@@ -15,11 +15,7 @@ export default function JoinIncident() {
   const [error, setError] = useState('')
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null)
   const [joining, setJoining] = useState<string | null>(null)
-
-  const [existingParticipant, setExistingParticipant] = useState<IncidentParticipant | null>(null)
-  const [showDuplicateNotif, setShowDuplicateNotif] = useState(false)
-  const [duplicateIncidentId, setDuplicateIncidentId] = useState('')
-  const [duplicateCheckedIn, setDuplicateCheckedIn] = useState(false)
+  const [userParticipants, setUserParticipants] = useState<Map<string, IncidentParticipant>>(new Map())
 
   useEffect(() => {
     fetchIncidents()
@@ -35,9 +31,29 @@ export default function JoinIncident() {
 
     if (error) {
       setError(error.message)
-    } else {
-      setIncidents(data || [])
+      setLoading(false)
+      return
     }
+
+    const incidentList = data || []
+    setIncidents(incidentList)
+
+    if (user && incidentList.length > 0) {
+      const incidentIds = incidentList.map((i) => i.incident_id)
+      const { data: participants } = await supabase
+        .from('incident_participants')
+        .select('*')
+        .in('incident_id', incidentIds)
+        .eq('user_id', user.id)
+        .eq('status', 'Active')
+
+      if (participants) {
+        const map = new Map<string, IncidentParticipant>()
+        participants.forEach((p) => map.set(p.incident_id, p))
+        setUserParticipants(map)
+      }
+    }
+
     setLoading(false)
   }
 
@@ -61,24 +77,6 @@ export default function JoinIncident() {
     if (!user) return
     setJoining(incidentId)
     setError('')
-
-    const { data: existing } = await supabase
-      .from('incident_participants')
-      .select('*')
-      .eq('incident_id', incidentId)
-      .eq('user_id', user.id)
-      .eq('status', 'Active')
-      .limit(1)
-      .single()
-
-    if (existing) {
-      setExistingParticipant(existing)
-      setDuplicateIncidentId(incidentId)
-      setDuplicateCheckedIn(existing.checked_in === true)
-      setShowDuplicateNotif(true)
-      setJoining(null)
-      return
-    }
 
     const roleId = generateRoleId(role)
     const userName = user.user_metadata?.first_name
@@ -104,25 +102,6 @@ export default function JoinIncident() {
     }
 
     navigate(`/incident/${incidentId}?role=${encodeURIComponent(role)}`)
-  }
-
-  const handleDuplicateChangeRole = () => {
-    setShowDuplicateNotif(false)
-    if (existingParticipant) {
-      navigate(`/incident/${duplicateIncidentId}?role=${encodeURIComponent(existingParticipant.role)}`)
-    }
-  }
-
-  const handleDuplicateDismiss = () => {
-    setShowDuplicateNotif(false)
-    setExistingParticipant(null)
-  }
-
-  const handleDuplicateProceedCheckin = () => {
-    setShowDuplicateNotif(false)
-    if (existingParticipant) {
-      navigate(`/incident/${duplicateIncidentId}/checkin`)
-    }
   }
 
   return (
@@ -163,57 +142,115 @@ export default function JoinIncident() {
               <p className="empty-text">No ongoing incidents found.</p>
             ) : (
               <div className="incident-cards">
-                {incidents.map((incident) => (
-                  <div key={incident.id} className={`incident-card ${expandedCardId === incident.id ? 'expanded' : ''}`}>
-                    <div className="incident-card-content" onClick={() => handleCardClick(incident.id)}>
-                      <div className="incident-card-header">
-                        <span className="incident-code">{incident.incident_id}</span>
-                        <span className={`incident-type-badge ${incident.type.toLowerCase().replace(/\s/g, '-')}`}>
-                          {incident.type}
-                        </span>
+                {incidents.map((incident) => {
+                  const participant = userParticipants.get(incident.incident_id)
+                  const isJoined = !!participant
+                  const isCheckedIn = participant?.checked_in === true
+
+                  return (
+                    <div key={incident.id} className={`incident-card ${expandedCardId === incident.id ? 'expanded' : ''}`}>
+                      <div className="incident-card-content" onClick={() => handleCardClick(incident.id)}>
+                        <div className="incident-card-header">
+                          <span className="incident-code">{incident.incident_id}</span>
+                          <span className={`incident-type-badge ${incident.type.toLowerCase().replace(/\s/g, '-')}`}>
+                            {incident.type}
+                          </span>
+                        </div>
+                        <h4>{incident.name}</h4>
+                        <p className="incident-location">{incident.location}</p>
+                        <div className="incident-meta">
+                          <span>Created by {incident.created_by_name}</span>
+                          <span>{new Date(incident.created_at).toLocaleDateString()}</span>
+                        </div>
+
+                        {isJoined && (
+                          <div className="joined-status">
+                            <div className="joined-info">
+                              <span className={`joined-badge ${participant!.role.toLowerCase().replace(/\s/g, '-')}`}>
+                                Joined as {participant!.role}
+                              </span>
+                              <span className="joined-timestamp">
+                                {new Date(participant!.joined_at).toLocaleString()}
+                              </span>
+                            </div>
+                            {isCheckedIn && (
+                              <div className="checkedin-info">
+                                <span className="checkedin-badge">Checked-in</span>
+                                <span className="checkedin-timestamp">
+                                  {participant!.checked_in ? new Date(participant!.joined_at).toLocaleString() : ''}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
-                      <h4>{incident.name}</h4>
-                      <p className="incident-location">{incident.location}</p>
-                      <div className="incident-meta">
-                        <span>Created by {incident.created_by_name}</span>
-                        <span>{new Date(incident.created_at).toLocaleDateString()}</span>
-                      </div>
+
+                      {expandedCardId === incident.id && (
+                        <div className="role-selection-bar">
+                          {isJoined ? (
+                            <>
+                              <div className="role-selection-header">
+                                <span className="role-label">Your Participation</span>
+                                <button className="collapse-btn" onClick={(e) => { e.stopPropagation(); setExpandedCardId(null) }}>
+                                  &times;
+                                </button>
+                              </div>
+                              <div className="joined-actions">
+                                {isCheckedIn ? (
+                                  <button
+                                    className="action-btn proceed-view"
+                                    onClick={() => navigate(`/incident/${incident.incident_id}`)}
+                                  >
+                                    View Incident
+                                  </button>
+                                ) : (
+                                  <button
+                                    className="action-btn proceed-checkin"
+                                    onClick={() => navigate(`/incident/${incident.incident_id}/checkin`)}
+                                  >
+                                    Proceed to Check-in
+                                  </button>
+                                )}
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="role-selection-header">
+                                <span className="role-label">Request to Join as?</span>
+                                <button className="collapse-btn" onClick={(e) => { e.stopPropagation(); setExpandedCardId(null) }}>
+                                  &times;
+                                </button>
+                              </div>
+                              <div className="role-buttons">
+                                <button
+                                  className="role-btn imt"
+                                  disabled={joining === incident.id}
+                                  onClick={() => handleRoleSelect(incident.incident_id, 'IMT')}
+                                >
+                                  {joining === incident.id ? 'Joining...' : 'IMT'}
+                                </button>
+                                <button
+                                  className="role-btn tactical"
+                                  disabled={joining === incident.id}
+                                  onClick={() => handleRoleSelect(incident.incident_id, 'Tactical Resources')}
+                                >
+                                  {joining === incident.id ? 'Joining...' : 'Tactical Resources'}
+                                </button>
+                                <button
+                                  className="role-btn observer"
+                                  disabled={joining === incident.id}
+                                  onClick={() => handleRoleSelect(incident.incident_id, 'Observer')}
+                                >
+                                  {joining === incident.id ? 'Joining...' : 'Observer'}
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    {expandedCardId === incident.id && (
-                      <div className="role-selection-bar">
-                        <div className="role-selection-header">
-                          <span className="role-label">Request to Join as?</span>
-                          <button className="collapse-btn" onClick={(e) => { e.stopPropagation(); setExpandedCardId(null) }}>
-                            &times;
-                          </button>
-                        </div>
-                        <div className="role-buttons">
-                          <button
-                            className="role-btn imt"
-                            disabled={joining === incident.id}
-                            onClick={() => handleRoleSelect(incident.incident_id, 'IMT')}
-                          >
-                            {joining === incident.id ? 'Joining...' : 'IMT'}
-                          </button>
-                          <button
-                            className="role-btn tactical"
-                            disabled={joining === incident.id}
-                            onClick={() => handleRoleSelect(incident.incident_id, 'Tactical Resources')}
-                          >
-                            {joining === incident.id ? 'Joining...' : 'Tactical Resources'}
-                          </button>
-                          <button
-                            className="role-btn observer"
-                            disabled={joining === incident.id}
-                            onClick={() => handleRoleSelect(incident.incident_id, 'Observer')}
-                          >
-                            {joining === incident.id ? 'Joining...' : 'Observer'}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>
@@ -221,41 +258,6 @@ export default function JoinIncident() {
           <button className="btn-back" onClick={() => navigate('/dashboard')}>Back to Dashboard</button>
         </div>
       </main>
-
-      {showDuplicateNotif && existingParticipant && (
-        <div className="duplicate-overlay" onClick={handleDuplicateDismiss}>
-          <div className="duplicate-notif" onClick={(e) => e.stopPropagation()}>
-            <div className="duplicate-notif-header">
-              <span className="duplicate-icon">!</span>
-              <h4>Already a Member</h4>
-            </div>
-            <p>
-              You are already a member of the incident management team as{' '}
-              <strong>{existingParticipant.role}</strong> (ID: {existingParticipant.role_id}).
-            </p>
-            {duplicateCheckedIn ? (
-              <p className="duplicate-warning">
-                You have already checked in. You cannot leave without an approved ICS Form 221 - Demobilization Check-out Form.
-              </p>
-            ) : (
-              <p>Do you want to leave the {existingParticipant.role} and change role?</p>
-            )}
-            <div className="duplicate-actions">
-              <button className="duplicate-btn primary" onClick={handleDuplicateProceedCheckin}>
-                Proceed to Check-in
-              </button>
-              {!duplicateCheckedIn && (
-                <button className="duplicate-btn secondary" onClick={handleDuplicateChangeRole}>
-                  Change Role
-                </button>
-              )}
-              <button className="duplicate-btn tertiary" onClick={handleDuplicateDismiss}>
-                {duplicateCheckedIn ? 'OK' : 'Cancel'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

@@ -209,6 +209,64 @@
   background: #145a30;
 }
 
+.btn-view {
+  padding: 5px 12px;
+  background: #1e40af;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease;
+}
+
+.btn-view:hover {
+  background: #1e3a8a;
+}
+
+.role-cell-badge {
+  font-size: 0.75rem;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.role-cell-badge.imt {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.role-cell-badge.tactical-resources {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.role-cell-badge.observer {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.role-cell-none {
+  color: #ccc;
+}
+
+.checkin-cell-badge {
+  font-size: 0.75rem;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.checkin-cell-pending {
+  font-size: 0.75rem;
+  color: #999;
+  font-style: italic;
+}
+
 .btn-edit {
   padding: 5px 12px;
   background: #1a5276;

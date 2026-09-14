@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import type { Incident } from '../lib/types'
+import type { Incident, IncidentParticipant } from '../lib/types'
 import './OngoingIncidents.css'
 
 export default function OngoingIncidents() {
@@ -11,8 +11,8 @@ export default function OngoingIncidents() {
   const [incidents, setIncidents] = useState<Incident[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [userParticipants, setUserParticipants] = useState<Map<string, IncidentParticipant>>(new Map())
 
-  // Edit modal
   const [editing, setEditing] = useState<Incident | null>(null)
   const [editName, setEditName] = useState('')
   const [editLocation, setEditLocation] = useState('')
@@ -33,9 +33,29 @@ export default function OngoingIncidents() {
 
     if (error) {
       setError(error.message)
-    } else {
-      setIncidents(data || [])
+      setLoading(false)
+      return
     }
+
+    const incidentList = data || []
+    setIncidents(incidentList)
+
+    if (user && incidentList.length > 0) {
+      const incidentIds = incidentList.map((i) => i.incident_id)
+      const { data: participants } = await supabase
+        .from('incident_participants')
+        .select('*')
+        .in('incident_id', incidentIds)
+        .eq('user_id', user.id)
+        .eq('status', 'Active')
+
+      if (participants) {
+        const map = new Map<string, IncidentParticipant>()
+        participants.forEach((p) => map.set(p.incident_id, p))
+        setUserParticipants(map)
+      }
+    }
+
     setLoading(false)
   }
 
@@ -132,42 +152,70 @@ export default function OngoingIncidents() {
                     <th>Location</th>
                     <th>Type</th>
                     <th>Status</th>
-                    <th>Created By</th>
-                    <th>Date</th>
+                    <th>Your Role</th>
+                    <th>Check-in</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {incidents.map((incident) => (
-                    <tr key={incident.id}>
-                      <td className="code-cell">{incident.incident_id}</td>
-                      <td className="name-cell">{incident.name}</td>
-                      <td>{incident.location}</td>
-                      <td>
-                        <span className={`type-badge ${incident.type.toLowerCase().replace(/\s/g, '-')}`}>
-                          {incident.type}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`status-badge ${incident.status.toLowerCase()}`}>
-                          {incident.status}
-                        </span>
-                      </td>
-                      <td>{incident.created_by_name}</td>
-                      <td className="date-cell">{new Date(incident.created_at).toLocaleDateString()}</td>
-                      <td className="actions-cell">
-                        <button className="btn-checkin" onClick={() => navigate(`/incident/${incident.incident_id}/checkin`)}>
-                          Check-in
-                        </button>
-                        {isOwner(incident) && (
-                          <>
-                            <button className="btn-edit" onClick={() => openEdit(incident)}>Edit</button>
-                            <button className="btn-delete" onClick={() => handleDelete(incident.id)}>Delete</button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                  {incidents.map((incident) => {
+                    const participant = userParticipants.get(incident.incident_id)
+                    const isJoined = !!participant
+                    const isCheckedIn = participant?.checked_in === true
+
+                    return (
+                      <tr key={incident.id}>
+                        <td className="code-cell">{incident.incident_id}</td>
+                        <td className="name-cell">{incident.name}</td>
+                        <td>{incident.location}</td>
+                        <td>
+                          <span className={`type-badge ${incident.type.toLowerCase().replace(/\s/g, '-')}`}>
+                            {incident.type}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`status-badge ${incident.status.toLowerCase()}`}>
+                            {incident.status}
+                          </span>
+                        </td>
+                        <td>
+                          {isJoined ? (
+                            <span className={`role-cell-badge ${participant!.role.toLowerCase().replace(/\s/g, '-')}`}>
+                              {participant!.role}
+                            </span>
+                          ) : (
+                            <span className="role-cell-none">-</span>
+                          )}
+                        </td>
+                        <td>
+                          {isCheckedIn ? (
+                            <span className="checkin-cell-badge">Checked-in</span>
+                          ) : isJoined ? (
+                            <span className="checkin-cell-pending">Not yet</span>
+                          ) : (
+                            <span className="role-cell-none">-</span>
+                          )}
+                        </td>
+                        <td className="actions-cell">
+                          {isJoined ? (
+                            <button className="btn-view" onClick={() => navigate(`/incident/${incident.incident_id}`)}>
+                              View
+                            </button>
+                          ) : (
+                            <button className="btn-checkin" onClick={() => navigate(`/incident/${incident.incident_id}/checkin`)}>
+                              Check-in
+                            </button>
+                          )}
+                          {isOwner(incident) && (
+                            <>
+                              <button className="btn-edit" onClick={() => openEdit(incident)}>Edit</button>
+                              <button className="btn-delete" onClick={() => handleDelete(incident.id)}>Delete</button>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
@@ -177,7 +225,6 @@ export default function OngoingIncidents() {
         </div>
       </main>
 
-      {/* Edit Modal */}
       {editing && (
         <div className="modal-overlay" onClick={() => setEditing(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>

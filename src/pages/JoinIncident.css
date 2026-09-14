@@ -293,6 +293,105 @@
   border-color: #bbb;
 }
 
+.joined-status {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.joined-info,
+.checkedin-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.joined-badge {
+  font-size: 0.8rem;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.joined-badge.imt {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.joined-badge.tactical-resources {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.joined-badge.observer {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.joined-timestamp {
+  font-size: 0.75rem;
+  color: #999;
+}
+
+.checkedin-badge {
+  font-size: 0.8rem;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.checkedin-timestamp {
+  font-size: 0.75rem;
+  color: #999;
+}
+
+.joined-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.action-btn.proceed-checkin {
+  background: #1a6b3c;
+  color: white;
+  border-color: #1a6b3c;
+}
+
+.action-btn.proceed-checkin:hover {
+  background: #145a30;
+  border-color: #145a30;
+}
+
+.action-btn.proceed-view {
+  background: #1e40af;
+  color: white;
+  border-color: #1e40af;
+}
+
+.action-btn.proceed-view:hover {
+  background: #1e3a8a;
+  border-color: #1e3a8a;
+}
+
 .duplicate-overlay {
   position: fixed;
   inset: 0;

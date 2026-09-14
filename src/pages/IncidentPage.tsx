@@ -3,7 +3,7 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { generateRoleId } from '../lib/utils'
-import type { Incident, IncidentParticipant } from '../lib/types'
+import type { Incident, IncidentParticipant, CheckinManifest, CheckinPersonnel, CheckinVehicle, CheckinEquipment } from '../lib/types'
 import ConfirmModal from '../components/ConfirmModal'
 import './IncidentPage.css'
 
@@ -23,6 +23,11 @@ export default function IncidentPage() {
   const [showConfirmChange, setShowConfirmChange] = useState(false)
   const [pendingNewRole, setPendingNewRole] = useState<'IMT' | 'Tactical Resources' | 'Observer' | null>(null)
   const [processing, setProcessing] = useState(false)
+
+  const [manifests, setManifests] = useState<CheckinManifest[]>([])
+  const [allPersonnel, setAllPersonnel] = useState<CheckinPersonnel[]>([])
+  const [allVehicles, setAllVehicles] = useState<CheckinVehicle[]>([])
+  const [allEquipment, setAllEquipment] = useState<CheckinEquipment[]>([])
 
   useEffect(() => {
     if (id) fetchData()
@@ -58,6 +63,28 @@ export default function IncidentPage() {
         .single()
 
       setParticipant(participantData)
+    }
+
+    const { data: manifestsData } = await supabase
+      .from('checkin_manifests')
+      .select('*')
+      .eq('incident_id', id)
+      .order('submitted_at', { ascending: false })
+
+    if (manifestsData && manifestsData.length > 0) {
+      setManifests(manifestsData)
+
+      const manifestIds = manifestsData.map((m) => m.id)
+
+      const [personnelRes, vehiclesRes, equipmentRes] = await Promise.all([
+        supabase.from('checkin_personnel').select('*').in('manifest_id', manifestIds),
+        supabase.from('checkin_vehicles').select('*').in('manifest_id', manifestIds),
+        supabase.from('checkin_equipment').select('*').in('manifest_id', manifestIds),
+      ])
+
+      setAllPersonnel(personnelRes.data || [])
+      setAllVehicles(vehiclesRes.data || [])
+      setAllEquipment(equipmentRes.data || [])
     }
 
     setLoading(false)
@@ -205,12 +232,8 @@ export default function IncidentPage() {
             </div>
           </div>
 
-          {isIMTOrTactical ? (
-            <div className="incident-content">
-              <h3>Check-in Manifest</h3>
-              <p className="placeholder-text">
-                Proceed to the check-in form to check in personnel, vehicles, and equipment resources.
-              </p>
+          {isIMTOrTactical && (
+            <div className="checkin-proceed-section">
               <button
                 className="checkin-proceed-btn"
                 onClick={() => navigate(`/incident/${incident.incident_id}/checkin`)}
@@ -218,12 +241,136 @@ export default function IncidentPage() {
                 Proceed to Check-in
               </button>
             </div>
-          ) : (
-            <div className="incident-content">
-              <h3>Incident Overview</h3>
-              <p className="placeholder-text">
-                Incident overview and summary will be displayed here. As an Observer, you have read-only access to incident information.
-              </p>
+          )}
+
+          <div className="resource-section">
+            <h3>Checked-in Resources</h3>
+
+            {allPersonnel.length === 0 && allVehicles.length === 0 && allEquipment.length === 0 ? (
+              <p className="no-resources-text">No resources have been checked in yet.</p>
+            ) : (
+              <>
+                {allPersonnel.length > 0 && (
+                  <div className="resource-group">
+                    <h4>Personnel ({allPersonnel.length})</h4>
+                    <table className="resource-table">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Name</th>
+                          <th>Role</th>
+                          <th>Age</th>
+                          <th>Gender</th>
+                          <th>Contact</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {allPersonnel.map((p, idx) => (
+                          <tr key={p.id}>
+                            <td>{idx + 1}</td>
+                            <td>{p.name}</td>
+                            <td>{p.role}</td>
+                            <td>{p.age}</td>
+                            <td>{p.gender}</td>
+                            <td>{p.contact_details}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {allVehicles.length > 0 && (
+                  <div className="resource-group">
+                    <h4>Vehicles ({allVehicles.length})</h4>
+                    <table className="resource-table">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Kind</th>
+                          <th>Type</th>
+                          <th>Plate Number</th>
+                          <th>Operator</th>
+                          <th>Contact</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {allVehicles.map((v, idx) => (
+                          <tr key={v.id}>
+                            <td>{idx + 1}</td>
+                            <td>{v.kind}</td>
+                            <td>{v.type}</td>
+                            <td>{v.plate_number}</td>
+                            <td>{v.operator_name}</td>
+                            <td>{v.contact_details}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {allEquipment.length > 0 && (
+                  <div className="resource-group">
+                    <h4>Equipment ({allEquipment.length})</h4>
+                    <table className="resource-table">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Kind</th>
+                          <th>Type</th>
+                          <th>Power Source</th>
+                          <th>Operator</th>
+                          <th>Contact</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {allEquipment.map((e, idx) => (
+                          <tr key={e.id}>
+                            <td>{idx + 1}</td>
+                            <td>{e.kind}</td>
+                            <td>{e.type}</td>
+                            <td>{e.source_of_power}</td>
+                            <td>{e.operator_name}</td>
+                            <td>{e.contact_details}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {manifests.length > 0 && (
+            <div className="manifests-section">
+              <h3>Check-in Manifests</h3>
+              <div className="manifest-list">
+                {manifests.map((m) => (
+                  <div key={m.id} className="manifest-card">
+                    <div className="manifest-info">
+                      <span className="manifest-id">{m.checkin_id}</span>
+                      <span className="manifest-agency">{m.agency_name}</span>
+                      <span className="manifest-date">{new Date(m.created_at).toLocaleString()}</span>
+                    </div>
+                    <div className="manifest-actions">
+                      <button
+                        className="manifest-btn view"
+                        onClick={() => navigate(`/incident/${incident.incident_id}/checkin/view`)}
+                      >
+                        View
+                      </button>
+                      <button
+                        className="manifest-btn print"
+                        onClick={() => navigate(`/incident/${incident.incident_id}/checkin/view?print=true`)}
+                      >
+                        Print
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
