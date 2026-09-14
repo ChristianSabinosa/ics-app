@@ -106,6 +106,13 @@ export default function IncidentPage() {
     if (forms211 && forms211.length > 0) {
       statuses['211'] = forms211[0].status
     }
+    const { data: forms207 } = await supabase
+      .from('ics_207_forms')
+      .select('id, status, incident_id')
+      .eq('incident_id', id)
+    if (forms207 && forms207.length > 0) {
+      statuses['207'] = forms207[0].status
+    }
     setFormStatuses(statuses)
 
     setLoading(false)
@@ -172,6 +179,8 @@ export default function IncidentPage() {
   const handleFormClick = (formNum: string) => {
     if (formNum === '211') {
       navigate(`/incident/${incident.incident_id}/ics-211`)
+    } else if (formNum === '207') {
+      navigate(`/incident/${incident.incident_id}/ics-207`)
     }
   }
 
@@ -219,13 +228,26 @@ export default function IncidentPage() {
               </div>
             </div>
 
-            {isIMTOrTactical && (
-              <div className="checkin-proceed-section">
-                <button className="checkin-proceed-btn" onClick={() => navigate(`/incident/${incident.incident_id}/checkin`)}>
-                  Proceed to Check-in
-                </button>
-              </div>
-            )}
+            {isIMTOrTactical && (() => {
+              const myManifest = manifests.find((m) => m.user_id === user?.id)
+              const isCheckedIn = !!myManifest
+              return (
+                <div className="checkin-proceed-section">
+                  {isCheckedIn ? (
+                    <div className="checked-in-status">
+                      <span className="checked-in-badge">Already Checked-in</span>
+                      <span className="checked-in-id">{myManifest.checkin_id}</span>
+                      <button className="manifest-btn view" onClick={() => navigate(`/incident/${incident.incident_id}/checkin/view?manifest=${myManifest.id}`)}>View My Check-in</button>
+                      <button className="manifest-btn edit" onClick={() => navigate(`/incident/${incident.incident_id}/checkin?manifest=${myManifest.id}`)}>Edit</button>
+                    </div>
+                  ) : (
+                    <button className="checkin-proceed-btn" onClick={() => navigate(`/incident/${incident.incident_id}/checkin`)}>
+                      Proceed to Check-in
+                    </button>
+                  )}
+                </div>
+              )
+            })()}
 
             <div className="resource-section">
               <h3>Checked-in Resources</h3>

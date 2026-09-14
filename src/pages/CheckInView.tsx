@@ -19,6 +19,7 @@ export default function CheckInView() {
   const [equipment, setEquipment] = useState<CheckinEquipment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [showPrint, setShowPrint] = useState(false)
 
   useEffect(() => {
     if (!incidentId || !user) return
@@ -65,8 +66,6 @@ export default function CheckInView() {
     setLoading(false)
   }
 
-  const handlePrint = () => window.print()
-
   if (loading) {
     return (
       <div className="checkin-view-page">
@@ -112,11 +111,11 @@ export default function CheckInView() {
         </div>
         <div className="topbar-actions">
           <button className="topbar-btn edit" onClick={() => navigate(`/incident/${incidentId}/checkin?manifest=${manifest.id}`)}>Edit</button>
-          <button className="topbar-btn print" onClick={handlePrint}>Print</button>
+          <button className="topbar-btn print" onClick={() => setShowPrint(true)}>Print</button>
         </div>
       </div>
 
-      <main className="checkin-view-main">
+      <main className="checkin-view-main no-print">
         <div className="checkin-view-container print-area">
           <div className="manifest-header">
             <h2>Check-in Manifest</h2>
@@ -224,7 +223,7 @@ export default function CheckInView() {
         </div>
       </main>
 
-      <CheckInPrint manifest={manifest} personnel={personnel} vehicles={vehicles} equipment={equipment} />
+      <CheckInPrint manifest={manifest} personnel={personnel} vehicles={vehicles} equipment={equipment} showPrint={showPrint} onClose={() => setShowPrint(false)} />
     </div>
   )
 }

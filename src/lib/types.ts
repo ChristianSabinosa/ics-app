@@ -126,3 +126,27 @@ export interface Ics211Resource {
   data_sent_to_resl: string
   sort_order: number
 }
+
+export interface Ics207Form {
+  id: string
+  incident_id: string
+  incident_name: string
+  status: 'Draft' | 'Submitted'
+  prepared_by: string
+  date_prepared: string
+  time_prepared: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Ics207Position {
+  id: string
+  form_id: string
+  position_key: string
+  position_title: string
+  abbreviation: string
+  section: string
+  person_name: string
+  agency: string
+  sort_order: number
+}

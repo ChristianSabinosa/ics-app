@@ -147,6 +147,36 @@
 
 .checkin-proceed-btn:hover { background: #145a30; }
 
+.checked-in-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.checked-in-badge {
+  background: #d1fae5;
+  color: #065f46;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.checked-in-id {
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.manifest-btn.edit {
+  background: white;
+  color: #1e40af;
+  border: 2px solid #bfdbfe;
+}
+
+.manifest-btn.edit:hover { background: #1e40af; color: white; }
+
 .resource-section { margin-bottom: 24px; }
 
 .resource-section h3 {

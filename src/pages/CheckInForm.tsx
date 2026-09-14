@@ -33,9 +33,6 @@ export default function CheckInForm() {
   const [success, setSuccess] = useState('')
 
   const [agencyName, setAgencyName] = useState('')
-  const [totalPersonnel, setTotalPersonnel] = useState(0)
-  const [totalVehicles, setTotalVehicles] = useState(0)
-  const [totalEquipment, setTotalEquipment] = useState(0)
   const [others, setOthers] = useState('')
   const [preparedByName, setPreparedByName] = useState('')
 
@@ -43,6 +40,10 @@ export default function CheckInForm() {
   const [members, setMembers] = useState<Omit<CheckinPersonnel, 'id' | 'manifest_id'>[]>([])
   const [vehicles, setVehicles] = useState<Omit<CheckinVehicle, 'id' | 'manifest_id'>[]>([])
   const [equipment, setEquipment] = useState<Omit<CheckinEquipment, 'id' | 'manifest_id'>[]>([])
+
+  const totalPersonnel = 1 + members.length
+  const totalVehicles = vehicles.length
+  const totalEquipment = equipment.length
 
   const landCount = vehicles.filter((v) => v.method_of_travel === 'Land').length
   const waterCount = vehicles.filter((v) => v.method_of_travel === 'Water').length
@@ -89,9 +90,6 @@ export default function CheckInForm() {
       setManifestId(existing.id)
       setCheckinId(existing.checkin_id)
       setAgencyName(existing.agency_name)
-      setTotalPersonnel(existing.total_personnel)
-      setTotalVehicles(existing.total_vehicles)
-      setTotalEquipment(existing.total_equipment)
       setOthers(existing.others)
       setPreparedByName(existing.prepared_by_name)
 
@@ -257,7 +255,7 @@ export default function CheckInForm() {
             <h3>Personnel</h3>
             <div className="form-group">
               <label>Total Number of Personnel</label>
-              <input type="number" min="0" value={totalPersonnel} onChange={(e) => setTotalPersonnel(parseInt(e.target.value) || 0)} />
+              <input type="number" value={totalPersonnel} readOnly className="readonly-input" />
             </div>
 
             <h4>Leader</h4>
@@ -295,7 +293,7 @@ export default function CheckInForm() {
             <h3>Vehicles</h3>
             <div className="form-group">
               <label>Total Number of Vehicles</label>
-              <input type="number" min="0" value={totalVehicles} onChange={(e) => setTotalVehicles(parseInt(e.target.value) || 0)} />
+              <input type="number" value={totalVehicles} readOnly className="readonly-input" />
             </div>
             <div className="vehicle-counts">
               <div className="vehicle-count-item"><label>Land</label><span className="count-value">{landCount}</span></div>
@@ -332,7 +330,7 @@ export default function CheckInForm() {
             <h3>Equipment</h3>
             <div className="form-group">
               <label>Total Number of Equipment</label>
-              <input type="number" min="0" value={totalEquipment} onChange={(e) => setTotalEquipment(parseInt(e.target.value) || 0)} />
+              <input type="number" value={totalEquipment} readOnly className="readonly-input" />
             </div>
 
             {equipment.map((eq, i) => (

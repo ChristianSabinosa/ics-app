@@ -249,7 +249,7 @@ export default function Ics211Form() {
 
   return (
     <div className="ics211-page">
-      <header className="ics211-header">
+      <header className="ics211-header no-print">
         <div className="header-brand" onClick={() => navigate(`/incident/${incidentId}`)} style={{ cursor: 'pointer' }}>
           <img src="/alaminos-logo.png" alt="Logo" className="header-logo" />
           <div>
@@ -259,7 +259,7 @@ export default function Ics211Form() {
         </div>
       </header>
 
-      <div className="ics211-topbar">
+      <div className="ics211-topbar no-print">
         <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}`)}>&larr; Back</button>
         <div className="topbar-info">
           <span className="form-badge">ICS 211</span>
@@ -267,7 +267,7 @@ export default function Ics211Form() {
         </div>
       </div>
 
-      <main className="ics211-main">
+      <main className="ics211-main no-print">
         <div className="ics211-container">
           {error && <div className="error-message">{error}</div>}
           {success && <div className="success-message">{success}</div>}

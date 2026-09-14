@@ -171,6 +171,13 @@
   color: #555;
 }
 
+.readonly-input {
+  background: #f5f5f5 !important;
+  color: #333 !important;
+  font-weight: 700;
+  cursor: default;
+}
+
 .count-value {
   font-size: 1.1rem;
   font-weight: 700;

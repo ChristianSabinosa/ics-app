@@ -112,7 +112,6 @@ export default function LoginPage() {
             <img src="/alaminos-logo.png" alt="Municipality of Alaminos Logo" />
           </div>
           <h1 className="brand-title">Incident Command System</h1>
-          <p className="brand-subtitle">Emergency Response Management</p>
           <p className="brand-location">Municipality of Alaminos</p>
         </div>
       </div>

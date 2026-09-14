@@ -1,40 +1,49 @@
-/* Print-only container - hidden on screen */
-.print-only {
-  display: none;
+.checkin-print-overlay {
+  position: fixed;
+  inset: 0;
+  background: #e5e5e5;
+  z-index: 2000;
+  overflow-y: auto;
 }
 
-/* ==========================================
-   SCREEN: Hidden
-   PRINT: Visible
-   ========================================== */
-@media print {
-  .print-only {
-    display: block !important;
-  }
+.checkin-print-controls {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 2001;
+  display: flex;
+  gap: 8px;
+}
 
-  /* Hide everything else when printing */
-  .no-print,
-  .checkin-header,
-  .checkin-topbar,
-  .checkin-view-main,
-  .checkin-error {
-    display: none !important;
-  }
+.checkin-print-controls button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
 
-  body {
-    margin: 0;
-    padding: 0;
-    background: white;
-  }
+.checkin-print-controls button:first-child {
+  background: #950606;
+  color: white;
+}
 
-  .print-page {
-    page-break-after: always;
-    width: 100%;
-  }
+.checkin-print-controls button:last-child {
+  background: white;
+  color: #333;
+  border: 1px solid #ccc;
+}
 
-  .print-page:last-child {
-    page-break-after: auto;
-  }
+.checkin-print-page {
+  width: 297mm;
+  min-height: 210mm;
+  margin: 16px auto;
+  background: white;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  padding: 10mm;
+  box-sizing: border-box;
 }
 
 /* ==========================================
@@ -199,12 +208,6 @@
 .equipment-table th:nth-child(9),
 .equipment-table td:nth-child(9) { width: 8%; }
 
-/* Empty row height */
-.data-table td:empty,
-.data-table td:contains('\00a0') {
-  height: 22px;
-}
-
 /* ==========================================
    FOOTER NOTES
    ========================================== */
@@ -232,34 +235,35 @@
 }
 
 /* ==========================================
-   PRINT PAGE SIZING
+   PRINT STYLES
    ========================================== */
 @media print {
-  @page {
-    size: A4 landscape;
-    margin: 0.4in;
+  .no-print { display: none !important; }
+
+  .checkin-print-overlay {
+    position: static;
+    background: white;
+    overflow: visible;
   }
 
-  .print-page {
+  .checkin-print-page {
     width: 100%;
     margin: 0;
     padding: 0;
+    box-shadow: none;
+    page-break-after: always;
+    min-height: auto;
   }
 
-  .form-frame {
-    border: 2px solid #000;
+  .checkin-print-page:last-child {
+    page-break-after: auto;
   }
 
-  .data-table th,
-  .data-table td {
-    border: 1px solid #000;
+  @page {
+    size: A4 landscape;
+    margin: 0.5in;
   }
 
-  .info-fields td {
-    border: 1px solid #000;
-  }
-
-  /* Force background colors to print */
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;

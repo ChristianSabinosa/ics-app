@@ -6,18 +6,29 @@ interface CheckInPrintProps {
   personnel: CheckinPersonnel[]
   vehicles: CheckinVehicle[]
   equipment: CheckinEquipment[]
+  showPrint: boolean
+  onClose: () => void
 }
 
-export default function CheckInPrint({ manifest, personnel, vehicles, equipment }: CheckInPrintProps) {
+export default function CheckInPrint({ manifest, personnel, vehicles, equipment, showPrint, onClose }: CheckInPrintProps) {
+  if (!showPrint) return null
+
   const leader = personnel.find((p) => p.role === 'Leader')
   const landCount = vehicles.filter((v) => v.method_of_travel === 'Land').length
   const waterCount = vehicles.filter((v) => v.method_of_travel === 'Water').length
   const airCount = vehicles.filter((v) => v.method_of_travel === 'Air').length
 
+  const handlePrint = () => window.print()
+
   return (
-    <div className="print-only">
+    <div className="checkin-print-overlay">
+      <div className="checkin-print-controls no-print">
+        <button onClick={handlePrint}>Print</button>
+        <button onClick={onClose}>Close</button>
+      </div>
+
       {/* PAGE 1: Personnel */}
-      <div className="print-page">
+      <div className="checkin-print-page">
         <table className="form-frame">
           <tbody>
             <tr>
@@ -97,7 +108,7 @@ export default function CheckInPrint({ manifest, personnel, vehicles, equipment 
       </div>
 
       {/* PAGE 2: Vehicles + Equipment + Others */}
-      <div className="print-page">
+      <div className="checkin-print-page">
         <table className="form-frame">
           <tbody>
             <tr>
