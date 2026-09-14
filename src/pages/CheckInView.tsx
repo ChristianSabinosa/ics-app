@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { formatMilitaryTime } from '../lib/utils'
 import type { CheckinManifest, CheckinPersonnel, CheckinVehicle, CheckinEquipment } from '../lib/types'
 import CheckInPrint from './CheckInPrint'
 import './CheckInView.css'
@@ -124,7 +125,7 @@ export default function CheckInView() {
               <span><strong>Incident:</strong> {manifest.incident_id}</span>
               <span><strong>Status:</strong> {manifest.status}</span>
               {manifest.prepared_by_timestamp && (
-                <span><strong>Submitted:</strong> {new Date(manifest.prepared_by_timestamp).toLocaleString()}</span>
+                <span><strong>Submitted:</strong> {new Date(manifest.prepared_by_timestamp).toLocaleDateString()} {formatMilitaryTime(manifest.prepared_by_timestamp)}</span>
               )}
             </div>
           </div>
@@ -217,7 +218,7 @@ export default function CheckInView() {
             <h3>Prepared By</h3>
             <p><strong>Name:</strong> {manifest.prepared_by_name}</p>
             {manifest.prepared_by_timestamp && (
-              <p><strong>Timestamp:</strong> {new Date(manifest.prepared_by_timestamp).toLocaleString()}</p>
+              <p><strong>Timestamp:</strong> {new Date(manifest.prepared_by_timestamp).toLocaleDateString()} {formatMilitaryTime(manifest.prepared_by_timestamp)}</p>
             )}
           </section>
         </div>

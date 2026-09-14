@@ -87,3 +87,42 @@ export interface CheckinEquipment {
   capabilities: string
   others: string
 }
+
+export interface Ics211Form {
+  id: string
+  incident_id: string
+  incident_name: string
+  start_date: string
+  start_time: string
+  checkin_location: string
+  status: 'Draft' | 'Submitted'
+  prepared_by: string
+  date_prepared: string
+  time_prepared: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Ics211Resource {
+  id: string
+  form_id: string
+  order_request_no: string
+  checkin_datetime: string
+  kind: string
+  type: string
+  resource_identifier_single: boolean
+  resource_identifier_st: boolean
+  resource_identifier_tf: boolean
+  agency_name: string
+  leader_name: string
+  contact_details: string
+  total_personnel: number
+  departure_point_of_origin: string
+  departure_datetime: string
+  departure_method_of_travel: string
+  with_manifest: boolean
+  incident_assignment: string
+  other_qualifications: string
+  data_sent_to_resl: string
+  sort_order: number
+}

@@ -23,3 +23,21 @@ export function generateCheckinId(date: Date = new Date()): string {
   const random = Math.floor(100 + Math.random() * 900)
   return `CHK-${year}${month}${day}-${random}`
 }
+
+export function formatMilitaryTime(dateStr: string): string {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return dateStr
+  const h = d.getHours()
+  const m = String(d.getMinutes()).padStart(2, '0')
+  return `${h === 0 ? '00' : h}${m}H`
+}
+
+export function formatMilitaryTimeShort(timeStr: string): string {
+  if (!timeStr) return ''
+  const parts = timeStr.split(':')
+  if (parts.length < 2) return timeStr
+  const h = parseInt(parts[0], 10)
+  const m = parts[1]
+  return `${h === 0 ? '00' : h}${m}H`
+}

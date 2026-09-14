@@ -234,3 +234,78 @@ create policy "Authenticated users can delete equipment"
   on checkin_equipment for delete to authenticated using (true);
 
 create index if not exists equipment_manifest_idx on checkin_equipment (manifest_id);
+
+-- ============================================================
+-- ICS FORM 211 - INCIDENT CHECK-IN LIST
+-- ============================================================
+
+create table if not exists ics_211_forms (
+  id uuid default gen_random_uuid() primary key,
+  incident_id text not null references incidents(incident_id),
+  incident_name text not null default '',
+  start_date text not null default '',
+  start_time text not null default '',
+  checkin_location text not null default '',
+  status text not null default 'Draft' check (status in ('Draft', 'Submitted')),
+  prepared_by text not null default '',
+  date_prepared text not null default '',
+  time_prepared text not null default '',
+  created_at timestamp with time zone default now() not null,
+  updated_at timestamp with time zone default now() not null
+);
+
+alter table ics_211_forms enable row level security;
+
+create policy "Authenticated users can view 211 forms"
+  on ics_211_forms for select to authenticated using (true);
+
+create policy "Authenticated users can insert 211 forms"
+  on ics_211_forms for insert to authenticated with check (true);
+
+create policy "Authenticated users can update 211 forms"
+  on ics_211_forms for update to authenticated using (true) with check (true);
+
+create policy "Authenticated users can delete 211 forms"
+  on ics_211_forms for delete to authenticated using (true);
+
+create index if not exists ics_211_forms_incident_idx on ics_211_forms (incident_id);
+
+create table if not exists ics_211_resources (
+  id uuid default gen_random_uuid() primary key,
+  form_id uuid not null references ics_211_forms(id) on delete cascade,
+  order_request_no text not null default '',
+  checkin_datetime text not null default '',
+  kind text not null default '',
+  type text not null default '',
+  resource_identifier_single boolean not null default false,
+  resource_identifier_st boolean not null default false,
+  resource_identifier_tf boolean not null default false,
+  agency_name text not null default '',
+  leader_name text not null default '',
+  contact_details text not null default '',
+  total_personnel integer not null default 0,
+  departure_point_of_origin text not null default '',
+  departure_datetime text not null default '',
+  departure_method_of_travel text not null default '',
+  with_manifest boolean not null default false,
+  incident_assignment text not null default '',
+  other_qualifications text not null default '',
+  data_sent_to_resl text not null default '',
+  sort_order integer not null default 0
+);
+
+alter table ics_211_resources enable row level security;
+
+create policy "Authenticated users can view 211 resources"
+  on ics_211_resources for select to authenticated using (true);
+
+create policy "Authenticated users can insert 211 resources"
+  on ics_211_resources for insert to authenticated with check (true);
+
+create policy "Authenticated users can update 211 resources"
+  on ics_211_resources for update to authenticated using (true) with check (true);
+
+create policy "Authenticated users can delete 211 resources"
+  on ics_211_resources for delete to authenticated using (true);
+
+create index if not exists ics_211_resources_form_idx on ics_211_resources (form_id);

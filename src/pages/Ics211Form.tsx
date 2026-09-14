@@ -1,0 +1,423 @@
+import { useEffect, useState } from 'react'
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
+import type { Ics211Resource } from '../lib/types'
+import Ics211Print from './Ics211Print'
+import './Ics211Form.css'
+
+const emptyResource: Omit<Ics211Resource, 'id' | 'form_id'> = {
+  order_request_no: '', checkin_datetime: '', kind: '', type: '',
+  resource_identifier_single: false, resource_identifier_st: false, resource_identifier_tf: false,
+  agency_name: '', leader_name: '', contact_details: '', total_personnel: 0,
+  departure_point_of_origin: '', departure_datetime: '', departure_method_of_travel: '',
+  with_manifest: false, incident_assignment: 'Waiting for assignment', other_qualifications: '',
+  data_sent_to_resl: '', sort_order: 0,
+}
+
+export default function Ics211Form() {
+  const { id: incidentId } = useParams<{ id: string }>()
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const { user } = useAuth()
+
+  const [formId, setFormId] = useState<string | null>(null)
+  const [incidentName, setIncidentName] = useState('')
+  const [startDate, setStartDate] = useState('')
+  const [startTime, setStartTime] = useState('')
+  const [checkinLocation, setCheckinLocation] = useState<string[]>([])
+  const [resources, setResources] = useState<Omit<Ics211Resource, 'id' | 'form_id'>[]>([])
+  const [preparedBy, setPreparedBy] = useState('')
+  const [datePrepared, setDatePrepared] = useState('')
+  const [timePrepared, setTimePrepared] = useState('')
+  const [status, setStatus] = useState<'Draft' | 'Submitted'>('Draft')
+
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [showPrint, setShowPrint] = useState(false)
+
+  useEffect(() => {
+    if (!user) return
+    const now = new Date()
+    setPreparedBy(user.user_metadata?.first_name
+      ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`.trim()
+      : user.email || '')
+    setDatePrepared(now.toISOString().slice(0, 10))
+    setTimePrepared(now.toTimeString().slice(0, 5))
+    loadForm()
+  }, [incidentId, user, searchParams])
+
+  const loadForm = async () => {
+    if (!incidentId) return
+    setLoading(true)
+
+    const { data: incident } = await supabase
+      .from('incidents')
+      .select('name')
+      .eq('incident_id', incidentId)
+      .single()
+    if (incident) setIncidentName(incident.name)
+
+    const formParam = searchParams.get('form')
+
+    let formToLoad = null
+
+    if (formParam) {
+      const { data: form } = await supabase
+        .from('ics_211_forms')
+        .select('*')
+        .eq('id', formParam)
+        .single()
+      formToLoad = form
+    } else {
+      const { data: existingForm } = await supabase
+        .from('ics_211_forms')
+        .select('*')
+        .eq('incident_id', incidentId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+      formToLoad = existingForm
+    }
+
+    if (formToLoad) {
+      setFormId(formToLoad.id)
+      setIncidentName(formToLoad.incident_name)
+      setStartDate(formToLoad.start_date)
+      setStartTime(formToLoad.start_time)
+      setCheckinLocation(formToLoad.checkin_location ? formToLoad.checkin_location.split(',').filter(Boolean) : [])
+      setPreparedBy(formToLoad.prepared_by)
+      setDatePrepared(formToLoad.date_prepared)
+      setTimePrepared(formToLoad.time_prepared)
+      setStatus(formToLoad.status)
+
+      const { data: resData } = await supabase
+        .from('ics_211_resources')
+        .select('*')
+        .eq('form_id', formToLoad.id)
+        .order('sort_order')
+
+      if (resData) {
+        setResources(resData.map(({ id: _id, form_id: _fid, ...rest }) => rest))
+      }
+    } else {
+      await loadFromManifests()
+    }
+
+    setLoading(false)
+  }
+
+  const loadFromManifests = async () => {
+    if (!incidentId) return
+
+    const { data: manifests } = await supabase
+      .from('checkin_manifests')
+      .select('*')
+      .eq('incident_id', incidentId)
+      .eq('status', 'Submitted')
+      .order('created_at')
+
+    if (!manifests || manifests.length === 0) return
+
+    const manifestIds = manifests.map((m) => m.id)
+    const { data: allPersonnel } = await supabase
+      .from('checkin_personnel')
+      .select('*')
+      .in('manifest_id', manifestIds)
+
+    const loadedResources: Omit<Ics211Resource, 'id' | 'form_id'>[] = []
+
+    for (const manifest of manifests) {
+      const manifestPersonnel = allPersonnel?.filter((p) => p.manifest_id === manifest.id) || []
+      const leader = manifestPersonnel.find((p) => p.role === 'Leader')
+
+      const checkinTs = manifest.prepared_by_timestamp || manifest.created_at
+      const checkinDt = checkinTs ? new Date(checkinTs).toISOString().slice(0, 16) : ''
+
+      loadedResources.push({
+        order_request_no: manifest.checkin_id,
+        checkin_datetime: checkinDt,
+        kind: '',
+        type: '',
+        resource_identifier_single: true,
+        resource_identifier_st: false,
+        resource_identifier_tf: false,
+        agency_name: manifest.agency_name,
+        leader_name: leader?.name || '',
+        contact_details: leader?.contact_details || '',
+        total_personnel: manifest.total_personnel,
+        departure_point_of_origin: '',
+        departure_datetime: '',
+        departure_method_of_travel: '',
+        with_manifest: true,
+        incident_assignment: 'Waiting for assignment',
+        other_qualifications: leader?.capabilities || '',
+        data_sent_to_resl: '',
+        sort_order: loadedResources.length,
+      })
+    }
+
+    if (loadedResources.length > 0) {
+      setResources(loadedResources)
+    }
+  }
+
+  const handleLocationToggle = (loc: string) => {
+    setCheckinLocation((prev) =>
+      prev.includes(loc) ? prev.filter((l) => l !== loc) : [...prev, loc]
+    )
+  }
+
+  const updateResource = (index: number, field: string, value: string | number | boolean) => {
+    const updated = [...resources]
+    updated[index] = { ...updated[index], [field]: value }
+    setResources(updated)
+  }
+
+  const addResource = () => {
+    setResources([...resources, { ...emptyResource, with_manifest: false, sort_order: resources.length }])
+  }
+
+  const removeResource = (index: number) => {
+    setResources(resources.filter((_, i) => i !== index))
+  }
+
+  const saveForm = async (formStatus: 'Draft' | 'Submitted') => {
+    if (!incidentId || !user) return
+    setSaving(true)
+    setError('')
+    setSuccess('')
+
+    const now = new Date()
+    const formData = {
+      incident_id: incidentId,
+      incident_name: incidentName,
+      start_date: startDate,
+      start_time: startTime,
+      checkin_location: checkinLocation.join(','),
+      status: formStatus,
+      prepared_by: preparedBy,
+      date_prepared: formStatus === 'Submitted' ? now.toISOString().slice(0, 10) : datePrepared,
+      time_prepared: formStatus === 'Submitted' ? now.toTimeString().slice(0, 5) : timePrepared,
+      updated_at: now.toISOString(),
+    }
+
+    let fId = formId
+
+    if (fId) {
+      const { error: updateError } = await supabase.from('ics_211_forms').update(formData).eq('id', fId)
+      if (updateError) { setError(updateError.message); setSaving(false); return }
+    } else {
+      const { data: inserted, error: insertError } = await supabase
+        .from('ics_211_forms')
+        .insert(formData)
+        .select()
+        .single()
+      if (insertError) { setError(insertError.message); setSaving(false); return }
+      fId = inserted.id
+      setFormId(fId)
+    }
+
+    await supabase.from('ics_211_resources').delete().eq('form_id', fId)
+
+    if (resources.length > 0) {
+      const now211 = new Date().toISOString().slice(0, 16)
+      const resourceRows = resources.map((r, i) => ({
+        form_id: fId!,
+        ...r,
+        data_sent_to_resl: now211,
+        sort_order: i,
+      }))
+      const { error: resError } = await supabase.from('ics_211_resources').insert(resourceRows)
+      if (resError) { setError(resError.message); setSaving(false); return }
+    }
+
+    setSaving(false)
+    setStatus(formStatus)
+    setSuccess(formStatus === 'Draft' ? 'Progress saved as draft.' : 'ICS Form 211 submitted successfully!')
+  }
+
+  if (loading) {
+    return (
+      <div className="ics211-page">
+        <div className="ics211-loading">Loading ICS Form 211...</div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="ics211-page">
+      <header className="ics211-header">
+        <div className="header-brand" onClick={() => navigate(`/incident/${incidentId}`)} style={{ cursor: 'pointer' }}>
+          <img src="/alaminos-logo.png" alt="Logo" className="header-logo" />
+          <div>
+            <h1>Incident Command System</h1>
+            <p>Municipality of Alaminos</p>
+          </div>
+        </div>
+      </header>
+
+      <div className="ics211-topbar">
+        <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}`)}>&larr; Back</button>
+        <div className="topbar-info">
+          <span className="form-badge">ICS 211</span>
+          <span className={`status-badge ${status.toLowerCase()}`}>{status}</span>
+        </div>
+      </div>
+
+      <main className="ics211-main">
+        <div className="ics211-container">
+          {error && <div className="error-message">{error}</div>}
+          {success && <div className="success-message">{success}</div>}
+
+          <div className="form-header-section">
+            <h2>INCIDENT CHECK-IN LIST</h2>
+            <h3>ICS 211</h3>
+          </div>
+
+          <div className="form-top-row">
+            <div className="form-field wide">
+              <label>1. INCIDENT/EVENT NAME</label>
+              <input type="text" value={incidentName} onChange={(e) => setIncidentName(e.target.value)} />
+            </div>
+            <div className="form-field">
+              <label>2. START DATE AND TIME</label>
+              <div className="datetime-row">
+                <div><label>Date:</label><input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
+                <div><label>Time:</label><input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} /></div>
+              </div>
+            </div>
+            <div className="form-field">
+              <label>3. CHECK-IN LOCATION</label>
+              <div className="checkbox-group">
+                {['Base', 'Camp', 'Staging Area', 'ICP', 'Others'].map((loc) => (
+                  <label key={loc} className="checkbox-label">
+                    <input type="checkbox" checked={checkinLocation.includes(loc)} onChange={() => handleLocationToggle(loc)} />
+                    {loc}
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="resources-section">
+            <h4>4. CHECK-IN INFORMATION</h4>
+            <div className="resources-table-wrapper">
+              <table className="resources-table">
+                <thead>
+                  <tr>
+                    <th>Order/Request No.</th>
+                    <th>Check-In Date and Time</th>
+                    <th>Kind</th>
+                    <th>Type</th>
+                    <th>Resource Identifier</th>
+                    <th>Name of Agency/Office/Home Base</th>
+                    <th>Name of Leader</th>
+                    <th>Contact Details</th>
+                    <th>Total No. of Pers.</th>
+                    <th>Departure: Point of Origin</th>
+                    <th>Departure: Date and Time</th>
+                    <th>Departure: Method of Travel</th>
+                    <th>With Manifest?</th>
+                    <th>Incident Assignment</th>
+                    <th>Other Qualifications</th>
+                    <th>Data Sent to RESL</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {resources.map((r, i) => (
+                    <tr key={i}>
+                      <td><input value={r.order_request_no} onChange={(e) => updateResource(i, 'order_request_no', e.target.value)} /></td>
+                      <td><input type="datetime-local" value={r.checkin_datetime} onChange={(e) => updateResource(i, 'checkin_datetime', e.target.value)} /></td>
+                      <td><input value={r.kind} onChange={(e) => updateResource(i, 'kind', e.target.value)} /></td>
+                      <td><input value={r.type} onChange={(e) => updateResource(i, 'type', e.target.value)} /></td>
+                      <td className="ri-cell">
+                        <label><input type="checkbox" checked={r.resource_identifier_single} onChange={(e) => updateResource(i, 'resource_identifier_single', e.target.checked)} /> Single</label>
+                        <label><input type="checkbox" checked={r.resource_identifier_st} onChange={(e) => updateResource(i, 'resource_identifier_st', e.target.checked)} /> ST</label>
+                        <label><input type="checkbox" checked={r.resource_identifier_tf} onChange={(e) => updateResource(i, 'resource_identifier_tf', e.target.checked)} /> TF</label>
+                      </td>
+                      <td><input value={r.agency_name} onChange={(e) => updateResource(i, 'agency_name', e.target.value)} /></td>
+                      <td><input value={r.leader_name} onChange={(e) => updateResource(i, 'leader_name', e.target.value)} /></td>
+                      <td><input value={r.contact_details} onChange={(e) => updateResource(i, 'contact_details', e.target.value)} /></td>
+                      <td><input type="number" min="0" value={r.total_personnel} onChange={(e) => updateResource(i, 'total_personnel', parseInt(e.target.value) || 0)} /></td>
+                      <td><input value={r.departure_point_of_origin} onChange={(e) => updateResource(i, 'departure_point_of_origin', e.target.value)} /></td>
+                      <td><input type="datetime-local" value={r.departure_datetime} onChange={(e) => updateResource(i, 'departure_datetime', e.target.value)} /></td>
+                      <td>
+                        <select value={r.departure_method_of_travel} onChange={(e) => updateResource(i, 'departure_method_of_travel', e.target.value)}>
+                          <option value="">-</option>
+                          <option value="Land">Land</option>
+                          <option value="Water">Water</option>
+                          <option value="Air">Air</option>
+                        </select>
+                      </td>
+                      <td className="manifest-cell">
+                        <label><input type="radio" name={`manifest-${i}`} checked={r.with_manifest === true} onChange={() => updateResource(i, 'with_manifest', true)} /> Yes</label>
+                        <label><input type="radio" name={`manifest-${i}`} checked={r.with_manifest === false} onChange={() => updateResource(i, 'with_manifest', false)} /> No</label>
+                      </td>
+                      <td><input value={r.incident_assignment} onChange={(e) => updateResource(i, 'incident_assignment', e.target.value)} /></td>
+                      <td><input value={r.other_qualifications} onChange={(e) => updateResource(i, 'other_qualifications', e.target.value)} /></td>
+                      <td><input type="datetime-local" value={r.data_sent_to_resl} onChange={(e) => updateResource(i, 'data_sent_to_resl', e.target.value)} /></td>
+                      <td className="actions-cell">
+                        <button className="remove-row-btn" onClick={() => removeResource(i)}>&times;</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="add-row-buttons">
+              <button className="add-row-btn" onClick={addResource}>+ Add Resource</button>
+            </div>
+          </div>
+
+          <div className="form-footer-section">
+            <div className="footer-field">
+              <label>5. Prepared by:</label>
+              <input type="text" value={preparedBy} onChange={(e) => setPreparedBy(e.target.value)} />
+            </div>
+            <div className="footer-field">
+              <label>Name and Signature:</label>
+              <input type="text" value={preparedBy} readOnly />
+            </div>
+            <div className="footer-field">
+              <label>Date Prepared:</label>
+              <input type="date" value={datePrepared} onChange={(e) => setDatePrepared(e.target.value)} />
+            </div>
+            <div className="footer-field">
+              <label>Time Prepared:</label>
+              <input type="time" value={timePrepared} onChange={(e) => setTimePrepared(e.target.value)} />
+            </div>
+          </div>
+
+          <div className="form-actions">
+            <button className="action-btn back" onClick={() => navigate(`/incident/${incidentId}`)} disabled={saving}>Back</button>
+            <button className="action-btn save" onClick={() => saveForm('Draft')} disabled={saving}>
+              {saving ? 'Saving...' : 'Save Progress'}
+            </button>
+            <button className="action-btn submit" onClick={() => saveForm('Submitted')} disabled={saving}>
+              {saving ? 'Submitting...' : 'Submit'}
+            </button>
+            <button className="action-btn print" onClick={() => setShowPrint(true)} disabled={saving}>Print</button>
+          </div>
+        </div>
+      </main>
+
+      {showPrint && (
+        <Ics211Print
+          incidentName={incidentName}
+          startDate={startDate}
+          startTime={startTime}
+          checkinLocation={checkinLocation}
+          resources={resources}
+          preparedBy={preparedBy}
+          datePrepared={datePrepared}
+          timePrepared={timePrepared}
+          onClose={() => setShowPrint(false)}
+        />
+      )}
+    </div>
+  )
+}
