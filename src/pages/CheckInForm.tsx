@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { generateCheckinId } from '../lib/utils'
@@ -13,7 +13,7 @@ const emptyMember: Omit<CheckinPersonnel, 'id' | 'manifest_id'> = {
   role: 'Member', name: '', age: '', gender: '', weight: '', contact_details: '', capabilities: '', others: '',
 }
 const emptyVehicle: Omit<CheckinVehicle, 'id' | 'manifest_id'> = {
-  vehicle_id: '', operator_name: '', kind: '', type: '', plate_number: '', fuel_type: '', weight: '', contact_details: '', capabilities: '', others: '',
+  vehicle_id: '', operator_name: '', kind: '', type: '', method_of_travel: '', plate_number: '', fuel_type: '', weight: '', contact_details: '', capabilities: '', others: '',
 }
 const emptyEquipment: Omit<CheckinEquipment, 'id' | 'manifest_id'> = {
   equipment_id: '', operator_name: '', kind: '', type: '', source_of_power: '', fuel_type: '', weight: '', contact_details: '', capabilities: '', others: '',
@@ -21,6 +21,7 @@ const emptyEquipment: Omit<CheckinEquipment, 'id' | 'manifest_id'> = {
 
 export default function CheckInForm() {
   const { id: incidentId } = useParams<{ id: string }>()
+  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { user } = useAuth()
 
@@ -43,9 +44,9 @@ export default function CheckInForm() {
   const [vehicles, setVehicles] = useState<Omit<CheckinVehicle, 'id' | 'manifest_id'>[]>([])
   const [equipment, setEquipment] = useState<Omit<CheckinEquipment, 'id' | 'manifest_id'>[]>([])
 
-  const [landCount, setLandCount] = useState(0)
-  const [waterCount, setWaterCount] = useState(0)
-  const [airCount, setAirCount] = useState(0)
+  const landCount = vehicles.filter((v) => v.method_of_travel === 'Land').length
+  const waterCount = vehicles.filter((v) => v.method_of_travel === 'Water').length
+  const airCount = vehicles.filter((v) => v.method_of_travel === 'Air').length
 
   useEffect(() => {
     if (!user) return
@@ -53,21 +54,36 @@ export default function CheckInForm() {
       ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`.trim()
       : user.email || '')
     loadOrInitManifest()
-  }, [incidentId, user])
+  }, [incidentId, user, searchParams])
 
   const loadOrInitManifest = async () => {
     if (!incidentId || !user) return
     setLoading(true)
 
-    const { data: existing } = await supabase
-      .from('checkin_manifests')
-      .select('*')
-      .eq('incident_id', incidentId)
-      .eq('user_id', user.id)
-      .eq('status', 'Draft')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single()
+    const manifestParam = searchParams.get('manifest')
+
+    let existing = null
+
+    if (manifestParam) {
+      const { data } = await supabase
+        .from('checkin_manifests')
+        .select('*')
+        .eq('id', manifestParam)
+        .eq('incident_id', incidentId)
+        .single()
+      existing = data
+    } else {
+      const { data } = await supabase
+        .from('checkin_manifests')
+        .select('*')
+        .eq('incident_id', incidentId)
+        .eq('user_id', user.id)
+        .eq('status', 'Draft')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+      existing = data
+    }
 
     if (existing) {
       setManifestId(existing.id)
@@ -282,16 +298,22 @@ export default function CheckInForm() {
               <input type="number" min="0" value={totalVehicles} onChange={(e) => setTotalVehicles(parseInt(e.target.value) || 0)} />
             </div>
             <div className="vehicle-counts">
-              <div className="form-group"><label>Land</label><input type="number" min="0" value={landCount} onChange={(e) => setLandCount(parseInt(e.target.value) || 0)} /></div>
-              <div className="form-group"><label>Water</label><input type="number" min="0" value={waterCount} onChange={(e) => setWaterCount(parseInt(e.target.value) || 0)} /></div>
-              <div className="form-group"><label>Air</label><input type="number" min="0" value={airCount} onChange={(e) => setAirCount(parseInt(e.target.value) || 0)} /></div>
+              <div className="vehicle-count-item"><label>Land</label><span className="count-value">{landCount}</span></div>
+              <div className="vehicle-count-item"><label>Water</label><span className="count-value">{waterCount}</span></div>
+              <div className="vehicle-count-item"><label>Air</label><span className="count-value">{airCount}</span></div>
             </div>
 
             {vehicles.map((v, i) => (
               <div key={i} className="vehicle-row">
                 <input placeholder="Name of Operator" value={v.operator_name} onChange={(e) => updateVehicle(i, 'operator_name', e.target.value)} />
-                <input placeholder="Kind" value={v.kind} onChange={(e) => updateVehicle(i, 'kind', e.target.value)} />
+                <input placeholder="Kind (e.g. Ambulance, Boat)" value={v.kind} onChange={(e) => updateVehicle(i, 'kind', e.target.value)} />
                 <input placeholder="Type" value={v.type} onChange={(e) => updateVehicle(i, 'type', e.target.value)} />
+                <select value={v.method_of_travel} onChange={(e) => updateVehicle(i, 'method_of_travel', e.target.value)}>
+                  <option value="">Method of Travel</option>
+                  <option value="Land">Land</option>
+                  <option value="Water">Water</option>
+                  <option value="Air">Air</option>
+                </select>
                 <input placeholder="Plate Number" value={v.plate_number} onChange={(e) => updateVehicle(i, 'plate_number', e.target.value)} />
                 <select value={v.fuel_type} onChange={(e) => updateVehicle(i, 'fuel_type', e.target.value)}>
                   <option value="">Fuel Type</option><option>Gasoline</option><option>Diesel</option><option>Kerosene</option><option>EV</option><option>Others</option>

@@ -3,7 +3,7 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { generateRoleId } from '../lib/utils'
-import type { Incident, IncidentParticipant, CheckinManifest, CheckinPersonnel, CheckinVehicle, CheckinEquipment } from '../lib/types'
+import type { Incident, IncidentParticipant, CheckinManifest, CheckinPersonnel } from '../lib/types'
 import ConfirmModal from '../components/ConfirmModal'
 import './IncidentPage.css'
 
@@ -23,11 +23,10 @@ export default function IncidentPage() {
   const [showConfirmChange, setShowConfirmChange] = useState(false)
   const [pendingNewRole, setPendingNewRole] = useState<'IMT' | 'Tactical Resources' | 'Observer' | null>(null)
   const [processing, setProcessing] = useState(false)
+  const [showFormsMenu, setShowFormsMenu] = useState(false)
 
   const [manifests, setManifests] = useState<CheckinManifest[]>([])
   const [allPersonnel, setAllPersonnel] = useState<CheckinPersonnel[]>([])
-  const [allVehicles, setAllVehicles] = useState<CheckinVehicle[]>([])
-  const [allEquipment, setAllEquipment] = useState<CheckinEquipment[]>([])
 
   useEffect(() => {
     if (id) fetchData()
@@ -65,26 +64,29 @@ export default function IncidentPage() {
       setParticipant(participantData)
     }
 
-    const { data: manifestsData } = await supabase
+    const { data: manifestsData, error: manifestsError } = await supabase
       .from('checkin_manifests')
       .select('*')
       .eq('incident_id', id)
-      .order('submitted_at', { ascending: false })
+      .order('created_at', { ascending: false })
+
+    if (manifestsError) {
+      setError(manifestsError.message)
+      setLoading(false)
+      return
+    }
 
     if (manifestsData && manifestsData.length > 0) {
       setManifests(manifestsData)
 
       const manifestIds = manifestsData.map((m) => m.id)
 
-      const [personnelRes, vehiclesRes, equipmentRes] = await Promise.all([
-        supabase.from('checkin_personnel').select('*').in('manifest_id', manifestIds),
-        supabase.from('checkin_vehicles').select('*').in('manifest_id', manifestIds),
-        supabase.from('checkin_equipment').select('*').in('manifest_id', manifestIds),
-      ])
+      const { data: personnelData } = await supabase
+        .from('checkin_personnel')
+        .select('*')
+        .in('manifest_id', manifestIds)
 
-      setAllPersonnel(personnelRes.data || [])
-      setAllVehicles(vehiclesRes.data || [])
-      setAllEquipment(equipmentRes.data || [])
+      setAllPersonnel(personnelData || [])
     }
 
     setLoading(false)
@@ -243,136 +245,128 @@ export default function IncidentPage() {
             </div>
           )}
 
-          <div className="resource-section">
-            <h3>Checked-in Resources</h3>
-
-            {allPersonnel.length === 0 && allVehicles.length === 0 && allEquipment.length === 0 ? (
-              <p className="no-resources-text">No resources have been checked in yet.</p>
-            ) : (
-              <>
-                {allPersonnel.length > 0 && (
-                  <div className="resource-group">
-                    <h4>Personnel ({allPersonnel.length})</h4>
-                    <table className="resource-table">
-                      <thead>
-                        <tr>
-                          <th>#</th>
-                          <th>Name</th>
-                          <th>Role</th>
-                          <th>Age</th>
-                          <th>Gender</th>
-                          <th>Contact</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {allPersonnel.map((p, idx) => (
-                          <tr key={p.id}>
-                            <td>{idx + 1}</td>
-                            <td>{p.name}</td>
-                            <td>{p.role}</td>
-                            <td>{p.age}</td>
-                            <td>{p.gender}</td>
-                            <td>{p.contact_details}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-
-                {allVehicles.length > 0 && (
-                  <div className="resource-group">
-                    <h4>Vehicles ({allVehicles.length})</h4>
-                    <table className="resource-table">
-                      <thead>
-                        <tr>
-                          <th>#</th>
-                          <th>Kind</th>
-                          <th>Type</th>
-                          <th>Plate Number</th>
-                          <th>Operator</th>
-                          <th>Contact</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {allVehicles.map((v, idx) => (
-                          <tr key={v.id}>
-                            <td>{idx + 1}</td>
-                            <td>{v.kind}</td>
-                            <td>{v.type}</td>
-                            <td>{v.plate_number}</td>
-                            <td>{v.operator_name}</td>
-                            <td>{v.contact_details}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-
-                {allEquipment.length > 0 && (
-                  <div className="resource-group">
-                    <h4>Equipment ({allEquipment.length})</h4>
-                    <table className="resource-table">
-                      <thead>
-                        <tr>
-                          <th>#</th>
-                          <th>Kind</th>
-                          <th>Type</th>
-                          <th>Power Source</th>
-                          <th>Operator</th>
-                          <th>Contact</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {allEquipment.map((e, idx) => (
-                          <tr key={e.id}>
-                            <td>{idx + 1}</td>
-                            <td>{e.kind}</td>
-                            <td>{e.type}</td>
-                            <td>{e.source_of_power}</td>
-                            <td>{e.operator_name}</td>
-                            <td>{e.contact_details}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </>
+          <div className="ics-forms-section">
+            <button className="ics-forms-toggle" onClick={() => setShowFormsMenu(!showFormsMenu)}>
+              <span>ICS Forms</span>
+              <span className={`toggle-arrow ${showFormsMenu ? 'open' : ''}`}>&#9660;</span>
+            </button>
+            {showFormsMenu && (
+              <div className="ics-forms-list">
+                <div className="ics-form-item" onClick={() => alert('ICS Form 201 - Coming soon')}>
+                  <span className="form-number">201</span>
+                  <span className="form-name">Incident Briefing</span>
+                </div>
+                <div className="ics-form-item" onClick={() => alert('ICS Form 202 - Coming soon')}>
+                  <span className="form-number">202</span>
+                  <span className="form-name">Incident Objectives</span>
+                </div>
+                <div className="ics-form-item" onClick={() => alert('ICS Form 203 - Coming soon')}>
+                  <span className="form-number">203</span>
+                  <span className="form-name">Organization Assignment List</span>
+                </div>
+                <div className="ics-form-item" onClick={() => alert('ICS Form 204 - Coming soon')}>
+                  <span className="form-number">204</span>
+                  <span className="form-name">Assignment List</span>
+                </div>
+                <div className="ics-form-item" onClick={() => alert('ICS Form 205 - Coming soon')}>
+                  <span className="form-number">205</span>
+                  <span className="form-name">Communications Plan</span>
+                </div>
+                <div className="ics-form-item" onClick={() => alert('ICS Form 206 - Coming soon')}>
+                  <span className="form-number">206</span>
+                  <span className="form-name">Medical Plan</span>
+                </div>
+                <div className="ics-form-item" onClick={() => alert('ICS Form 207 - Coming soon')}>
+                  <span className="form-number">207</span>
+                  <span className="form-name">Incident Organization Chart</span>
+                </div>
+                <div className="ics-form-item" onClick={() => alert('ICS Form 208 - Coming soon')}>
+                  <span className="form-number">208</span>
+                  <span className="form-name">Safety Message/Plan</span>
+                </div>
+                <div className="ics-form-item" onClick={() => alert('ICS Form 209 - Coming soon')}>
+                  <span className="form-number">209</span>
+                  <span className="form-name">Incident Status Summary</span>
+                </div>
+                <div className="ics-form-item" onClick={() => alert('ICS Form 211 - Coming soon')}>
+                  <span className="form-number">211</span>
+                  <span className="form-name">Incident Check-in List</span>
+                </div>
+                <div className="ics-form-item" onClick={() => alert('ICS Form 213 - Coming soon')}>
+                  <span className="form-number">213</span>
+                  <span className="form-name">General Message</span>
+                </div>
+                <div className="ics-form-item" onClick={() => alert('ICS Form 214 - Coming soon')}>
+                  <span className="form-number">214</span>
+                  <span className="form-name">Activity Log</span>
+                </div>
+                <div className="ics-form-item" onClick={() => alert('ICS Form 215 - Coming soon')}>
+                  <span className="form-number">215</span>
+                  <span className="form-name">Operational Planning Worksheet</span>
+                </div>
+                <div className="ics-form-item" onClick={() => alert('ICS Form 215-A - Coming soon')}>
+                  <span className="form-number">215-A</span>
+                  <span className="form-name">Incident/Event Safety, Risk and Health Analysis</span>
+                </div>
+                <div className="ics-form-item" onClick={() => alert('ICS Form 221 - Coming soon')}>
+                  <span className="form-number">221</span>
+                  <span className="form-name">Demobilization Check-out</span>
+                </div>
+              </div>
             )}
           </div>
 
-          {manifests.length > 0 && (
-            <div className="manifests-section">
-              <h3>Check-in Manifests</h3>
-              <div className="manifest-list">
-                {manifests.map((m) => (
-                  <div key={m.id} className="manifest-card">
-                    <div className="manifest-info">
-                      <span className="manifest-id">{m.checkin_id}</span>
-                      <span className="manifest-agency">{m.agency_name}</span>
-                      <span className="manifest-date">{new Date(m.created_at).toLocaleString()}</span>
-                    </div>
-                    <div className="manifest-actions">
-                      <button
-                        className="manifest-btn view"
-                        onClick={() => navigate(`/incident/${incident.incident_id}/checkin/view`)}
-                      >
-                        View
-                      </button>
-                      <button
-                        className="manifest-btn print"
-                        onClick={() => navigate(`/incident/${incident.incident_id}/checkin/view?print=true`)}
-                      >
-                        Print
-                      </button>
-                    </div>
-                  </div>
-                ))}
+          <div className="resource-section">
+            <h3>Checked-in Resources</h3>
+
+            {manifests.length === 0 ? (
+              <p className="no-resources-text">No resources have been checked in yet.</p>
+            ) : (
+              <div className="resource-table-wrapper">
+                <table className="resource-table">
+                  <thead>
+                    <tr>
+                      <th>Check-in ID</th>
+                      <th>Timestamp</th>
+                      <th>Manifest ID</th>
+                      <th>Agency Name</th>
+                      <th>Leader (Role)</th>
+                      <th>Total Personnel</th>
+                      <th>Capabilities/Specialization</th>
+                      <th>Others</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {manifests.map((m) => {
+                      const manifestPersonnel = allPersonnel.filter((p) => p.manifest_id === m.id)
+                      const leader = manifestPersonnel.find((p) => p.role === 'Leader')
+                      return (
+                        <tr key={m.id}>
+                          <td className="code-cell">{m.checkin_id}</td>
+                          <td className="date-cell">{new Date(m.created_at).toLocaleString()}</td>
+                          <td className="code-cell">{m.id.slice(0, 8)}...</td>
+                          <td>{m.agency_name}</td>
+                          <td>{leader ? leader.name : '-'}</td>
+                          <td className="number-cell">{m.total_personnel}</td>
+                          <td>{leader?.capabilities || '-'}</td>
+                          <td>{m.others || '-'}</td>
+                          <td className="actions-cell">
+                            <button
+                              className="manifest-btn view"
+                              onClick={() => navigate(`/incident/${incident.incident_id}/checkin/view?manifest=${m.id}`)}
+                            >
+                              View Manifest
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </main>
 

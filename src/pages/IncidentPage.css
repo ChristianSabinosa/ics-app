@@ -357,6 +357,84 @@
   margin-bottom: 24px;
 }
 
+.ics-forms-section {
+  margin-bottom: 24px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ics-forms-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: #f8f9fa;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease;
+}
+
+.ics-forms-toggle:hover {
+  background: #eee;
+}
+
+.toggle-arrow {
+  font-size: 0.75rem;
+  transition: transform 0.2s ease;
+}
+
+.toggle-arrow.open {
+  transform: rotate(180deg);
+}
+
+.ics-forms-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.ics-form-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 18px;
+  border-top: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.ics-form-item:hover {
+  background: #f0f7ff;
+}
+
+.ics-form-item:last-child {
+  border-bottom: none;
+}
+
+.form-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  padding: 3px 8px;
+  background: #950606;
+  color: white;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: monospace;
+}
+
+.form-name {
+  font-size: 0.9rem;
+  color: #333;
+}
+
 .resource-section {
   margin-bottom: 32px;
 }
@@ -375,14 +453,8 @@
   font-size: 0.9rem;
 }
 
-.resource-group {
-  margin-bottom: 24px;
-}
-
-.resource-group h4 {
-  color: #555;
-  font-size: 0.95rem;
-  margin-bottom: 10px;
+.resource-table-wrapper {
+  overflow-x: auto;
 }
 
 .resource-table {
@@ -393,6 +465,7 @@
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   overflow: hidden;
+  min-width: 900px;
 }
 
 .resource-table th {
@@ -405,6 +478,7 @@
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.3px;
+  white-space: nowrap;
 }
 
 .resource-table td {
@@ -421,66 +495,22 @@
   border-bottom: none;
 }
 
-.manifests-section {
-  margin-bottom: 24px;
-}
-
-.manifests-section h3 {
-  color: #333;
-  font-size: 1.1rem;
-  margin-bottom: 16px;
-  padding-bottom: 8px;
-  border-bottom: 2px solid #eee;
-}
-
-.manifest-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.manifest-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  transition: box-shadow 0.2s ease;
-}
-
-.manifest-card:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.manifest-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.manifest-id {
+.resource-table .code-cell {
   font-family: monospace;
-  font-weight: 600;
-  color: #950606;
-  font-size: 0.85rem;
-}
-
-.manifest-agency {
-  color: #555;
-  font-size: 0.85rem;
-}
-
-.manifest-date {
-  color: #999;
   font-size: 0.8rem;
 }
 
-.manifest-actions {
-  display: flex;
-  gap: 8px;
+.resource-table .date-cell {
+  white-space: nowrap;
+  font-size: 0.8rem;
+}
+
+.resource-table .number-cell {
+  text-align: center;
+}
+
+.resource-table .actions-cell {
+  white-space: nowrap;
 }
 
 .manifest-btn {
@@ -501,15 +531,6 @@
 
 .manifest-btn.view:hover {
   background: #1e3a8a;
-}
-
-.manifest-btn.print {
-  background: #6b7280;
-  color: white;
-}
-
-.manifest-btn.print:hover {
-  background: #4b5563;
 }
 
 @media (max-width: 600px) {

@@ -64,6 +64,7 @@ export interface CheckinVehicle {
   operator_name: string
   kind: string
   type: string
+  method_of_travel: string
   plate_number: string
   fuel_type: string
   weight: string

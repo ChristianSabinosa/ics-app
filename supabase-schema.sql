@@ -175,6 +175,7 @@ create table if not exists checkin_vehicles (
   operator_name text not null default '',
   kind text not null default '',
   type text not null default '',
+  method_of_travel text not null default '',
   plate_number text not null default '',
   fuel_type text not null default '',
   weight text not null default '',

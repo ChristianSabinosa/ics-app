@@ -10,6 +10,9 @@ interface CheckInPrintProps {
 
 export default function CheckInPrint({ manifest, personnel, vehicles, equipment }: CheckInPrintProps) {
   const leader = personnel.find((p) => p.role === 'Leader')
+  const landCount = vehicles.filter((v) => v.method_of_travel === 'Land').length
+  const waterCount = vehicles.filter((v) => v.method_of_travel === 'Water').length
+  const airCount = vehicles.filter((v) => v.method_of_travel === 'Air').length
 
   return (
     <div className="print-only">
@@ -78,7 +81,7 @@ export default function CheckInPrint({ manifest, personnel, vehicles, equipment 
                         <td>{p.others}</td>
                       </tr>
                     ))}
-                    {Array.from({ length: Math.max(0, 20 - personnel.length) }).map((_, i) => (
+                    {personnel.length < 15 && Array.from({ length: Math.max(0, 15 - personnel.length) }).map((_, i) => (
                       <tr key={`empty-${i}`}>
                         <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
                       </tr>
@@ -108,11 +111,11 @@ export default function CheckInPrint({ manifest, personnel, vehicles, equipment 
                     </tr>
                     <tr>
                       <td className="field-label-center sub-counts">
-                        LAND: {vehicles.filter((v) => v.kind.toLowerCase().includes('land')).length || '___'}
+                        LAND: {landCount || '___'}
                         &nbsp;&nbsp;&nbsp;
-                        WATER: {vehicles.filter((v) => v.kind.toLowerCase().includes('water')).length || '___'}
+                        WATER: {waterCount || '___'}
                         &nbsp;&nbsp;&nbsp;
-                        AIR: {vehicles.filter((v) => v.kind.toLowerCase().includes('air')).length || '___'}
+                        AIR: {airCount || '___'}
                       </td>
                     </tr>
                   </tbody>
@@ -124,6 +127,7 @@ export default function CheckInPrint({ manifest, personnel, vehicles, equipment 
                       <th>Name of Operator</th>
                       <th>Kind</th>
                       <th>Type</th>
+                      <th>Method of Travel</th>
                       <th>Plate Number</th>
                       <th>Fuel Type</th>
                       <th>Weight (kg)</th>
@@ -138,6 +142,7 @@ export default function CheckInPrint({ manifest, personnel, vehicles, equipment 
                         <td>{v.operator_name}</td>
                         <td>{v.kind}</td>
                         <td>{v.type}</td>
+                        <td>{v.method_of_travel}</td>
                         <td>{v.plate_number}</td>
                         <td>{v.fuel_type}</td>
                         <td>{v.weight}</td>
@@ -146,9 +151,9 @@ export default function CheckInPrint({ manifest, personnel, vehicles, equipment 
                         <td>{v.others}</td>
                       </tr>
                     ))}
-                    {Array.from({ length: Math.max(0, 5 - vehicles.length) }).map((_, i) => (
+                    {vehicles.length < 5 && Array.from({ length: Math.max(0, 5 - vehicles.length) }).map((_, i) => (
                       <tr key={`empty-v-${i}`}>
-                        <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
+                        <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
                       </tr>
                     ))}
                   </tbody>
@@ -194,7 +199,7 @@ export default function CheckInPrint({ manifest, personnel, vehicles, equipment 
                         <td>{eq.others}</td>
                       </tr>
                     ))}
-                    {Array.from({ length: Math.max(0, 5 - equipment.length) }).map((_, i) => (
+                    {equipment.length < 5 && Array.from({ length: Math.max(0, 5 - equipment.length) }).map((_, i) => (
                       <tr key={`empty-e-${i}`}>
                         <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
                       </tr>

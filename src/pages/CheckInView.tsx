@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import type { CheckinManifest, CheckinPersonnel, CheckinVehicle, CheckinEquipment } from '../lib/types'
@@ -8,6 +8,7 @@ import './CheckInView.css'
 
 export default function CheckInView() {
   const { id: incidentId } = useParams<{ id: string }>()
+  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { user } = useAuth()
 
@@ -25,14 +26,23 @@ export default function CheckInView() {
 
   const fetchManifest = async () => {
     setLoading(true)
-    const { data: m, error: me } = await supabase
+    const manifestId = searchParams.get('manifest')
+
+    let query = supabase
       .from('checkin_manifests')
       .select('*')
       .eq('incident_id', incidentId)
-      .eq('user_id', user!.id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single()
+
+    if (manifestId) {
+      query = query.eq('id', manifestId)
+    } else {
+      query = query
+        .eq('user_id', user!.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+    }
+
+    const { data: m, error: me } = await query.single()
 
     if (me || !m) {
       setError('No check-in manifest found.')
@@ -77,6 +87,9 @@ export default function CheckInView() {
 
   const leader = personnel.find((p) => p.role === 'Leader')
   const members = personnel.filter((p) => p.role === 'Member')
+  const landVehicles = vehicles.filter((v) => v.method_of_travel === 'Land').length
+  const waterVehicles = vehicles.filter((v) => v.method_of_travel === 'Water').length
+  const airVehicles = vehicles.filter((v) => v.method_of_travel === 'Air').length
 
   return (
     <div className="checkin-view-page">
@@ -97,7 +110,7 @@ export default function CheckInView() {
           <span className={`status-badge ${manifest.status.toLowerCase()}`}>{manifest.status}</span>
         </div>
         <div className="topbar-actions">
-          <button className="topbar-btn edit" onClick={() => navigate(`/incident/${incidentId}/checkin`)}>Edit</button>
+          <button className="topbar-btn edit" onClick={() => navigate(`/incident/${incidentId}/checkin?manifest=${manifest.id}`)}>Edit</button>
           <button className="topbar-btn print" onClick={handlePrint}>Print</button>
         </div>
       </div>
@@ -159,6 +172,9 @@ export default function CheckInView() {
           <section className="view-section">
             <h3>Vehicles</h3>
             <p><strong>Total Number of Vehicles:</strong> {manifest.total_vehicles}</p>
+            <p className="vehicle-type-breakdown">
+              <strong>Land:</strong> {landVehicles} &nbsp;|&nbsp; <strong>Water:</strong> {waterVehicles} &nbsp;|&nbsp; <strong>Air:</strong> {airVehicles}
+            </p>
             {vehicles.length > 0 && (
               <table className="view-table">
                 <thead>

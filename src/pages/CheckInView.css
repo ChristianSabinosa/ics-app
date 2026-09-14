@@ -129,6 +129,16 @@
 
 .view-table tr:hover td { background: #fafafa; }
 
+.vehicle-type-breakdown {
+  margin: 8px 0 16px;
+  padding: 8px 14px;
+  background: #f0f7ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #1e40af;
+}
+
 @media print {
   .no-print { display: none !important; }
 
