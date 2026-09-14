@@ -1,0 +1,265 @@
+/* Print-only container - hidden on screen */
+.print-only {
+  display: none;
+}
+
+/* ==========================================
+   SCREEN: Hidden
+   PRINT: Visible
+   ========================================== */
+@media print {
+  .print-only {
+    display: block !important;
+  }
+
+  /* Hide everything else when printing */
+  .no-print,
+  .checkin-header,
+  .checkin-topbar,
+  .checkin-view-main,
+  .checkin-error {
+    display: none !important;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    background: white;
+  }
+
+  .print-page {
+    page-break-after: always;
+    width: 100%;
+  }
+
+  .print-page:last-child {
+    page-break-after: auto;
+  }
+}
+
+/* ==========================================
+   FORM FRAME - Outer border matching official form
+   ========================================== */
+.form-frame {
+  width: 100%;
+  border: 2px solid #000;
+  border-collapse: collapse;
+}
+
+.form-frame td {
+  padding: 0;
+}
+
+/* ==========================================
+   HEADER - Logo + Title
+   ========================================== */
+.form-header {
+  width: 100%;
+  border-bottom: 2px solid #000;
+  border-collapse: collapse;
+}
+
+.logo-cell {
+  width: 80px;
+  padding: 8px 10px;
+  vertical-align: middle;
+}
+
+.ndrrmc-logo {
+  width: 65px;
+  height: auto;
+}
+
+.title-cell {
+  text-align: center;
+  padding: 12px 10px;
+}
+
+.title-cell h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 4px;
+  margin: 0;
+  color: #000;
+}
+
+/* ==========================================
+   INFO FIELDS - Numbered sections
+   ========================================== */
+.info-fields {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.info-fields td {
+  border: 1px solid #000;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.field-label {
+  width: 40%;
+  white-space: nowrap;
+}
+
+.field-value {
+  font-weight: 400;
+}
+
+.field-label-center {
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.sub-counts {
+  font-size: 0.85rem;
+}
+
+/* ==========================================
+   DATA TABLES - Personnel, Vehicles, Equipment
+   ========================================== */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.data-table th,
+.data-table td {
+  border: 1px solid #000;
+  padding: 4px 6px;
+  font-size: 0.75rem;
+  text-align: left;
+  overflow: hidden;
+}
+
+.data-table th {
+  background: #f0f0f0;
+  font-weight: 700;
+  text-align: center;
+  font-size: 0.7rem;
+}
+
+/* Personnel table column widths */
+.personnel-table th:nth-child(1),
+.personnel-table td:nth-child(1) { width: 18%; }
+.personnel-table th:nth-child(2),
+.personnel-table td:nth-child(2) { width: 8%; }
+.personnel-table th:nth-child(3),
+.personnel-table td:nth-child(3) { width: 10%; }
+.personnel-table th:nth-child(4),
+.personnel-table td:nth-child(4) { width: 10%; }
+.personnel-table th:nth-child(5),
+.personnel-table td:nth-child(5) { width: 18%; }
+.personnel-table th:nth-child(6),
+.personnel-table td:nth-child(6) { width: 18%; }
+.personnel-table th:nth-child(7),
+.personnel-table td:nth-child(7) { width: 18%; }
+
+/* Vehicle table column widths */
+.vehicle-table th:nth-child(1),
+.vehicle-table td:nth-child(1) { width: 16%; }
+.vehicle-table th:nth-child(2),
+.vehicle-table td:nth-child(2) { width: 10%; }
+.vehicle-table th:nth-child(3),
+.vehicle-table td:nth-child(3) { width: 10%; }
+.vehicle-table th:nth-child(4),
+.vehicle-table td:nth-child(4) { width: 11%; }
+.vehicle-table th:nth-child(5),
+.vehicle-table td:nth-child(5) { width: 10%; }
+.vehicle-table th:nth-child(6),
+.vehicle-table td:nth-child(6) { width: 9%; }
+.vehicle-table th:nth-child(7),
+.vehicle-table td:nth-child(7) { width: 14%; }
+.vehicle-table th:nth-child(8),
+.vehicle-table td:nth-child(8) { width: 12%; }
+.vehicle-table th:nth-child(9),
+.vehicle-table td:nth-child(9) { width: 8%; }
+
+/* Equipment table column widths */
+.equipment-table th:nth-child(1),
+.equipment-table td:nth-child(1) { width: 15%; }
+.equipment-table th:nth-child(2),
+.equipment-table td:nth-child(2) { width: 10%; }
+.equipment-table th:nth-child(3),
+.equipment-table td:nth-child(3) { width: 10%; }
+.equipment-table th:nth-child(4),
+.equipment-table td:nth-child(4) { width: 12%; }
+.equipment-table th:nth-child(5),
+.equipment-table td:nth-child(5) { width: 10%; }
+.equipment-table th:nth-child(6),
+.equipment-table td:nth-child(6) { width: 9%; }
+.equipment-table th:nth-child(7),
+.equipment-table td:nth-child(7) { width: 14%; }
+.equipment-table th:nth-child(8),
+.equipment-table td:nth-child(8) { width: 12%; }
+.equipment-table th:nth-child(9),
+.equipment-table td:nth-child(9) { width: 8%; }
+
+/* Empty row height */
+.data-table td:empty,
+.data-table td:contains('\00a0') {
+  height: 22px;
+}
+
+/* ==========================================
+   FOOTER NOTES
+   ========================================== */
+.additional-sheet-note {
+  text-align: right;
+  font-style: italic;
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border: 1px solid #000;
+  border-top: none;
+  background: #fafafa;
+}
+
+/* ==========================================
+   OTHERS SECTION
+   ========================================== */
+.others-lines {
+  padding: 0;
+}
+
+.others-line {
+  border-bottom: 1px solid #000;
+  height: 24px;
+  margin: 0 10px;
+}
+
+/* ==========================================
+   PRINT PAGE SIZING
+   ========================================== */
+@media print {
+  @page {
+    size: letter;
+    margin: 0.5in;
+  }
+
+  .print-page {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  .form-frame {
+    border: 2px solid #000;
+  }
+
+  .data-table th,
+  .data-table td {
+    border: 1px solid #000;
+  }
+
+  .info-fields td {
+    border: 1px solid #000;
+  }
+
+  /* Force background colors to print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

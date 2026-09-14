@@ -1,0 +1,230 @@
+.dashboard {
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+
+/* Header */
+.dashboard-header {
+  background: #950606;
+  color: white;
+  padding: 16px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: white;
+  object-fit: contain;
+}
+
+.header-brand h1 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.header-brand p {
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.user-name {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.signout-btn {
+  padding: 8px 20px;
+  background: white;
+  color: #950606;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  font-family: inherit;
+}
+
+.signout-btn:hover {
+  background: #f5f0f0;
+}
+
+/* Main Content */
+.dashboard-main {
+  padding: 40px 30px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.welcome-section {
+  margin-bottom: 40px;
+}
+
+.welcome-section h2 {
+  color: #950606;
+  font-size: 1.6rem;
+  margin-bottom: 6px;
+}
+
+.welcome-section p {
+  color: #666;
+  font-size: 1rem;
+}
+
+/* Action Cards */
+.action-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.action-card {
+  background: white;
+  border: 2px solid #e8e8e8;
+  border-radius: 12px;
+  padding: 36px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.action-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.action-card.create {
+  border-color: #950606;
+}
+
+.action-card.create:hover {
+  background: #950606;
+  color: white;
+}
+
+.action-card.create:hover .action-icon {
+  background: white;
+  color: #950606;
+}
+
+.action-card.join {
+  border-color: #1a6b3c;
+}
+
+.action-card.join:hover {
+  background: #1a6b3c;
+  color: white;
+}
+
+.action-card.join:hover .action-icon {
+  background: white;
+  color: #1a6b3c;
+}
+
+.action-card.view {
+  border-color: #1a5276;
+}
+
+.action-card.view:hover {
+  background: #1a5276;
+  color: white;
+}
+
+.action-card.view:hover .action-icon {
+  background: white;
+  color: #1a5276;
+}
+
+.action-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  font-weight: 700;
+  transition: all 0.25s ease;
+}
+
+.create .action-icon {
+  background: rgba(149, 6, 6, 0.1);
+  color: #950606;
+}
+
+.join .action-icon {
+  background: rgba(26, 107, 60, 0.1);
+  color: #1a6b3c;
+}
+
+.view .action-icon {
+  background: rgba(26, 82, 118, 0.1);
+  color: #1a5276;
+}
+
+.action-card h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.action-card p {
+  font-size: 0.85rem;
+  opacity: 0.75;
+  line-height: 1.4;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .action-cards {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .action-card {
+    flex-direction: row;
+    text-align: left;
+    padding: 20px;
+  }
+
+  .action-icon {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    font-size: 1.4rem;
+  }
+
+  .dashboard-header {
+    padding: 12px 16px;
+  }
+
+  .header-brand h1 {
+    font-size: 0.95rem;
+  }
+
+  .dashboard-main {
+    padding: 24px 16px;
+  }
+}

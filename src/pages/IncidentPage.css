@@ -1,0 +1,375 @@
+.incident-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+
+.incident-loading,
+.incident-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.incident-loading {
+  color: #888;
+  font-size: 1rem;
+}
+
+.incident-error p {
+  color: #c53030;
+  font-size: 1rem;
+  margin-bottom: 16px;
+}
+
+.incident-error button {
+  padding: 10px 24px;
+  background: #950606;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.incident-header {
+  background: #950606;
+  color: white;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+}
+
+.incident-header .header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.incident-header .header-logo {
+  height: 36px;
+  width: auto;
+}
+
+.incident-header h1 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.incident-header p {
+  font-size: 0.75rem;
+  opacity: 0.85;
+  margin: 0;
+}
+
+.incident-topbar {
+  background: white;
+  border-bottom: 2px solid #e8e8e8;
+  padding: 12px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.topbar-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.incident-code-badge {
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: #950606;
+  font-weight: 600;
+  background: rgba(149, 6, 6, 0.08);
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+
+.role-badge {
+  font-size: 0.8rem;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.role-badge.imt {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.role-badge.tactical-resources {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.role-badge.observer {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.role-id-badge {
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: #555;
+  background: #f0f0f0;
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.topbar-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.topbar-btn.back {
+  background: #f5f5f5;
+  color: #555;
+  border-color: #ddd;
+}
+
+.topbar-btn.back:hover {
+  background: #e8e8e8;
+  border-color: #bbb;
+}
+
+.topbar-btn.change-role {
+  background: white;
+  color: #1e40af;
+  border-color: #bfdbfe;
+}
+
+.topbar-btn.change-role:hover {
+  background: #1e40af;
+  color: white;
+  border-color: #1e40af;
+}
+
+.topbar-btn.leave {
+  background: white;
+  color: #c53030;
+  border-color: #feb2b2;
+}
+
+.topbar-btn.leave:hover {
+  background: #c53030;
+  color: white;
+  border-color: #c53030;
+}
+
+.incident-main {
+  padding: 24px;
+}
+
+.incident-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.incident-info-bar {
+  background: white;
+  border: 2px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.incident-info-bar h2 {
+  color: #222;
+  font-size: 1.3rem;
+  margin-bottom: 6px;
+}
+
+.incident-location-text {
+  color: #777;
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+}
+
+.incident-meta-row {
+  display: flex;
+  gap: 20px;
+  font-size: 0.8rem;
+  color: #999;
+  flex-wrap: wrap;
+}
+
+.incident-content {
+  background: white;
+  border: 2px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 24px;
+}
+
+.incident-content h3 {
+  color: #950606;
+  font-size: 1.1rem;
+  margin-bottom: 12px;
+}
+
+.placeholder-text {
+  color: #888;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.checkin-proceed-btn {
+  padding: 10px 24px;
+  background: #1a6b3c;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease;
+}
+
+.checkin-proceed-btn:hover {
+  background: #145a30;
+}
+
+.role-picker-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.role-picker-btn {
+  padding: 14px 18px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.role-picker-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.role-picker-btn.imt {
+  color: #950606;
+  border-color: #f5c6c6;
+}
+
+.role-picker-btn.imt:hover:not(:disabled) {
+  background: #950606;
+  color: white;
+  border-color: #950606;
+}
+
+.role-picker-btn.tactical-resources {
+  color: #1e40af;
+  border-color: #bfdbfe;
+}
+
+.role-picker-btn.tactical-resources:hover:not(:disabled) {
+  background: #1e40af;
+  color: white;
+  border-color: #1e40af;
+}
+
+.role-picker-btn.observer {
+  color: #065f46;
+  border-color: #a7f3d0;
+}
+
+.role-picker-btn.observer:hover:not(:disabled) {
+  background: #065f46;
+  color: white;
+  border-color: #065f46;
+}
+
+.role-picker-btn.current {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.modal-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.modal-btn.cancel {
+  background: white;
+  color: #666;
+  border-color: #ddd;
+}
+
+.modal-btn.cancel:hover {
+  background: #f5f5f5;
+  border-color: #bbb;
+}
+
+.modal-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  .incident-topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .topbar-actions {
+    width: 100%;
+  }
+
+  .topbar-btn {
+    flex: 1;
+    text-align: center;
+  }
+
+  .incident-meta-row {
+    flex-direction: column;
+    gap: 4px;
+  }
+}
