@@ -42,6 +42,7 @@ export default function Ics207Form() {
   const { user } = useAuth()
 
   const [formId, setFormId] = useState<string | null>(null)
+  const [formType, setFormType] = useState<'standard' | 'expanded'>('standard')
   const [incidentName, setIncidentName] = useState('')
   const [positions, setPositions] = useState<Position[]>(DEFAULT_POSITIONS)
   const [preparedBy, setPreparedBy] = useState('')
@@ -106,6 +107,7 @@ export default function Ics207Form() {
 
     if (formToLoad) {
       setFormId(formToLoad.id)
+      setFormType(formToLoad.form_type || 'standard')
       setIncidentName(formToLoad.incident_name)
       setPreparedBy(formToLoad.prepared_by)
       setDatePrepared(formToLoad.date_prepared)
@@ -199,6 +201,7 @@ export default function Ics207Form() {
     const formData = {
       incident_id: incidentId,
       incident_name: incidentName,
+      form_type: formType,
       status: formStatus,
       prepared_by: preparedBy,
       date_prepared: formStatus === 'Submitted' ? now.toISOString().slice(0, 10) : datePrepared,
@@ -306,6 +309,7 @@ export default function Ics207Form() {
         <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}`)}>&larr; Back</button>
         <div className="topbar-info">
           <span className="form-badge">ICS 207</span>
+          <span className={`form-type-badge ${formType}`}>{formType === 'standard' ? 'Standard' : 'Expanded'}</span>
           <span className={`status-badge ${status.toLowerCase()}`}>{status}</span>
         </div>
         <div className="topbar-actions">

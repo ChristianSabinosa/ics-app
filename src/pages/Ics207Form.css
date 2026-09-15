@@ -67,6 +67,16 @@
   font-size: 0.85rem;
 }
 
+.form-type-badge {
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.form-type-badge.standard { background: #e0e7ff; color: #3730a3; }
+.form-type-badge.expanded { background: #fef3c7; color: #92400e; }
+
 .status-badge { font-size: 0.8rem; padding: 4px 12px; border-radius: 12px; font-weight: 600; }
 .status-badge.draft { background: #fef3c7; color: #92400e; }
 .status-badge.submitted { background: #d1fae5; color: #065f46; }

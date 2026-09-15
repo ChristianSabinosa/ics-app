@@ -131,6 +131,7 @@ export interface Ics207Form {
   id: string
   incident_id: string
   incident_name: string
+  form_type: 'standard' | 'expanded'
   status: 'Draft' | 'Submitted'
   prepared_by: string
   date_prepared: string
@@ -149,4 +150,19 @@ export interface Ics207Position {
   person_name: string
   agency: string
   sort_order: number
+}
+
+export interface Ics207SubPosition {
+  id: string
+  form_id: string
+  parent_key: string
+  sub_key: string
+  sub_title: string
+  resource_type: 'personnel' | 'vehicle' | 'equipment' | ''
+  resource_id: string | null
+  resource_name: string
+  agency: string
+  sort_order: number
+  created_at: string
+  updated_at: string
 }
