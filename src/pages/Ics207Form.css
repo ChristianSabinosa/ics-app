@@ -219,6 +219,32 @@
 .card-accent-blue .card-abbr { background: #1e40af; }
 .card-accent-green { border-left: 4px solid #065f46; }
 .card-accent-green .card-abbr { background: #065f46; }
+.card-accent-purple { border-left: 4px solid #6b21a8; }
+.card-accent-purple .card-abbr { background: #6b21a8; }
+.card-accent-teal { border-left: 4px solid #0f766e; }
+.card-accent-teal .card-abbr { background: #0f766e; }
+.card-accent-orange { border-left: 4px solid #c2410c; }
+.card-accent-orange .card-abbr { background: #c2410c; }
+
+.card-accent-green-sub { border-left: 3px solid #065f46; background: #f0fdf4; }
+.card-accent-green-sub .card-abbr { background: #065f46; font-size: 0.6rem; }
+.card-accent-purple-sub { border-left: 3px solid #6b21a8; background: #faf5ff; }
+.card-accent-purple-sub .card-abbr { background: #6b21a8; font-size: 0.6rem; }
+.card-accent-teal-sub { border-left: 3px solid #0f766e; background: #f0fdfa; }
+.card-accent-teal-sub .card-abbr { background: #0f766e; font-size: 0.6rem; }
+.card-accent-orange-sub { border-left: 3px solid #c2410c; background: #fff7ed; }
+.card-accent-orange-sub .card-abbr { background: #c2410c; font-size: 0.6rem; }
+
+.cards-sub { margin-top: 8px; gap: 6px; }
+
+.cards-sub .position-card {
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+
+.cards-sub .card-title {
+  font-size: 0.7rem;
+}
 
 .card-top {
   display: flex;
@@ -253,6 +279,173 @@
 
 .card-clear:hover {
   background: #fecaca;
+}
+
+.card-top-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.card-remove {
+  background: #fee2e2;
+  color: #c53030;
+  border: none;
+  border-radius: 4px;
+  width: 20px;
+  height: 20px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+}
+
+.card-remove:hover {
+  background: #fecaca;
+}
+
+.cards-add {
+  margin-top: 8px;
+  display: flex;
+  justify-content: center;
+}
+
+.add-position-btn {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.add-position-btn:hover {
+  background: #2563eb;
+}
+
+.sub-position-picker {
+  background: white;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 12px;
+  width: 100%;
+}
+
+.picker-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 8px;
+}
+
+.picker-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.picker-btn {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.picker-btn:hover {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.picker-cancel {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.picker-cancel:hover {
+  color: #334155;
+}
+
+.osc-picker {
+  max-width: 300px;
+}
+
+.osc-type-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.osc-type-btn {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #f1f5f9;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.osc-type-btn:hover {
+  background: #e2e8f0;
+}
+
+.osc-type-btn.active {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.osc-name-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  margin-bottom: 8px;
+  box-sizing: border-box;
+}
+
+.osc-name-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.picker-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.picker-confirm {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.picker-confirm:hover {
+  background: #2563eb;
 }
 
 .card-title {

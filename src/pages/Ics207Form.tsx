@@ -35,6 +35,46 @@ const DEFAULT_POSITIONS: Position[] = [
   { position_key: 'fasc', position_title: 'Finance/Admin Section Chief', abbreviation: 'FASC', section: 'General Staff', person_name: '', agency: '' },
 ]
 
+const SUB_POSITION_OPTIONS: Record<string, Position[]> = {
+  osc: [
+    { position_key: 'osc-stam', position_title: 'Staging Area Manager', abbreviation: 'STAM', section: 'OSC Sub', person_name: '', agency: '' },
+  ],
+  psc: [
+    { position_key: 'psc-resl', position_title: 'Resources Unit Leader', abbreviation: 'RESL', section: 'PSC Sub', person_name: '', agency: '' },
+    { position_key: 'psc-sitl', position_title: 'Situation Unit Leader', abbreviation: 'SITL', section: 'PSC Sub', person_name: '', agency: '' },
+    { position_key: 'psc-docl', position_title: 'Documentation Unit Leader', abbreviation: 'DOCL', section: 'PSC Sub', person_name: '', agency: '' },
+    { position_key: 'psc-dmob', position_title: 'Demobilization Unit Leader', abbreviation: 'DMOB', section: 'PSC Sub', person_name: '', agency: '' },
+  ],
+  lsc: [
+    { position_key: 'lsc-spul', position_title: 'Supply Unit Leader', abbreviation: 'SPUL', section: 'LSC Sub', person_name: '', agency: '' },
+    { position_key: 'lsc-facl', position_title: 'Facilities Unit Leader', abbreviation: 'FACL', section: 'LSC Sub', person_name: '', agency: '' },
+    { position_key: 'lsc-gsul', position_title: 'Ground Support Unit Leader', abbreviation: 'GSUL', section: 'LSC Sub', person_name: '', agency: '' },
+    { position_key: 'lsc-coml', position_title: 'Communications Unit Leader', abbreviation: 'COML', section: 'LSC Sub', person_name: '', agency: '' },
+    { position_key: 'lsc-medl', position_title: 'Medical Unit Leader', abbreviation: 'MEDL', section: 'LSC Sub', person_name: '', agency: '' },
+    { position_key: 'lsc-fdul', position_title: 'Food Unit Leader', abbreviation: 'FDUL', section: 'LSC Sub', person_name: '', agency: '' },
+  ],
+  fasc: [
+    { position_key: 'fasc-time', position_title: 'Time Unit Leader', abbreviation: 'TIME', section: 'FASC Sub', person_name: '', agency: '' },
+    { position_key: 'fasc-comp', position_title: 'Compensation/Claims Unit Leader', abbreviation: 'COMP', section: 'FASC Sub', person_name: '', agency: '' },
+    { position_key: 'fasc-cost', position_title: 'Cost Unit Leader', abbreviation: 'COST', section: 'FASC Sub', person_name: '', agency: '' },
+    { position_key: 'fasc-proc', position_title: 'Procurement Unit Leader', abbreviation: 'PROC', section: 'FASC Sub', person_name: '', agency: '' },
+  ],
+}
+
+type OscSubType = 'branch' | 'division' | 'group'
+
+const OSC_SUB_TYPE_LABELS: Record<OscSubType, string> = {
+  branch: 'Branch',
+  division: 'Division',
+  group: 'Group',
+}
+
+const OSC_SUB_TYPE_ABBR: Record<OscSubType, string> = {
+  branch: 'BR',
+  division: 'DIV',
+  group: 'GR',
+}
+
 export default function Ics207Form() {
   const { id: incidentId } = useParams<{ id: string }>()
   const [searchParams] = useSearchParams()
@@ -59,6 +99,9 @@ export default function Ics207Form() {
   const [allPersonnel, setAllPersonnel] = useState<PersonnelWithAgency[]>([])
   const [selectedPosition, setSelectedPosition] = useState<string | null>(null)
   const [personnelFilter, setPersonnelFilter] = useState('All')
+  const [addingTo, setAddingTo] = useState<string | null>(null)
+  const [oscSubType, setOscSubType] = useState<OscSubType>('branch')
+  const [oscSubName, setOscSubName] = useState('')
 
   useEffect(() => {
     if (!user) return
@@ -191,6 +234,42 @@ export default function Ics207Form() {
     )
   }
 
+  const addSubPosition = (_parentKey: string, subPosition: Position) => {
+    setPositions((prev) => [...prev, subPosition])
+    setAddingTo(null)
+  }
+
+  const addOscSubPosition = () => {
+    const oscSubs = positions.filter((p) => p.position_key.startsWith('osc-') && p.position_key !== 'osc-stam')
+    const nextNum = oscSubs.length + 1
+    const abbr = OSC_SUB_TYPE_ABBR[oscSubType]
+    const newSub: Position = {
+      position_key: `osc-${abbr.toLowerCase()}${nextNum}`,
+      position_title: oscSubName || `${OSC_SUB_TYPE_LABELS[oscSubType]} ${nextNum}`,
+      abbreviation: `${abbr}${nextNum}`,
+      section: 'OSC Sub',
+      person_name: '',
+      agency: '',
+    }
+    setPositions((prev) => [...prev, newSub])
+    setAddingTo(null)
+    setOscSubName('')
+  }
+
+  const removeSubPosition = (positionKey: string) => {
+    setPositions((prev) => prev.filter((p) => p.position_key !== positionKey))
+  }
+
+  const getAvailableSubs = (parentKey: string) => {
+    const options = SUB_POSITION_OPTIONS[parentKey] || []
+    const activeKeys = positions.map((p) => p.position_key)
+    return options.filter((opt) => !activeKeys.includes(opt.position_key))
+  }
+
+  const getOscSubCount = () => {
+    return positions.filter((p) => p.position_key.startsWith('osc-') && p.position_key !== 'osc-stam').length
+  }
+
   const saveForm = async (formStatus: 'Draft' | 'Submitted') => {
     if (!incidentId || !user) return
     setSaving(true)
@@ -248,7 +327,14 @@ export default function Ics207Form() {
   const assignedPersonnel = positions.filter((p) => p.person_name).map((p) => p.person_name)
   const icPosition = positions.find((p) => p.position_key === 'ic')
   const commandStaff = positions.filter((p) => p.section === 'Command Staff')
-  const generalStaff = positions.filter((p) => p.section === 'General Staff')
+  const oscPosition = positions.find((p) => p.position_key === 'osc')
+  const oscSub = positions.filter((p) => p.section === 'OSC Sub')
+  const pscPosition = positions.find((p) => p.position_key === 'psc')
+  const pscSub = positions.filter((p) => p.section === 'PSC Sub')
+  const lscPosition = positions.find((p) => p.position_key === 'lsc')
+  const lscSub = positions.filter((p) => p.section === 'LSC Sub')
+  const fascPosition = positions.find((p) => p.position_key === 'fasc')
+  const fascSub = positions.filter((p) => p.section === 'FASC Sub')
 
   const filteredPersonnel = (() => {
     let pool = allPersonnel
@@ -266,7 +352,7 @@ export default function Ics207Form() {
     )
   }
 
-  const renderPositionCard = (pos: Position, accentClass: string) => {
+  const renderPositionCard = (pos: Position, accentClass: string, isSub = false) => {
     const isSelected = selectedPosition === pos.position_key
     return (
       <div
@@ -276,9 +362,14 @@ export default function Ics207Form() {
       >
         <div className="card-top">
           <span className="card-abbr">{pos.abbreviation}</span>
-          {pos.person_name && (
-            <button className="card-clear" onClick={(e) => { e.stopPropagation(); clearPosition(pos.position_key) }}>&times;</button>
-          )}
+          <div className="card-top-actions">
+            {pos.person_name && (
+              <button className="card-clear" onClick={(e) => { e.stopPropagation(); clearPosition(pos.position_key) }}>&times;</button>
+            )}
+            {isSub && (
+              <button className="card-remove" onClick={(e) => { e.stopPropagation(); removeSubPosition(pos.position_key) }}>&times;</button>
+            )}
+          </div>
         </div>
         <div className="card-title">{pos.position_title}</div>
         {pos.person_name ? (
@@ -359,10 +450,133 @@ export default function Ics207Form() {
               </div>
 
               <div className="cards-group">
-                <div className="cards-group-label">General Staff</div>
+                <div className="cards-group-label">Operations Section</div>
                 <div className="cards-row">
-                  {generalStaff.map((pos) => renderPositionCard(pos, 'card-accent-green'))}
+                  {oscPosition && renderPositionCard(oscPosition, 'card-accent-green')}
                 </div>
+                <div className="cards-row cards-sub">
+                  {oscSub.map((pos) => renderPositionCard(pos, 'card-accent-green-sub', true))}
+                </div>
+                {getAvailableSubs('osc').length > 0 || getOscSubCount() < 3 ? (
+                  <div className="cards-add">
+                    {addingTo === 'osc' ? (
+                      <div className="sub-position-picker osc-picker">
+                        <div className="picker-label">Add Branch/Division/Group:</div>
+                        <div className="osc-type-row">
+                          {(['branch', 'division', 'group'] as OscSubType[]).map((type) => (
+                            <button
+                              key={type}
+                              className={`osc-type-btn ${oscSubType === type ? 'active' : ''}`}
+                              onClick={() => setOscSubType(type)}
+                            >
+                              {OSC_SUB_TYPE_LABELS[type]}
+                            </button>
+                          ))}
+                        </div>
+                        <input
+                          type="text"
+                          className="osc-name-input"
+                          placeholder={`${OSC_SUB_TYPE_LABELS[oscSubType]} name (e.g., Air Operations)`}
+                          value={oscSubName}
+                          onChange={(e) => setOscSubName(e.target.value)}
+                        />
+                        <div className="picker-actions">
+                          <button className="picker-confirm" onClick={addOscSubPosition}>Add</button>
+                          <button className="picker-cancel" onClick={() => { setAddingTo(null); setOscSubName('') }}>Cancel</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button className="add-position-btn" onClick={() => setAddingTo('osc')}>+ Add Branch/Division/Group</button>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="cards-group">
+                <div className="cards-group-label">Planning Section</div>
+                <div className="cards-row">
+                  {pscPosition && renderPositionCard(pscPosition, 'card-accent-purple')}
+                </div>
+                <div className="cards-row cards-sub">
+                  {pscSub.map((pos) => renderPositionCard(pos, 'card-accent-purple-sub', true))}
+                </div>
+                {getAvailableSubs('psc').length > 0 && (
+                  <div className="cards-add">
+                    {addingTo === 'psc' ? (
+                      <div className="sub-position-picker">
+                        <div className="picker-label">Add Position:</div>
+                        <div className="picker-options">
+                          {getAvailableSubs('psc').map((opt) => (
+                            <button key={opt.position_key} className="picker-btn" onClick={() => addSubPosition('psc', opt)}>
+                              {opt.abbreviation} - {opt.position_title}
+                            </button>
+                          ))}
+                        </div>
+                        <button className="picker-cancel" onClick={() => setAddingTo(null)}>Cancel</button>
+                      </div>
+                    ) : (
+                      <button className="add-position-btn" onClick={() => setAddingTo('psc')}>+ Add Position</button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="cards-group">
+                <div className="cards-group-label">Logistics Section</div>
+                <div className="cards-row">
+                  {lscPosition && renderPositionCard(lscPosition, 'card-accent-teal')}
+                </div>
+                <div className="cards-row cards-sub">
+                  {lscSub.map((pos) => renderPositionCard(pos, 'card-accent-teal-sub', true))}
+                </div>
+                {getAvailableSubs('lsc').length > 0 && (
+                  <div className="cards-add">
+                    {addingTo === 'lsc' ? (
+                      <div className="sub-position-picker">
+                        <div className="picker-label">Add Position:</div>
+                        <div className="picker-options">
+                          {getAvailableSubs('lsc').map((opt) => (
+                            <button key={opt.position_key} className="picker-btn" onClick={() => addSubPosition('lsc', opt)}>
+                              {opt.abbreviation} - {opt.position_title}
+                            </button>
+                          ))}
+                        </div>
+                        <button className="picker-cancel" onClick={() => setAddingTo(null)}>Cancel</button>
+                      </div>
+                    ) : (
+                      <button className="add-position-btn" onClick={() => setAddingTo('lsc')}>+ Add Position</button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="cards-group">
+                <div className="cards-group-label">Finance/Admin Section</div>
+                <div className="cards-row">
+                  {fascPosition && renderPositionCard(fascPosition, 'card-accent-orange')}
+                </div>
+                <div className="cards-row cards-sub">
+                  {fascSub.map((pos) => renderPositionCard(pos, 'card-accent-orange-sub', true))}
+                </div>
+                {getAvailableSubs('fasc').length > 0 && (
+                  <div className="cards-add">
+                    {addingTo === 'fasc' ? (
+                      <div className="sub-position-picker">
+                        <div className="picker-label">Add Position:</div>
+                        <div className="picker-options">
+                          {getAvailableSubs('fasc').map((opt) => (
+                            <button key={opt.position_key} className="picker-btn" onClick={() => addSubPosition('fasc', opt)}>
+                              {opt.abbreviation} - {opt.position_title}
+                            </button>
+                          ))}
+                        </div>
+                        <button className="picker-cancel" onClick={() => setAddingTo(null)}>Cancel</button>
+                      </div>
+                    ) : (
+                      <button className="add-position-btn" onClick={() => setAddingTo('fasc')}>+ Add Position</button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 

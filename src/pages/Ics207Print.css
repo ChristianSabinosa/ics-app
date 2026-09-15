@@ -31,7 +31,6 @@
 .print-toolbar button:first-child { background: #1a6b3c; color: white; }
 .print-toolbar button:last-child { background: #666; color: white; }
 
-/* ===== PAGE (A4 Landscape) ===== */
 .print-page {
   background: white;
   margin: 60px auto 20px;
@@ -46,7 +45,6 @@
   box-sizing: border-box;
 }
 
-/* ===== HEADER ===== */
 .print-header {
   display: flex;
   align-items: center;
@@ -60,7 +58,6 @@
 .print-title h1 { font-size: 1.1rem; font-weight: 800; text-transform: uppercase; margin: 0; letter-spacing: 1px; }
 .print-title h2 { font-size: 0.8rem; font-weight: 700; color: #333; margin: 2px 0 0; }
 
-/* ===== INFO BAR ===== */
 .print-info-bar {
   display: flex;
   gap: 20px;
@@ -74,7 +71,6 @@
 .print-field label { font-weight: 700; font-size: 0.75rem; color: #333; white-space: nowrap; }
 .print-field span { font-size: 0.8rem; color: #000; font-weight: 600; }
 
-/* ===== ORG CHART ===== */
 .print-org-chart {
   flex: 1;
   display: flex;
@@ -89,7 +85,6 @@
   height: 100%;
 }
 
-/* ===== FOOTER ===== */
 .print-footer {
   display: flex;
   gap: 24px;
@@ -102,7 +97,6 @@
 .print-footer-field label { font-weight: 700; font-size: 0.7rem; color: #333; white-space: nowrap; }
 .print-footer-field span { font-size: 0.7rem; color: #000; border-bottom: 1px solid #999; padding: 0 6px; min-width: 100px; }
 
-/* ===== PRINT ===== */
 @media print {
   .no-print { display: none !important; }
   .print-overlay { position: static; background: white; overflow: visible; }
