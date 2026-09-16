@@ -3,8 +3,7 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import Ics207Print from './Ics207Print'
-import Ics207ExpandedPrint from './Ics207ExpandedPrint'
-import { exportToPDF, exportToImage } from '../lib/exportUtils'
+import Ics207ExpandedExport from './Ics207ExpandedExport'
 import './Ics207Form.css'
 
 interface PersonnelWithAgency {
@@ -161,7 +160,7 @@ export default function Ics207Form() {
   const [unitSubCount, setUnitSubCount] = useState<Record<string, number>>({})
   const [techSpecCount, setTechSpecCount] = useState(0)
   const [agencyRepCount, setAgencyRepCount] = useState(0)
-  const [showExportMenu, setShowExportMenu] = useState(false)
+  const [showExpandedExport, setShowExpandedExport] = useState(false)
 
   const [branchName, setBranchName] = useState('')
   const [divisionName, setDivisionName] = useState('')
@@ -583,17 +582,6 @@ export default function Ics207Form() {
     }
   }
 
-  const handleExport = async (format: 'pdf' | 'png' | 'jpg') => {
-    setShowExportMenu(false)
-    const filename = `ICS207_Expanded_${incidentName.replace(/\s+/g, '_')}_${datePrepared}`
-
-    if (format === 'pdf') {
-      await exportToPDF('ics207-expanded-export', filename)
-    } else {
-      await exportToImage('ics207-expanded-export', filename, format)
-    }
-  }
-
   const saveForm = async (formStatus: 'Draft' | 'Submitted') => {
     if (!incidentId || !user) return
     setSaving(true)
@@ -876,16 +864,7 @@ export default function Ics207Form() {
             {saving ? 'Submitting...' : 'Submit'}
           </button>
           {formType === 'expanded' ? (
-            <div className="export-dropdown">
-              <button className="action-btn export" onClick={() => setShowExportMenu(!showExportMenu)} disabled={saving}>Export ▾</button>
-              {showExportMenu && (
-                <div className="export-menu">
-                  <button onClick={() => handleExport('pdf')}>📄 Export as PDF</button>
-                  <button onClick={() => handleExport('png')}>🖼️ Export as PNG</button>
-                  <button onClick={() => handleExport('jpg')}>🖼️ Export as JPG</button>
-                </div>
-              )}
-            </div>
+            <button className="action-btn export" onClick={() => setShowExpandedExport(true)} disabled={saving}>Export</button>
           ) : (
             <button className="action-btn print" onClick={() => setShowPrint(true)} disabled={saving}>Print</button>
           )}
@@ -1365,13 +1344,14 @@ export default function Ics207Form() {
         />
       )}
 
-      {formType === 'expanded' && (
-        <Ics207ExpandedPrint
+      {formType === 'expanded' && showExpandedExport && (
+        <Ics207ExpandedExport
           incidentName={incidentName}
           positions={positions}
           preparedBy={preparedBy}
           datePrepared={datePrepared}
           timePrepared={timePrepared}
+          onClose={() => setShowExpandedExport(false)}
         />
       )}
     </div>
