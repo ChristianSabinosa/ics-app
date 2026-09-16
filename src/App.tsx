@@ -12,6 +12,7 @@ import CheckInView from './pages/CheckInView'
 import Ics211Form from './pages/Ics211Form'
 import Ics207Form from './pages/Ics207Form'
 import Ics202Form from './pages/Ics202Form'
+import Ics203Form from './pages/Ics203Form'
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
           <Route path="/incident/:id/ics-211" element={<ProtectedRoute><Ics211Form /></ProtectedRoute>} />
           <Route path="/incident/:id/ics-207" element={<ProtectedRoute><Ics207Form /></ProtectedRoute>} />
           <Route path="/incident/:id/ics-202" element={<ProtectedRoute><Ics202Form /></ProtectedRoute>} />
+          <Route path="/incident/:id/ics-203" element={<ProtectedRoute><Ics203Form /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>

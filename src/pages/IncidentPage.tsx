@@ -45,6 +45,8 @@ export default function IncidentPage() {
   const [manifests, setManifests] = useState<CheckinManifest[]>([])
   const [allPersonnel, setAllPersonnel] = useState<CheckinPersonnel[]>([])
   const [formStatuses, setFormStatuses] = useState<Record<string, string>>({})
+  const [operationalPeriod, setOperationalPeriod] = useState('')
+  const [incidentCommander, setIncidentCommander] = useState('')
 
   useEffect(() => {
     if (id) fetchData()
@@ -120,7 +122,57 @@ export default function IncidentPage() {
     if (forms202 && forms202.length > 0) {
       statuses['202'] = forms202[0].status
     }
+    const { data: forms203 } = await supabase
+      .from('ics_203_forms')
+      .select('id, status, incident_id')
+      .eq('incident_id', id)
+    if (forms203 && forms203.length > 0) {
+      statuses['203'] = forms203[0].status
+    }
     setFormStatuses(statuses)
+
+    // Fetch operational period from 202
+    const { data: form202Data } = await supabase
+      .from('ics_202_forms')
+      .select('op_period_from_date, op_period_from_time, op_period_to_date, op_period_to_time')
+      .eq('incident_id', id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (form202Data && (form202Data.op_period_from_date || form202Data.op_period_to_date)) {
+      const fmtMil = (t: string) => t ? t.replace(':', '') + 'H' : ''
+      const from = form202Data.op_period_from_date
+        ? `${form202Data.op_period_from_date} ${fmtMil(form202Data.op_period_from_time)}`.trim()
+        : fmtMil(form202Data.op_period_from_time)
+      const to = form202Data.op_period_to_date
+        ? `${form202Data.op_period_to_date} ${fmtMil(form202Data.op_period_to_time)}`.trim()
+        : fmtMil(form202Data.op_period_to_time)
+      setOperationalPeriod(`${from} to ${to}`)
+    } else {
+      setOperationalPeriod('')
+    }
+
+    // Fetch incident commander from 207
+    const { data: form207Data } = await supabase
+      .from('ics_207_forms')
+      .select('id')
+      .eq('incident_id', id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (form207Data) {
+      const { data: icPos } = await supabase
+        .from('ics_207_positions')
+        .select('person_name')
+        .eq('form_id', form207Data.id)
+        .eq('position_key', 'ic')
+        .single()
+      setIncidentCommander(icPos?.person_name || '')
+    } else {
+      setIncidentCommander('')
+    }
 
     setLoading(false)
   }
@@ -190,6 +242,8 @@ export default function IncidentPage() {
       navigate(`/incident/${incident.incident_id}/ics-207`)
     } else if (formNum === '202') {
       navigate(`/incident/${incident.incident_id}/ics-202`)
+    } else if (formNum === '203') {
+      navigate(`/incident/${incident.incident_id}/ics-203`)
     }
   }
 
@@ -234,6 +288,16 @@ export default function IncidentPage() {
                 <span>Type: {incident.type}</span>
                 <span>Created by {incident.created_by_name}</span>
                 <span>{new Date(incident.created_at).toLocaleDateString()}</span>
+              </div>
+              <div className="incident-meta-row">
+                <span>
+                  Operational Period: {operationalPeriod || <em>Please indicate the operational period using ICS form 202</em>}
+                </span>
+              </div>
+              <div className="incident-meta-row">
+                <span>
+                  Incident Commander: {incidentCommander || <em>Please assign the Incident Commander in the organizational chart</em>}
+                </span>
               </div>
             </div>
 
