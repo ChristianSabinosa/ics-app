@@ -1,0 +1,215 @@
+.ics202-print-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: #e5e5e5;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ics202-print-controls {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #333;
+  padding: 10px 20px;
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ics202-print-controls button {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.ics202-print-controls button:first-child {
+  background: #2563eb;
+  color: white;
+}
+
+.ics202-print-controls button:last-child {
+  background: #6b7280;
+  color: white;
+}
+
+.ics202-print-page {
+  width: 210mm;
+  min-height: 297mm;
+  background: white;
+  margin: 20px auto;
+  padding: 12mm;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  box-sizing: border-box;
+}
+
+.ics202-form {
+  width: 100%;
+  border-collapse: collapse;
+  border: 2px solid #000;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 10pt;
+  table-layout: fixed;
+}
+
+.ics202-form td {
+  border: 1px solid #000;
+  padding: 0;
+  vertical-align: top;
+}
+
+.header-cell {
+  padding: 8px 12px;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ndrrmc-logo {
+  width: 60px;
+  height: auto;
+}
+
+.title-section {
+  text-align: center;
+  flex: 1;
+}
+
+.main-title {
+  font-size: 16pt;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.form-number {
+  font-size: 14pt;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.field-cell {
+  padding: 6px 10px;
+}
+
+.field-label {
+  font-weight: 700;
+  font-size: 9pt;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.field-value {
+  font-size: 9pt;
+  min-height: 14pt;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.field-value.tall {
+  min-height: 80pt;
+}
+
+.check-item {
+  margin-right: 20px;
+}
+
+.attachments-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 4px;
+  font-size: 9pt;
+}
+
+.attachments-table td {
+  border: none;
+  padding: 4px 8px;
+  vertical-align: top;
+  width: 33.33%;
+}
+
+.print-checkbox {
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+  vertical-align: middle;
+  accent-color: #000;
+}
+
+.others-cell {
+  vertical-align: top;
+}
+
+.sig-cell {
+  padding: 0;
+}
+
+.sig-row-print {
+  display: grid;
+  grid-template-columns: 140px 1fr 1fr 1fr;
+  min-height: 36pt;
+}
+
+.sig-num {
+  font-weight: 700;
+  font-size: 9pt;
+  display: flex;
+  align-items: center;
+  padding: 6px 8px;
+  border-right: 1px solid #000;
+}
+
+.sig-field-print {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 8px;
+  border-right: 1px solid #000;
+  justify-content: center;
+}
+
+.sig-field-print:last-child {
+  border-right: none;
+}
+
+.sig-label {
+  font-size: 7.5pt;
+  font-weight: 600;
+  color: #333;
+}
+
+.sig-value {
+  font-size: 9pt;
+  min-height: 14pt;
+  border-bottom: 1px solid #999;
+  margin-top: 2px;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+  .ics202-print-controls { display: none !important; }
+  .ics202-print-overlay {
+    background: none;
+    position: static;
+  }
+  .ics202-print-page {
+    margin: 0;
+    padding: 12mm;
+    box-shadow: none;
+    width: 210mm;
+    min-height: 297mm;
+    page-break-after: always;
+  }
+}

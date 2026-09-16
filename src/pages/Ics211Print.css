@@ -120,12 +120,13 @@
 .ics211-print-page .checkbox-print-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 70px;
   margin-top: 6px;
 }
 
 .ics211-print-page .print-checkbox {
   font-size: 0.75rem;
+  white-space: nowrap;
 }
 
 .ics211-print-page .section-title {

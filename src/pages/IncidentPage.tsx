@@ -113,6 +113,13 @@ export default function IncidentPage() {
     if (forms207 && forms207.length > 0) {
       statuses['207'] = forms207[0].status
     }
+    const { data: forms202 } = await supabase
+      .from('ics_202_forms')
+      .select('id, status, incident_id')
+      .eq('incident_id', id)
+    if (forms202 && forms202.length > 0) {
+      statuses['202'] = forms202[0].status
+    }
     setFormStatuses(statuses)
 
     setLoading(false)
@@ -181,6 +188,8 @@ export default function IncidentPage() {
       navigate(`/incident/${incident.incident_id}/ics-211`)
     } else if (formNum === '207') {
       navigate(`/incident/${incident.incident_id}/ics-207`)
+    } else if (formNum === '202') {
+      navigate(`/incident/${incident.incident_id}/ics-202`)
     }
   }
 
