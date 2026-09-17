@@ -1,0 +1,254 @@
+.ics206-print-overlay {
+  position: fixed;
+  inset: 0;
+  background: #e5e5e5;
+  z-index: 2000;
+  overflow-y: auto;
+}
+
+.ics206-print-controls {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 2001;
+  display: flex;
+  gap: 8px;
+}
+
+.ics206-print-controls button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.ics206-print-controls button:first-child {
+  background: #950606;
+  color: white;
+}
+
+.ics206-print-controls button:last-child {
+  background: white;
+  color: #333;
+  border: 1px solid #ccc;
+}
+
+.ics206-print-page {
+  width: 210mm;
+  min-height: 297mm;
+  margin: 16px auto;
+  background: white;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  padding: 10mm;
+  box-sizing: border-box;
+}
+
+/* Form frame */
+.ics206-print-page .form-frame {
+  width: 100%;
+  border: 2px solid #000;
+  border-collapse: collapse;
+}
+
+.ics206-print-page .form-frame td {
+  padding: 4mm;
+}
+
+/* Header */
+.ics206-print-page .form-header {
+  width: 100%;
+  border-bottom: 2px solid #000;
+  border-collapse: collapse;
+}
+
+.ics206-print-page .logo-cell {
+  width: 110px;
+  padding: 8px 10px;
+  vertical-align: middle;
+}
+
+.ics206-print-page .ndrrmc-logo {
+  width: 98px;
+  height: auto;
+}
+
+.ics206-print-page .title-cell {
+  text-align: center;
+  padding: 10px;
+  vertical-align: middle;
+}
+
+.ics206-print-page .title-cell h1 {
+  font-size: 1.4rem;
+  letter-spacing: 3px;
+  margin: 0;
+  color: #000;
+}
+
+.ics206-print-page .title-cell h2 {
+  font-size: 1rem;
+  margin: 2px 0 0;
+  color: #000;
+}
+
+/* Top fields row */
+.ics206-print-page .top-fields {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ics206-print-page .top-fields td {
+  border: 1px solid #000;
+  padding: 6px 8px;
+  vertical-align: top;
+  font-size: 0.75rem;
+}
+
+.ics206-print-page .field-box.wide {
+  width: 55%;
+}
+
+.ics206-print-page .field-num {
+  font-weight: 700;
+}
+
+.ics206-print-page .field-data {
+  margin-top: 4px;
+  font-weight: 400;
+  min-height: 14px;
+}
+
+/* Section title */
+.ics206-print-page .section-title {
+  text-align: center;
+  padding: 4px;
+  border: 1px solid #000;
+  border-top: none;
+  font-size: 0.8rem;
+  background: #f0f0f0;
+}
+
+/* Data grid - all cells get consistent 1px border */
+.ics206-print-page .data-grid {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ics206-print-page .data-grid th,
+.ics206-print-page .data-grid td {
+  border: 1px solid #000;
+  padding: 3px 4px;
+  font-size: 0.6rem;
+  text-align: center;
+}
+
+.ics206-print-page .data-grid th {
+  background: #f5f5f5;
+  font-weight: 700;
+  font-size: 0.58rem;
+  vertical-align: middle;
+}
+
+.ics206-print-page .data-grid td {
+  vertical-align: middle;
+  text-align: left;
+  font-size: 0.6rem;
+  height: 14px;
+}
+
+.ics206-print-page .data-grid .sub-header th {
+  background: #f5f5f5;
+  padding: 2px 4px;
+  height: auto;
+  font-size: 0.55rem;
+  font-weight: 700;
+}
+
+.ics206-print-page .data-grid .check-cell {
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* Procedures box */
+.ics206-print-page .procedures-box {
+  border: 1px solid #000;
+  border-top: none;
+  min-height: 30mm;
+  padding: 2mm 3mm;
+  font-size: 0.65rem;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.ics206-print-page .aviation-line {
+  border: 1px solid #000;
+  border-top: none;
+  padding: 3mm;
+  font-size: 0.65rem;
+}
+
+/* Footer */
+.ics206-print-page .footer-fields {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ics206-print-page .footer-fields td {
+  border: 1px solid #000;
+  padding: 6px 8px;
+  font-size: 0.65rem;
+}
+
+.ics206-print-page .footer-label-cell {
+  width: 18%;
+  white-space: nowrap;
+}
+
+.ics206-print-page .prepared-cell {
+  width: 34%;
+}
+
+.ics206-print-page .date-cell {
+  width: 24%;
+}
+
+.ics206-print-page .time-cell {
+  width: 24%;
+}
+
+/* Print styles */
+@media print {
+  .no-print { display: none !important; }
+
+  .ics206-print-overlay {
+    position: static;
+    background: white;
+    overflow: visible;
+  }
+
+  .ics206-print-page {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+    page-break-after: always;
+    min-height: auto;
+  }
+
+  .ics206-print-page:last-child {
+    page-break-after: auto;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 0.5in;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

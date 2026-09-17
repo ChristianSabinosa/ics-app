@@ -198,3 +198,63 @@ export interface Ics205Channel {
   remarks: string
   sort_order: number
 }
+
+export interface Ics206Form {
+  id: string
+  incident_id: string
+  incident_name: string
+  op_period_from_date: string
+  op_period_from_time: string
+  op_period_to_date: string
+  op_period_to_time: string
+  medical_emergency_procedures: string
+  aviation_assets_used: boolean
+  status: 'Draft' | 'Submitted'
+  prepared_by: string
+  date_prepared: string
+  time_prepared: string
+  reviewed_by: string
+  date_reviewed: string
+  time_reviewed: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Ics206AidStation {
+  id: string
+  form_id: string
+  name: string
+  location: string
+  contact_person: string
+  contact_numbers: string
+  remarks: string
+  with_paramedics: boolean
+  sort_order: number
+}
+
+export interface Ics206Ambulance {
+  id: string
+  form_id: string
+  name: string
+  location: string
+  contact_person: string
+  contact_numbers: string
+  remarks: string
+  level_of_service: string
+  sort_order: number
+}
+
+export interface Ics206Hospital {
+  id: string
+  form_id: string
+  name: string
+  location: string
+  contact_person: string
+  contact_numbers: string
+  travel_time_air: string
+  travel_time_land: string
+  with_trauma_center: boolean
+  with_burn_center: boolean
+  with_helipad: boolean
+  sort_order: number
+}
