@@ -37,6 +37,9 @@ export default function Ics211Form() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [showPrint, setShowPrint] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+
+  const isReadonly = status === 'Submitted' && !isEditing
 
   useEffect(() => {
     if (!user) return
@@ -347,6 +350,18 @@ export default function Ics211Form() {
           <span className="form-badge">ICS 211</span>
           <span className={`status-badge ${status.toLowerCase()}`}>{status}</span>
         </div>
+        <div className="topbar-actions">
+          <button className="action-btn save" onClick={() => saveForm('Draft')} disabled={saving || isReadonly}>
+            {saving ? 'Saving...' : 'Save Progress'}
+          </button>
+          <button className="action-btn submit" onClick={() => saveForm('Submitted')} disabled={saving || isReadonly}>
+            {saving ? 'Submitting...' : 'Submit'}
+          </button>
+          {status === 'Submitted' && !isEditing && (
+            <button className="action-btn edit" onClick={() => setIsEditing(true)}>Edit</button>
+          )}
+          <button className="action-btn print" onClick={() => setShowPrint(true)} disabled={saving}>Print</button>
+        </div>
       </div>
 
       <main className="ics211-main no-print">
@@ -493,17 +508,6 @@ export default function Ics211Form() {
               <label>Time Prepared:</label>
               <input type="time" value={timePrepared} onChange={(e) => setTimePrepared(e.target.value)} />
             </div>
-          </div>
-
-          <div className="form-actions">
-            <button className="action-btn back" onClick={() => navigate(`/incident/${incidentId}`)} disabled={saving}>Back</button>
-            <button className="action-btn save" onClick={() => saveForm('Draft')} disabled={saving}>
-              {saving ? 'Saving...' : 'Save Progress'}
-            </button>
-            <button className="action-btn submit" onClick={() => saveForm('Submitted')} disabled={saving}>
-              {saving ? 'Submitting...' : 'Submit'}
-            </button>
-            <button className="action-btn print" onClick={() => setShowPrint(true)} disabled={saving}>Print</button>
           </div>
         </div>
       </main>

@@ -31,38 +31,96 @@
 .checkin-header p { font-size: 0.75rem; opacity: 0.85; margin: 0; }
 
 .checkin-topbar {
-  background: white;
-  border-bottom: 2px solid #e8e8e8;
-  padding: 12px 24px;
+  background: #fff;
+  border-bottom: 1px solid #ddd;
+  padding: 10px 24px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
-.topbar-info {
+.checkin-topbar .topbar-btn.back {
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.checkin-topbar .topbar-btn.back:hover {
+  background: #f0f0f0;
+}
+
+.checkin-topbar .topbar-info {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.checkin-id-badge {
-  font-family: monospace;
-  font-size: 0.85rem;
-  color: #1a6b3c;
-  font-weight: 600;
-  background: rgba(26, 107, 60, 0.08);
+.checkin-topbar .form-badge {
+  background: #1e3a5f;
+  color: white;
   padding: 4px 10px;
   border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
 }
 
-.incident-ref-badge {
-  font-family: monospace;
-  font-size: 0.85rem;
-  color: #950606;
-  font-weight: 600;
-  background: rgba(149, 6, 6, 0.08);
+.checkin-topbar .status-badge {
   padding: 4px 10px;
   border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.checkin-topbar .status-badge.draft {
+  background: #fbbf24;
+  color: #92400e;
+}
+
+.checkin-topbar .status-badge.submitted {
+  background: #34d399;
+  color: #065f46;
+}
+
+.checkin-topbar .topbar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.checkin-topbar .action-btn {
+  padding: 6px 14px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.checkin-topbar .action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.checkin-topbar .action-btn.save {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.checkin-topbar .action-btn.submit {
+  background: #1e3a5f;
+  color: white;
+}
+
+.checkin-topbar .action-btn.edit {
+  background: #f59e0b;
+  color: white;
 }
 
 .checkin-main { padding: 24px; }
@@ -269,52 +327,46 @@
 
 .form-actions {
   display: flex;
-  gap: 12px;
-  margin-top: 24px;
-  padding: 20px;
-  background: white;
-  border: 2px solid #e8e8e8;
-  border-radius: 10px;
-  position: sticky;
-  bottom: 0;
+  gap: 8px;
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 1px solid #ddd;
+  margin-top: 16px;
 }
 
-.action-btn {
-  flex: 1;
-  padding: 12px;
-  border: 2px solid transparent;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: 600;
+.form-actions .action-btn {
+  padding: 8px 18px;
+  border-radius: 4px;
+  border: none;
   cursor: pointer;
-  font-family: inherit;
-  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
-.action-btn.back {
-  background: white;
-  color: #666;
-  border-color: #ddd;
+.form-actions .action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-.action-btn.back:hover { background: #f5f5f5; border-color: #bbb; }
-
-.action-btn.save {
-  background: white;
-  color: #1a6b3c;
-  border-color: #1a6b3c;
+.form-actions .action-btn.save {
+  background: #e5e7eb;
+  color: #374151;
 }
 
-.action-btn.save:hover { background: #1a6b3c; color: white; }
-
-.action-btn.submit {
-  background: #950606;
+.form-actions .action-btn.submit {
+  background: #1e3a5f;
   color: white;
 }
 
-.action-btn.submit:hover { background: #7a0505; }
+.form-actions .action-btn.edit {
+  background: #f59e0b;
+  color: white;
+}
 
-.action-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.form-actions .action-btn.print {
+  background: #059669;
+  color: white;
+}
 
 @media (max-width: 768px) {
   .personnel-row,

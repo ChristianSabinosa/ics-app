@@ -31,6 +31,10 @@ export default function CheckInForm() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [status, setStatus] = useState<'Draft' | 'Submitted'>('Draft')
+  const [isEditing, setIsEditing] = useState(false)
+
+  const isReadonly = status === 'Submitted' && !isEditing
 
   const [agencyName, setAgencyName] = useState('')
   const [others, setOthers] = useState('')
@@ -92,6 +96,7 @@ export default function CheckInForm() {
       setAgencyName(existing.agency_name)
       setOthers(existing.others)
       setPreparedByName(existing.prepared_by_name)
+      setStatus(existing.status || 'Draft')
 
       const { data: personnel } = await supabase.from('checkin_personnel').select('*').eq('manifest_id', existing.id)
       if (personnel) {
@@ -230,11 +235,22 @@ export default function CheckInForm() {
         </div>
       </header>
 
-      <div className="checkin-topbar">
+      <div className="checkin-topbar no-print">
         <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}`)}>&larr; Back</button>
         <div className="topbar-info">
-          <span className="checkin-id-badge">{checkinId}</span>
-          <span className="incident-ref-badge">{incidentId}</span>
+          <span className="form-badge">Check-In Manifest</span>
+          <span className={`status-badge ${status.toLowerCase()}`}>{status}</span>
+        </div>
+        <div className="topbar-actions">
+          <button className="action-btn save" onClick={() => saveManifest('Draft')} disabled={saving || isReadonly}>
+            {saving ? 'Saving...' : 'Save Progress'}
+          </button>
+          <button className="action-btn submit" onClick={() => saveManifest('Submitted')} disabled={saving || isReadonly}>
+            {saving ? 'Submitting...' : 'Submit'}
+          </button>
+          {status === 'Submitted' && !isEditing && (
+            <button className="action-btn edit" onClick={() => setIsEditing(true)}>Edit</button>
+          )}
         </div>
       </div>
 
@@ -357,15 +373,6 @@ export default function CheckInForm() {
             <textarea value={others} onChange={(e) => setOthers(e.target.value)} placeholder="Additional information..." rows={4} />
           </section>
 
-          <div className="form-actions">
-            <button className="action-btn back" onClick={() => navigate(`/incident/${incidentId}`)} disabled={saving}>Back</button>
-            <button className="action-btn save" onClick={() => saveManifest('Draft')} disabled={saving}>
-              {saving ? 'Saving...' : 'Save Progress'}
-            </button>
-            <button className="action-btn submit" onClick={() => saveManifest('Submitted')} disabled={saving}>
-              {saving ? 'Submitting...' : 'Submit'}
-            </button>
-          </div>
         </div>
       </main>
     </div>

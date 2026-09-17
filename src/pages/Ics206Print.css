@@ -64,7 +64,7 @@
   border-collapse: collapse;
 }
 
-.ics206-print-page .logo-cell {
+.ics206-print-page .form-frame td.logo-cell {
   width: 110px;
   padding: 8px 10px;
   vertical-align: middle;
@@ -75,7 +75,7 @@
   height: auto;
 }
 
-.ics206-print-page .title-cell {
+.ics206-print-page .form-frame td.title-cell {
   text-align: center;
   padding: 10px;
   vertical-align: middle;

@@ -33,56 +33,100 @@
 }
 
 .ics211-topbar {
-  background: white;
-  border-bottom: 1px solid #e0e0e0;
+  background: #fff;
+  border-bottom: 1px solid #ddd;
   padding: 10px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .ics211-topbar .topbar-btn.back {
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 4px;
   padding: 6px 14px;
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 6px;
   cursor: pointer;
   font-size: 0.85rem;
 }
 
 .ics211-topbar .topbar-btn.back:hover {
-  background: #f5f5f5;
+  background: #f0f0f0;
 }
 
 .ics211-topbar .topbar-info {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
 }
 
-.form-badge {
-  background: #950606;
-  color: white;
-  padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: 700;
+.ics211-topbar .topbar-actions {
+  display: flex;
+  gap: 8px;
 }
 
-.status-badge {
+.ics211-topbar .action-btn {
+  padding: 6px 14px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.ics211-topbar .action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ics211-topbar .action-btn.save {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.ics211-topbar .action-btn.submit {
+  background: #1e3a5f;
+  color: white;
+}
+
+.ics211-topbar .action-btn.edit {
+  background: #f59e0b;
+  color: white;
+}
+
+.ics211-topbar .action-btn.print {
+  background: #059669;
+  color: white;
+}
+
+.ics211-topbar .form-badge {
+  background: #1e3a5f;
+  color: white;
   padding: 4px 10px;
   border-radius: 4px;
   font-size: 0.8rem;
   font-weight: 600;
 }
 
-.status-badge.draft {
-  background: #fef3c7;
+.ics211-topbar .status-badge {
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.ics211-topbar .status-badge.draft {
+  background: #fbbf24;
   color: #92400e;
 }
 
-.status-badge.submitted {
-  background: #d1fae5;
+.ics211-topbar .status-badge.submitted {
+  background: #34d399;
   color: #065f46;
 }
 
@@ -453,64 +497,45 @@
 
 .form-actions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 1px solid #ddd;
+  margin-top: 16px;
 }
 
-.action-btn {
-  padding: 10px 20px;
-  border: 2px solid transparent;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
+.form-actions .action-btn {
+  padding: 8px 18px;
+  border-radius: 4px;
+  border: none;
   cursor: pointer;
-  font-family: inherit;
-  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
-.action-btn.back {
-  background: white;
-  color: #666;
-  border-color: #ddd;
-}
-
-.action-btn.back:hover {
-  background: #f5f5f5;
-}
-
-.action-btn.save {
-  background: white;
-  color: #1a6b3c;
-  border-color: #1a6b3c;
-}
-
-.action-btn.save:hover {
-  background: #1a6b3c;
-  color: white;
-}
-
-.action-btn.submit {
-  background: #950606;
-  color: white;
-  border-color: #950606;
-}
-
-.action-btn.submit:hover {
-  background: #7a0505;
-}
-
-.action-btn.print {
-  background: #1e40af;
-  color: white;
-  border-color: #1e40af;
-}
-
-.action-btn.print:hover {
-  background: #1e3a8a;
-}
-
-.action-btn:disabled {
-  opacity: 0.6;
+.form-actions .action-btn:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
+}
+
+.form-actions .action-btn.save {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.form-actions .action-btn.submit {
+  background: #1e3a5f;
+  color: white;
+}
+
+.form-actions .action-btn.edit {
+  background: #f59e0b;
+  color: white;
+}
+
+.form-actions .action-btn.print {
+  background: #059669;
+  color: white;
 }
 
 .error-message {

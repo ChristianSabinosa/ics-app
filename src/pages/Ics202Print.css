@@ -30,22 +30,15 @@
   font-weight: 500;
 }
 
-.ics202-print-controls button:first-child {
-  background: #2563eb;
-  color: white;
-}
-
-.ics202-print-controls button:last-child {
-  background: #6b7280;
-  color: white;
-}
+.ics202-print-controls button:first-child { background: #2563eb; color: white; }
+.ics202-print-controls button:last-child { background: #6b7280; color: white; }
 
 .ics202-print-page {
   width: 210mm;
   min-height: 297mm;
   background: white;
   margin: 20px auto;
-  padding: 12mm;
+  padding: 10mm;
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   box-sizing: border-box;
 }
@@ -55,7 +48,7 @@
   border-collapse: collapse;
   border: 2px solid #000;
   font-family: 'Times New Roman', Times, serif;
-  font-size: 10pt;
+  font-size: 9pt;
   table-layout: fixed;
 }
 
@@ -65,93 +58,67 @@
   vertical-align: top;
 }
 
-.header-cell {
-  padding: 8px 12px;
+.ics202-form td.header-cell { padding: 6px 10px; }
+
+.header-content { display: flex; align-items: center; gap: 10px; }
+.ndrrmc-logo { width: 55px; height: auto; }
+.title-section { text-align: center; flex: 1; }
+.main-title { font-size: 15pt; font-weight: 700; letter-spacing: 1px; }
+.form-number { font-size: 13pt; font-weight: 700; margin-top: 2px; }
+
+.ics202-form td.top-cell { padding: 6px 10px; }
+.field-label { font-weight: 700; font-size: 8.5pt; margin-bottom: 2px; text-transform: uppercase; }
+.field-value { font-size: 8.5pt; min-height: 12pt; line-height: 1.3; }
+
+.ics202-form td.content-cell { padding: 6px 10px; }
+
+.objective-cell,
+.emphasis-cell,
+.weather-cell,
+.safety-cell {
+  height: 80pt;
 }
 
-.header-content {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.safety-plan-cell {
+  min-height: 40pt;
 }
 
-.ndrrmc-logo {
-  width: 60px;
-  height: auto;
+.safety-options {
+  margin: 4px 0;
 }
 
-.title-section {
-  text-align: center;
-  flex: 1;
+.checkbox-mark {
+  font-size: 12pt;
+  line-height: 1;
 }
 
-.main-title {
-  font-size: 16pt;
-  font-weight: 700;
-  letter-spacing: 1px;
-}
-
-.form-number {
-  font-size: 14pt;
-  font-weight: 700;
-  margin-top: 2px;
-}
-
-.field-cell {
-  padding: 6px 10px;
-}
-
-.field-label {
-  font-weight: 700;
-  font-size: 9pt;
-  margin-bottom: 4px;
-  text-transform: uppercase;
-}
-
-.field-value {
-  font-size: 9pt;
-  min-height: 14pt;
+.field-textarea {
+  font-size: 8.5pt;
   line-height: 1.4;
+  min-height: 60pt;
   white-space: pre-wrap;
-  word-break: break-word;
+  padding: 4px 0;
 }
 
-.field-value.tall {
-  min-height: 80pt;
+.attachments-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 4px 20px;
+  font-size: 8.5pt;
 }
 
-.check-item {
-  margin-right: 20px;
+.attachment-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
 }
 
-.attachments-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 4px;
-  font-size: 9pt;
-}
-
-.attachments-table td {
-  border: none;
-  padding: 4px 8px;
-  vertical-align: top;
-  width: 33.33%;
-}
-
-.print-checkbox {
-  width: 14px;
-  height: 14px;
-  margin-right: 6px;
-  vertical-align: middle;
-  accent-color: #000;
-}
-
-.others-cell {
-  vertical-align: top;
+.others-col {
+  padding-left: 10px;
 }
 
 .sig-cell {
-  padding: 0;
+  padding: 0 !important;
 }
 
 .sig-row-print {
@@ -195,21 +162,14 @@
 }
 
 @media print {
-  @page {
-    size: A4 portrait;
-    margin: 0;
-  }
+  @page { size: A4 portrait; margin: 0; }
   .ics202-print-controls { display: none !important; }
-  .ics202-print-overlay {
-    background: none;
-    position: static;
-  }
+  .ics202-print-overlay { background: none; position: static; }
   .ics202-print-page {
     margin: 0;
-    padding: 12mm;
+    padding: 10mm;
     box-shadow: none;
     width: 210mm;
     min-height: 297mm;
-    page-break-after: always;
   }
 }

@@ -279,6 +279,18 @@ export default function Ics206Form() {
           <span className="form-badge">ICS 206</span>
           <span className={`status-badge ${status.toLowerCase()}`}>{status}</span>
         </div>
+        <div className="topbar-actions">
+          <button className="action-btn save" onClick={() => saveForm('Draft')} disabled={saving || isReadonly}>
+            {saving ? 'Saving...' : 'Save Progress'}
+          </button>
+          <button className="action-btn submit" onClick={() => saveForm('Submitted')} disabled={saving || isReadonly}>
+            {saving ? 'Submitting...' : 'Submit'}
+          </button>
+          {status === 'Submitted' && !isEditing && (
+            <button className="action-btn edit" onClick={() => setIsEditing(true)}>Edit</button>
+          )}
+          <button className="action-btn print" onClick={() => setShowPrint(true)} disabled={saving}>Print</button>
+        </div>
       </div>
 
       <main className="ics206-main no-print">
@@ -491,19 +503,6 @@ export default function Ics206Form() {
             </div>
           </div>
 
-          <div className="form-actions">
-            <button className="action-btn back" onClick={() => navigate(`/incident/${incidentId}`)} disabled={saving}>Back</button>
-            <button className="action-btn save" onClick={() => saveForm('Draft')} disabled={saving || isReadonly}>
-              {saving ? 'Saving...' : 'Save Progress'}
-            </button>
-            <button className="action-btn submit" onClick={() => saveForm('Submitted')} disabled={saving || isReadonly}>
-              {saving ? 'Submitting...' : 'Submit'}
-            </button>
-            {status === 'Submitted' && !isEditing && (
-              <button className="action-btn edit" onClick={() => setIsEditing(true)}>Edit</button>
-            )}
-            <button className="action-btn print" onClick={() => setShowPrint(true)} disabled={saving}>Print</button>
-          </div>
         </div>
       </main>
 
