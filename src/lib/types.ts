@@ -166,3 +166,35 @@ export interface Ics207SubPosition {
   created_at: string
   updated_at: string
 }
+
+export interface Ics205Form {
+  id: string
+  incident_id: string
+  incident_name: string
+  op_period_from_date: string
+  op_period_from_time: string
+  op_period_to_date: string
+  op_period_to_time: string
+  coordinating_instructions: string
+  status: 'Draft' | 'Submitted'
+  prepared_by: string
+  date_prepared: string
+  time_prepared: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Ics205Channel {
+  id: string
+  form_id: string
+  radio_type: string
+  system: string
+  channel: string
+  function: string
+  tone_offset: string
+  frequency: string
+  others: string
+  assignment: string
+  remarks: string
+  sort_order: number
+}
