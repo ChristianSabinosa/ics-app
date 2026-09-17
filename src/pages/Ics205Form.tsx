@@ -36,6 +36,7 @@ export default function Ics205Form() {
   const [success, setSuccess] = useState('')
   const [showPrint, setShowPrint] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
+  const isReadonly = status === 'Submitted' && !isEditing
 
   useEffect(() => {
     if (!user) return
@@ -148,7 +149,7 @@ export default function Ics205Form() {
 
     let fId = formId
 
-    if (fId && isEditing) {
+    if (fId) {
       const { error: updateError } = await supabase.from('ics_205_forms').update(formData).eq('id', fId)
       if (updateError) { setError(updateError.message); setSaving(false); return }
     } else if (!fId) {
@@ -322,10 +323,10 @@ export default function Ics205Form() {
 
           <div className="form-actions">
             <button className="action-btn back" onClick={() => navigate(`/incident/${incidentId}`)} disabled={saving}>Back</button>
-            <button className="action-btn save" onClick={() => saveForm('Draft')} disabled={saving}>
+            <button className="action-btn save" onClick={() => saveForm('Draft')} disabled={saving || isReadonly}>
               {saving ? 'Saving...' : 'Save Progress'}
             </button>
-            <button className="action-btn submit" onClick={() => saveForm('Submitted')} disabled={saving}>
+            <button className="action-btn submit" onClick={() => saveForm('Submitted')} disabled={saving || isReadonly}>
               {saving ? 'Submitting...' : 'Submit'}
             </button>
             {status === 'Submitted' && !isEditing && (
