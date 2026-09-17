@@ -1,4 +1,4 @@
-import { formatMilitaryTime, formatMilitaryTimeShort } from '../lib/utils'
+import { formatMilitaryTimeShort, formatDateTimeShort } from '../lib/utils'
 import './Ics211Print.css'
 
 interface Ics211PrintProps {
@@ -128,7 +128,7 @@ export default function Ics211Print({
                       {pageResources.map((r, i) => (
                         <tr key={i}>
                           <td>{r.order_request_no}</td>
-                          <td>{r.checkin_datetime ? formatMilitaryTime(r.checkin_datetime) : ''}</td>
+                          <td>{r.checkin_datetime ? formatDateTimeShort(r.checkin_datetime) : ''}</td>
                           <td>{r.kind}</td>
                           <td>{r.type}</td>
                           <td className="ri-cell">
@@ -141,12 +141,12 @@ export default function Ics211Print({
                           <td>{r.contact_details}</td>
                           <td className="num-cell">{r.total_personnel || ''}</td>
                           <td className="dep-cell">
-                            {r.departure_point_of_origin} {r.departure_datetime ? formatMilitaryTime(r.departure_datetime) : ''} {r.departure_method_of_travel}
+                            {r.departure_point_of_origin} {r.departure_datetime ? formatDateTimeShort(r.departure_datetime) : ''} {r.departure_method_of_travel}
                           </td>
                           <td className="bool-cell">{r.with_manifest ? 'Yes' : 'No'}</td>
                           <td>{r.incident_assignment}</td>
                           <td>{r.other_qualifications}</td>
-                          <td>{r.data_sent_to_resl ? formatMilitaryTime(r.data_sent_to_resl) : ''}</td>
+                          <td>{r.data_sent_to_resl ? formatDateTimeShort(r.data_sent_to_resl) : ''}</td>
                         </tr>
                       ))}
                       {Array.from({ length: Math.max(0, rowsPerPage - pageResources.length) }).map((_, i) => (

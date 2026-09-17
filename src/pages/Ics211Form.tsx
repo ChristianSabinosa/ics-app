@@ -164,6 +164,73 @@ export default function Ics211Form() {
     }
   }
 
+  const fetchFromCheckins = async () => {
+    if (!incidentId) return
+
+    const { data: manifests } = await supabase
+      .from('checkin_manifests')
+      .select('*')
+      .eq('incident_id', incidentId)
+      .eq('status', 'Submitted')
+      .order('created_at')
+
+    if (!manifests || manifests.length === 0) {
+      setError('No submitted check-ins found for this incident.')
+      return
+    }
+
+    const manifestIds = manifests.map((m) => m.id)
+    const { data: allPersonnel } = await supabase
+      .from('checkin_personnel')
+      .select('*')
+      .in('manifest_id', manifestIds)
+
+    const existingCheckinIds = new Set(
+      resources.map((r) => r.order_request_no).filter(Boolean)
+    )
+
+    const newResources: Omit<Ics211Resource, 'id' | 'form_id'>[] = []
+
+    for (const manifest of manifests) {
+      if (existingCheckinIds.has(manifest.checkin_id)) continue
+
+      const manifestPersonnel = allPersonnel?.filter((p) => p.manifest_id === manifest.id) || []
+      const leader = manifestPersonnel.find((p) => p.role === 'Leader')
+
+      const checkinTs = manifest.prepared_by_timestamp || manifest.created_at
+      const checkinDt = checkinTs ? new Date(checkinTs).toISOString().slice(0, 16) : ''
+
+      newResources.push({
+        order_request_no: manifest.checkin_id,
+        checkin_datetime: checkinDt,
+        kind: '',
+        type: '',
+        resource_identifier_single: true,
+        resource_identifier_st: false,
+        resource_identifier_tf: false,
+        agency_name: manifest.agency_name,
+        leader_name: leader?.name || '',
+        contact_details: leader?.contact_details || '',
+        total_personnel: manifest.total_personnel,
+        departure_point_of_origin: '',
+        departure_datetime: '',
+        departure_method_of_travel: '',
+        with_manifest: true,
+        incident_assignment: 'Waiting for assignment',
+        other_qualifications: leader?.capabilities || '',
+        data_sent_to_resl: '',
+        sort_order: resources.length + newResources.length,
+      })
+    }
+
+    if (newResources.length > 0) {
+      setResources([...resources, ...newResources])
+      setSuccess(`Fetched ${newResources.length} new check-in(s) from other agencies.`)
+    } else {
+      setSuccess('All check-ins are already included in the form.')
+    }
+  }
+
   const handleLocationToggle = (loc: string) => {
     setCheckinLocation((prev) =>
       prev.includes(loc) ? prev.filter((l) => l !== loc) : [...prev, loc]
@@ -173,6 +240,17 @@ export default function Ics211Form() {
   const updateResource = (index: number, field: string, value: string | number | boolean) => {
     const updated = [...resources]
     updated[index] = { ...updated[index], [field]: value }
+    setResources(updated)
+  }
+
+  const setResourceIdentifier = (index: number, choice: 'single' | 'st' | 'tf') => {
+    const updated = [...resources]
+    updated[index] = {
+      ...updated[index],
+      resource_identifier_single: choice === 'single',
+      resource_identifier_st: choice === 'st',
+      resource_identifier_tf: choice === 'tf',
+    }
     setResources(updated)
   }
 
@@ -223,11 +301,15 @@ export default function Ics211Form() {
     await supabase.from('ics_211_resources').delete().eq('form_id', fId)
 
     if (resources.length > 0) {
-      const now211 = new Date().toISOString().slice(0, 16)
+      const now211 = formStatus === 'Submitted' ? (() => {
+        const d = new Date()
+        const pad = (n: number) => String(n).padStart(2, '0')
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+      })() : ''
       const resourceRows = resources.map((r, i) => ({
         form_id: fId!,
         ...r,
-        data_sent_to_resl: now211,
+        data_sent_to_resl: formStatus === 'Submitted' ? now211 : r.data_sent_to_resl,
         sort_order: i,
       }))
       const { error: resError } = await supabase.from('ics_211_resources').insert(resourceRows)
@@ -304,72 +386,93 @@ export default function Ics211Form() {
 
           <div className="resources-section">
             <h4>4. CHECK-IN INFORMATION</h4>
-            <div className="resources-table-wrapper">
-              <table className="resources-table">
-                <thead>
-                  <tr>
-                    <th>Order/Request No.</th>
-                    <th>Check-In Date and Time</th>
-                    <th>Kind</th>
-                    <th>Type</th>
-                    <th>Resource Identifier</th>
-                    <th>Name of Agency/Office/Home Base</th>
-                    <th>Name of Leader</th>
-                    <th>Contact Details</th>
-                    <th>Total No. of Pers.</th>
-                    <th>Departure: Point of Origin</th>
-                    <th>Departure: Date and Time</th>
-                    <th>Departure: Method of Travel</th>
-                    <th>With Manifest?</th>
-                    <th>Incident Assignment</th>
-                    <th>Other Qualifications</th>
-                    <th>Data Sent to RESL</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {resources.map((r, i) => (
-                    <tr key={i}>
-                      <td><input value={r.order_request_no} onChange={(e) => updateResource(i, 'order_request_no', e.target.value)} /></td>
-                      <td><input type="datetime-local" value={r.checkin_datetime} onChange={(e) => updateResource(i, 'checkin_datetime', e.target.value)} /></td>
-                      <td><input value={r.kind} onChange={(e) => updateResource(i, 'kind', e.target.value)} /></td>
-                      <td><input value={r.type} onChange={(e) => updateResource(i, 'type', e.target.value)} /></td>
-                      <td className="ri-cell">
-                        <label><input type="checkbox" checked={r.resource_identifier_single} onChange={(e) => updateResource(i, 'resource_identifier_single', e.target.checked)} /> Single</label>
-                        <label><input type="checkbox" checked={r.resource_identifier_st} onChange={(e) => updateResource(i, 'resource_identifier_st', e.target.checked)} /> ST</label>
-                        <label><input type="checkbox" checked={r.resource_identifier_tf} onChange={(e) => updateResource(i, 'resource_identifier_tf', e.target.checked)} /> TF</label>
-                      </td>
-                      <td><input value={r.agency_name} onChange={(e) => updateResource(i, 'agency_name', e.target.value)} /></td>
-                      <td><input value={r.leader_name} onChange={(e) => updateResource(i, 'leader_name', e.target.value)} /></td>
-                      <td><input value={r.contact_details} onChange={(e) => updateResource(i, 'contact_details', e.target.value)} /></td>
-                      <td><input type="number" min="0" value={r.total_personnel} onChange={(e) => updateResource(i, 'total_personnel', parseInt(e.target.value) || 0)} /></td>
-                      <td><input value={r.departure_point_of_origin} onChange={(e) => updateResource(i, 'departure_point_of_origin', e.target.value)} /></td>
-                      <td><input type="datetime-local" value={r.departure_datetime} onChange={(e) => updateResource(i, 'departure_datetime', e.target.value)} /></td>
-                      <td>
-                        <select value={r.departure_method_of_travel} onChange={(e) => updateResource(i, 'departure_method_of_travel', e.target.value)}>
-                          <option value="">-</option>
-                          <option value="Land">Land</option>
-                          <option value="Water">Water</option>
-                          <option value="Air">Air</option>
-                        </select>
-                      </td>
-                      <td className="manifest-cell">
-                        <label><input type="radio" name={`manifest-${i}`} checked={r.with_manifest === true} onChange={() => updateResource(i, 'with_manifest', true)} /> Yes</label>
-                        <label><input type="radio" name={`manifest-${i}`} checked={r.with_manifest === false} onChange={() => updateResource(i, 'with_manifest', false)} /> No</label>
-                      </td>
-                      <td><input value={r.incident_assignment} onChange={(e) => updateResource(i, 'incident_assignment', e.target.value)} /></td>
-                      <td><input value={r.other_qualifications} onChange={(e) => updateResource(i, 'other_qualifications', e.target.value)} /></td>
-                      <td><input type="datetime-local" value={r.data_sent_to_resl} onChange={(e) => updateResource(i, 'data_sent_to_resl', e.target.value)} /></td>
-                      <td className="actions-cell">
-                        <button className="remove-row-btn" onClick={() => removeResource(i)}>&times;</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="cards-container">
+              {resources.map((r, i) => (
+                <div key={i} className="resource-card">
+                  <div className="card-header">
+                    <span className="card-number">Resource {i + 1}</span>
+                    <span className={`manifest-label ${r.with_manifest ? 'yes' : 'no'}`}>
+                      {r.with_manifest ? 'From Check-in Manifest' : 'Manually Added'}
+                    </span>
+                    <button className="remove-card-btn" onClick={() => removeResource(i)}>&times; Remove</button>
+                  </div>
+                  <div className="card-body">
+                    <div className="card-field">
+                      <label>Order/Request No.</label>
+                      <input value={r.order_request_no} onChange={(e) => updateResource(i, 'order_request_no', e.target.value)} />
+                    </div>
+                    <div className="card-field">
+                      <label>Check-In Date and Time</label>
+                      <input type="datetime-local" value={r.checkin_datetime} onChange={(e) => updateResource(i, 'checkin_datetime', e.target.value)} />
+                    </div>
+                    <div className="card-field">
+                      <label>Kind</label>
+                      <input value={r.kind} onChange={(e) => updateResource(i, 'kind', e.target.value)} />
+                    </div>
+                    <div className="card-field">
+                      <label>Type</label>
+                      <input value={r.type} onChange={(e) => updateResource(i, 'type', e.target.value)} />
+                    </div>
+                    <div className="card-field">
+                      <label>Resource Identifier</label>
+                      <div className="ri-group">
+                        <label><input type="radio" name={`ri-${i}`} checked={r.resource_identifier_single} onChange={() => setResourceIdentifier(i, 'single')} /> Single</label>
+                        <label><input type="radio" name={`ri-${i}`} checked={r.resource_identifier_st} onChange={() => setResourceIdentifier(i, 'st')} /> ST</label>
+                        <label><input type="radio" name={`ri-${i}`} checked={r.resource_identifier_tf} onChange={() => setResourceIdentifier(i, 'tf')} /> TF</label>
+                      </div>
+                    </div>
+                    <div className="card-field span-2">
+                      <label>Name of Agency/Office/Home Base</label>
+                      <textarea rows={1} value={r.agency_name} onChange={(e) => { updateResource(i, 'agency_name', e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }} onInput={(e) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} />
+                    </div>
+                    <div className="card-field">
+                      <label>Name of Leader</label>
+                      <textarea rows={1} value={r.leader_name} onChange={(e) => { updateResource(i, 'leader_name', e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }} onInput={(e) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} />
+                    </div>
+                    <div className="card-field">
+                      <label>Contact Details</label>
+                      <textarea rows={1} value={r.contact_details} onChange={(e) => { updateResource(i, 'contact_details', e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }} onInput={(e) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} />
+                    </div>
+                    <div className="card-field">
+                      <label>Total No. of Pers.</label>
+                      <input type="number" min="0" value={r.total_personnel} onChange={(e) => updateResource(i, 'total_personnel', parseInt(e.target.value) || 0)} />
+                    </div>
+                    <div className="card-field">
+                      <label>Departure: Point of Origin</label>
+                      <textarea rows={1} value={r.departure_point_of_origin} onChange={(e) => { updateResource(i, 'departure_point_of_origin', e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }} onInput={(e) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} />
+                    </div>
+                    <div className="card-field">
+                      <label>Departure: Date and Time</label>
+                      <input type="datetime-local" value={r.departure_datetime} onChange={(e) => updateResource(i, 'departure_datetime', e.target.value)} />
+                    </div>
+                    <div className="card-field">
+                      <label>Departure: Method of Travel</label>
+                      <select value={r.departure_method_of_travel} onChange={(e) => updateResource(i, 'departure_method_of_travel', e.target.value)}>
+                        <option value="">-</option>
+                        <option value="Land">Land</option>
+                        <option value="Water">Water</option>
+                        <option value="Air">Air</option>
+                      </select>
+                    </div>
+                    <div className="card-field span-2">
+                      <label>Incident Assignment</label>
+                      <textarea rows={1} value={r.incident_assignment} onChange={(e) => { updateResource(i, 'incident_assignment', e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }} onInput={(e) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} />
+                    </div>
+                    <div className="card-field span-2">
+                      <label>Other Qualifications</label>
+                      <textarea rows={1} value={r.other_qualifications} onChange={(e) => { updateResource(i, 'other_qualifications', e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }} onInput={(e) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} />
+                    </div>
+                    <div className="card-field">
+                      <label>Data Sent to RESL</label>
+                      <span className="resl-text">{r.data_sent_to_resl ? r.data_sent_to_resl.replace('T', ' ') : '-'}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
             <div className="add-row-buttons">
               <button className="add-row-btn" onClick={addResource}>+ Add Resource</button>
+              <button className="add-row-btn manifest" onClick={fetchFromCheckins}>Copy from Check-in Manifest</button>
             </div>
           </div>
 

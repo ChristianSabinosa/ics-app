@@ -41,3 +41,15 @@ export function formatMilitaryTimeShort(timeStr: string): string {
   const m = parts[1]
   return `${h === 0 ? '00' : h}${m}H`
 }
+
+export function formatDateTimeShort(dateStr: string): string {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return dateStr
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const mmddyy = `${pad(d.getMonth() + 1)}${pad(d.getDate())}${String(d.getFullYear()).slice(2)}`
+  const h = d.getHours()
+  const m = pad(d.getMinutes())
+  const hhmm = `${h === 0 ? '00' : h}${m}H`
+  return `${mmddyy} | ${hhmm}`
+}

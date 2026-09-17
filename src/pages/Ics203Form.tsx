@@ -12,6 +12,7 @@ interface Position {
   section: string
   person_name: string
   agency: string
+  parent_key: string | null
 }
 
 export default function Ics203Form() {
@@ -101,7 +102,7 @@ export default function Ics203Form() {
       setHas207(true)
       const { data: posData } = await supabase
         .from('ics_207_positions')
-        .select('position_key, position_title, abbreviation, section, person_name, agency')
+        .select('position_key, position_title, abbreviation, section, person_name, agency, parent_key')
         .eq('form_id', form207.id)
         .order('sort_order')
 

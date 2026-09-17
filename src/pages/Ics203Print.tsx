@@ -7,7 +7,7 @@ interface Position {
   section: string
   person_name: string
   agency: string
-  parent_key?: string
+  parent_key?: string | null
 }
 
 interface Ics203PrintProps {
@@ -162,22 +162,7 @@ export default function Ics203Print(props: Ics203PrintProps) {
   // ─── Pagination ────────────────────────────────────────────────
   const ROWS_PER_COL = 30
 
-  const paginate = (rows: Array<{ role: string; name: string; bold?: boolean; indent?: boolean }>): Array<Array<{ role: string; name: string; bold?: boolean; indent?: boolean }>> => {
-    const pages: Array<Array<{ role: string; name: string; bold?: boolean; indent?: boolean }>> = []
-    let current: Array<{ role: string; name: string; bold?: boolean; indent?: boolean }> = []
-    let count = 0
-    for (const row of rows) {
-      if (count >= ROWS_PER_COL && current.length > 0) {
-        pages.push(current)
-        current = []
-        count = 0
-      }
-      current.push(row)
-      count++
-    }
-    if (current.length > 0) pages.push(current)
-    return pages.length > 0 ? pages : [[]]
-  }
+
 
   const allLeftRows = [
     { type: 'title' as const, text: '3. INCIDENT COMMANDER AND COMMAND STAFF' },

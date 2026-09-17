@@ -91,7 +91,7 @@
 }
 
 .ics211-container {
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
   background: white;
   border-radius: 10px;
@@ -128,7 +128,7 @@
 
 .form-top-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-columns: 1.4fr 1fr 1fr;
   gap: 16px;
   margin-bottom: 24px;
 }
@@ -207,93 +207,184 @@
   color: #333;
 }
 
-.resources-table-wrapper {
-  overflow-x: auto;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+.cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.resources-table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 1200px;
-  font-size: 0.75rem;
+.resource-card {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  transition: box-shadow 0.2s;
 }
 
-.resources-table th {
-  background: #f0f0f0;
+.resource-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: #950606;
+  color: white;
+}
+
+.card-number {
   font-weight: 700;
-  text-align: center;
-  padding: 8px 4px;
-  border: 1px solid #ccc;
-  font-size: 0.7rem;
+  font-size: 0.85rem;
 }
 
-.resources-table td {
-  border: 1px solid #ccc;
-  padding: 2px;
-}
-
-.resources-table td input,
-.resources-table td select {
-  width: 100%;
-  padding: 6px 4px;
-  border: none;
+.remove-card-btn {
+  margin-left: auto;
+  padding: 4px 10px;
+  background: transparent;
+  color: rgba(255,255,255,0.8);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 4px;
   font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.remove-card-btn:hover {
+  background: white;
+  color: #950606;
+  border-color: white;
+}
+
+.card-body {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 16px;
+}
+
+.card-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.card-field.span-2 {
+  grid-column: span 2;
+}
+
+.card-field label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.card-field input,
+.card-field select,
+.card-field textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.85rem;
   font-family: inherit;
   box-sizing: border-box;
+  background: white;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-.resources-table td input:focus,
-.resources-table td select:focus {
-  outline: 2px solid #1a6b3c;
-  background: #f0fff4;
+.card-field textarea {
+  resize: none;
+  overflow: hidden;
+  line-height: 1.4;
+  min-height: 2em;
 }
 
-.resources-table .ri-cell {
-  padding: 4px;
+.card-field input:hover,
+.card-field select:hover,
+.card-field textarea:hover {
+  border-color: #9ca3af;
 }
 
-.resources-table .ri-cell label {
+.card-field input:focus,
+.card-field select:focus,
+.card-field textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+.ri-group {
+  display: flex;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.ri-group label {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  font-size: 0.7rem;
-  margin-right: 6px;
-}
-
-.resources-table .manifest-cell {
-  padding: 4px;
-  text-align: center;
-}
-
-.resources-table .manifest-cell label {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  font-size: 0.7rem;
-  margin: 0 4px;
-}
-
-.resources-table .actions-cell {
-  text-align: center;
-  padding: 4px;
-}
-
-.remove-row-btn {
-  background: #dc2626;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  width: 22px;
-  height: 22px;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: #374151;
   cursor: pointer;
-  font-size: 0.9rem;
-  line-height: 1;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
 }
 
-.remove-row-btn:hover {
-  background: #b91c1c;
+.resl-text {
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  color: #6b7280;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+}
+
+.manifest-label {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.manifest-label.yes {
+  background: rgba(255,255,255,0.2);
+  color: white;
+}
+
+.manifest-label.no {
+  background: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.8);
+}
+
+@media (max-width: 1024px) {
+  .card-body {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .card-field.span-2 {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 600px) {
+  .card-body {
+    grid-template-columns: 1fr;
+  }
+
+  .card-field.span-2 {
+    grid-column: span 1;
+  }
+
+  .card-header {
+    flex-wrap: wrap;
+  }
 }
 
 .add-row-buttons {
@@ -445,6 +536,11 @@
 @media (max-width: 1024px) {
   .form-top-row {
     grid-template-columns: 1fr;
+  }
+
+  .ics211-container {
+    max-width: 100%;
+    padding: 16px;
   }
 
   .form-footer-section {
