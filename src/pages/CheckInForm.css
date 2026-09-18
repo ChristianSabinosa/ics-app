@@ -15,7 +15,7 @@
 .checkin-header {
   background: #950606;
   color: white;
-  padding: 14px 24px;
+  padding: 12px 24px;
   display: flex;
   align-items: center;
 }
@@ -57,7 +57,7 @@
   background: #f0f0f0;
 }
 
-.checkin-topbar .topbar-info {
+.checkin-topbar .topbar-left {
   display: flex;
   align-items: center;
   gap: 10px;

@@ -104,14 +104,14 @@ export default function CheckInView() {
       </header>
 
       <div className="checkin-topbar no-print">
-        <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}`)}>&larr; Back</button>
-        <div className="topbar-info">
-          <span className="checkin-id-badge">{manifest.checkin_id}</span>
+        <div className="topbar-left">
+          <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}`)}>&larr; Back</button>
+          <span className="form-badge">Check-In Manifest</span>
           <span className={`status-badge ${manifest.status.toLowerCase()}`}>{manifest.status}</span>
         </div>
         <div className="topbar-actions">
-          <button className="topbar-btn edit" onClick={() => navigate(`/incident/${incidentId}/checkin?manifest=${manifest.id}`)}>Edit</button>
-          <button className="topbar-btn print" onClick={() => setShowPrint(true)}>Print</button>
+          <button className="action-btn edit" onClick={() => navigate(`/incident/${incidentId}/checkin?manifest=${manifest.id}`)}>Edit</button>
+          <button className="action-btn print" onClick={() => setShowPrint(true)}>Print</button>
         </div>
       </div>
 
