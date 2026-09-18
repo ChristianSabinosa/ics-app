@@ -130,6 +130,56 @@
 .incident-location-text { color: #777; font-size: 0.9rem; margin-bottom: 12px; }
 .incident-meta-row { display: flex; gap: 20px; font-size: 0.8rem; color: #999; flex-wrap: wrap; }
 
+.public-status-card {
+  display: flex;
+  gap: 12px;
+  background: white;
+  border: 2px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.public-status-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 120px;
+}
+
+.public-status-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.public-status-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.public-status-number {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #222;
+  line-height: 1.2;
+}
+
+.public-status-label {
+  font-size: 0.7rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
 .checkin-proceed-section { margin-bottom: 24px; }
 
 .checkin-proceed-btn {

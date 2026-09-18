@@ -47,6 +47,7 @@ export default function IncidentPage() {
   const [formStatuses, setFormStatuses] = useState<Record<string, string>>({})
   const [operationalPeriod, setOperationalPeriod] = useState('')
   const [incidentCommander, setIncidentCommander] = useState('')
+  const [publicStatus, setPublicStatus] = useState<{ description: string; totalCases: string }[]>([])
 
   useEffect(() => {
     if (id) fetchData()
@@ -202,6 +203,21 @@ export default function IncidentPage() {
       setIncidentCommander('')
     }
 
+    // Fetch public status from ICS 209
+    const { data: form209Data } = await supabase
+      .from('ics_209_forms')
+      .select('public_status')
+      .eq('incident_id', id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (form209Data?.public_status && Array.isArray(form209Data.public_status)) {
+      setPublicStatus(form209Data.public_status)
+    } else {
+      setPublicStatus([])
+    }
+
     setLoading(false)
   }
 
@@ -336,6 +352,33 @@ export default function IncidentPage() {
                 </span>
               </div>
             </div>
+
+            {publicStatus.length > 0 && (() => {
+              const getVal = (desc: string) => {
+                const row = publicStatus.find(r => r.description?.toLowerCase() === desc.toLowerCase())
+                return row?.totalCases || '0'
+              }
+              const items = [
+                { label: 'Dead', value: getVal('Dead'), icon: 'Ms', color: '#991b1b', bg: '#fee2e2' },
+                { label: 'Injured', value: getVal('Injured'), icon: 'M+', color: '#92400e', bg: '#fef3c7' },
+                { label: 'Missing', value: getVal('Missing'), icon: 'Mi', color: '#1e40af', bg: '#dbeafe' },
+                { label: 'Needs Treatment', value: getVal('Needs treatment/immunization'), icon: '+', color: '#065f46', bg: '#d1fae5' },
+                { label: 'Needs Evacuation', value: getVal('Needs evacuation'), icon: 'V', color: '#7c2d12', bg: '#ffedd5' },
+              ]
+              return (
+                <div className="public-status-card">
+                  {items.map((item, idx) => (
+                    <div key={idx} className="public-status-item">
+                      <div className="public-status-icon" style={{ background: item.bg, color: item.color }}>{item.icon}</div>
+                      <div className="public-status-info">
+                        <span className="public-status-number">{item.value}</span>
+                        <span className="public-status-label">{item.label}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            })()}
 
             {isIMTOrTactical && (() => {
               const myManifest = manifests.find((m) => m.user_id === user?.id)
