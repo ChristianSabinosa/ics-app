@@ -107,7 +107,27 @@ const SUPPORT_POSITIONS: Record<string, { title: string; abbr: string; type: 'de
 }
 
 type OscSubType = 'branch' | 'division' | 'group'
-type GroupChildType = 'tf' | 'st' | 'sr'
+type HierarchyChildType = 'branch' | 'division' | 'group' | 'tf' | 'st' | 'sr'
+
+const OSC_HIERARCHY_CHILDREN: Record<string, HierarchyChildType[]> = {
+  branch: ['division', 'group'],
+  division: ['group', 'tf', 'st', 'sr'],
+  group: ['tf', 'st', 'sr'],
+}
+
+const HIERARCHY_CHILD_LABELS: Record<HierarchyChildType, string> = {
+  branch: 'Branch', division: 'Division', group: 'Group',
+  tf: 'Task Force', st: 'Strike Team', sr: 'Single Resource',
+}
+
+const HIERARCHY_CHILD_ABBR: Record<HierarchyChildType, string> = {
+  branch: 'BR', division: 'DIV', group: 'GRP', tf: 'TF', st: 'ST', sr: 'SR',
+}
+
+const SECTION_TO_CHILD_TYPE: Record<string, HierarchyChildType> = {
+  'OSC Branch': 'branch', 'OSC Division': 'division', 'OSC Group': 'group',
+  'OSC Task Force': 'tf', 'OSC Strike Team': 'st', 'OSC Single Resource': 'sr',
+}
 
 const OSC_SUB_TYPE_LABELS: Record<OscSubType, string> = {
   branch: 'Branch',
@@ -148,7 +168,6 @@ export default function Ics207Form() {
   const [addingTo, setAddingTo] = useState<string | null>(null)
   const [oscSubType, setOscSubType] = useState<OscSubType>('branch')
   const [oscSubName, setOscSubName] = useState('')
-  const [groupChildType, setGroupChildType] = useState<GroupChildType>('tf')
 
   const [supportCount, setSupportCount] = useState<Record<string, number>>({})
   const [branchCount, setBranchCount] = useState(0)
@@ -175,6 +194,11 @@ export default function Ics207Form() {
   const [unitSubAbbr, setUnitSubAbbr] = useState('')
   const [techSpecTitle, setTechSpecTitle] = useState('')
   const [agencyRepName, setAgencyRepName] = useState('')
+  const [nestingPosition, setNestingPosition] = useState<string | null>(null)
+  const [addChildTo, setAddChildTo] = useState<string | null>(null)
+  const [childType, setChildType] = useState<HierarchyChildType>('division')
+  const [addChildName, setAddChildName] = useState('')
+  const [addChildAbbr, setAddChildAbbr] = useState('')
 
   const restoreCounters = (loadedPositions: Position[]) => {
     const newSupportCount: Record<string, number> = {}
@@ -380,6 +404,81 @@ export default function Ics207Form() {
 
   const removeSubPosition = (positionKey: string) => {
     setPositions((prev) => prev.filter((p) => p.position_key !== positionKey))
+  }
+
+  const getChildTypesForSection = (section: string): HierarchyChildType[] => {
+    const childType = SECTION_TO_CHILD_TYPE[section]
+    if (!childType) return []
+    return OSC_HIERARCHY_CHILDREN[childType] || []
+  }
+
+  const canHaveChildren = (pos: Position): boolean => {
+    return getChildTypesForSection(pos.section).length > 0
+  }
+
+  const getValidParents = (pos: Position): Position[] => {
+    const childType = SECTION_TO_CHILD_TYPE[pos.section]
+    if (!childType) return []
+    const validParentSections = Object.entries(OSC_HIERARCHY_CHILDREN)
+      .filter(([, children]) => children.includes(childType))
+      .map(([parent]) => {
+        const parentChildType = parent as HierarchyChildType
+        return Object.entries(SECTION_TO_CHILD_TYPE)
+          .filter(([, ct]) => ct === parentChildType)
+          .map(([sec]) => sec)
+      })
+      .flat()
+    return positions.filter(p =>
+      validParentSections.includes(p.section) && p.position_key !== pos.position_key
+    )
+  }
+
+  const getChildrenOf = (parentKey: string): Position[] => {
+    return positions.filter(p => p.parent_key === parentKey)
+  }
+
+  const getTopLevelOscPositions = (): Position[] => {
+    const oscSections = ['OSC Branch', 'OSC Division', 'OSC Group', 'OSC Task Force', 'OSC Strike Team', 'OSC Single Resource']
+    return positions.filter(p =>
+      oscSections.includes(p.section) && (!p.parent_key || p.parent_key === '')
+    )
+  }
+
+  const setParentKeyForPosition = (childKey: string, parentKey: string) => {
+    setPositions(prev => prev.map(p =>
+      p.position_key === childKey ? { ...p, parent_key: parentKey } : p
+    ))
+    setNestingPosition(null)
+  }
+
+  const addChildUnder = (parentPos: Position, type: HierarchyChildType, name: string, abbr: string) => {
+    const counters: Record<HierarchyChildType, [number, React.Dispatch<React.SetStateAction<number>>]> = {
+      branch: [branchCount, setBranchCount],
+      division: [divisionCount, setDivisionCount],
+      group: [groupCount, setGroupCount],
+      tf: [tfCount, setTfCount],
+      st: [stCount, setStCount],
+      sr: [srCount, setSrCount],
+    }
+    const [count, setCount] = counters[type]
+    const next = count + 1
+    const sectionMap: Record<HierarchyChildType, string> = {
+      branch: 'OSC Branch', division: 'OSC Division', group: 'OSC Group',
+      tf: 'OSC Task Force', st: 'OSC Strike Team', sr: 'OSC Single Resource',
+    }
+    const label = HIERARCHY_CHILD_LABELS[type]
+    const newChild: Position = {
+      position_key: `${type}${next}`,
+      position_title: name || `${label} ${next}`,
+      abbreviation: abbr || `${HIERARCHY_CHILD_ABBR[type]}${next}`,
+      section: sectionMap[type],
+      person_name: '',
+      agency: '',
+      parent_key: parentPos.position_key,
+    }
+    setPositions(prev => [...prev, newChild])
+    setCount(next)
+    setAddChildTo(null)
   }
 
   const getAvailableSubs = (parentKey: string) => {
@@ -642,12 +741,6 @@ export default function Ics207Form() {
   const commandStaff = positions.filter((p) => p.section === 'Command Staff')
   const oscPosition = positions.find((p) => p.position_key === 'osc')
   const oscSub = positions.filter((p) => p.section === 'OSC Sub')
-  const oscBranches = positions.filter((p) => p.section === 'OSC Branch')
-  const oscDivisions = positions.filter((p) => p.section === 'OSC Division')
-  const oscGroups = positions.filter((p) => p.section === 'OSC Group')
-  const oscTF = positions.filter((p) => p.section === 'OSC Task Force')
-  const oscST = positions.filter((p) => p.section === 'OSC Strike Team')
-  const oscSR = positions.filter((p) => p.section === 'OSC Single Resource')
   const pscPosition = positions.find((p) => p.position_key === 'psc')
   const pscSub = positions.filter((p) => p.section === 'PSC Sub')
   const pscTechSpec = positions.filter((p) => p.section === 'PSC Tech Specialist')
@@ -677,6 +770,11 @@ export default function Ics207Form() {
 
   const renderPositionCard = (pos: Position, accentClass: string, isSub = false) => {
     const isSelected = selectedPosition === pos.position_key
+    const validParents = formType === 'expanded' ? getValidParents(pos) : []
+    const childTypes = formType === 'expanded' ? getChildTypesForSection(pos.section) : []
+    const canNest = validParents.length > 0
+    const showHierarchyControls = formType === 'expanded' && isSub
+
     return (
       <div
         key={pos.position_key}
@@ -702,6 +800,55 @@ export default function Ics207Form() {
           </div>
         ) : (
           <div className="card-empty">Click a person from the pool to assign</div>
+        )}
+        {showHierarchyControls && (
+          <div className="card-hierarchy-controls">
+            {canNest && (
+              <div className="nest-dropdown-wrapper">
+                {nestingPosition === pos.position_key ? (
+                  <div className="nest-dropdown" onClick={(e) => e.stopPropagation()}>
+                    <div className="nest-dropdown-label">Nest under:</div>
+                    <button className="nest-option" onClick={() => setParentKeyForPosition(pos.position_key, '')}>
+                      Top Level
+                    </button>
+                    {validParents.map(parent => (
+                      <button key={parent.position_key} className="nest-option" onClick={() => setParentKeyForPosition(pos.position_key, parent.position_key)}>
+                        {parent.abbreviation} - {parent.position_title}
+                      </button>
+                    ))}
+                    <button className="nest-cancel" onClick={() => setNestingPosition(null)}>Cancel</button>
+                  </div>
+                ) : (
+                  <button className="nest-under-btn" onClick={(e) => { e.stopPropagation(); setNestingPosition(pos.position_key); setSelectedPosition(null) }}>
+                    Nest Under
+                  </button>
+                )}
+              </div>
+            )}
+            {childTypes.length > 0 && (
+              <div className="add-child-wrapper">
+                {addChildTo === pos.position_key ? (
+                  <div className="add-child-picker" onClick={(e) => e.stopPropagation()}>
+                    <select value={childType} onChange={(e) => setChildType(e.target.value as HierarchyChildType)}>
+                      {childTypes.map(ct => (
+                        <option key={ct} value={ct}>{HIERARCHY_CHILD_LABELS[ct]}</option>
+                      ))}
+                    </select>
+                    <input type="text" placeholder="Name" value={addChildName} onChange={(e) => setAddChildName(e.target.value)} />
+                    <input type="text" placeholder="Abbr" value={addChildAbbr} onChange={(e) => setAddChildAbbr(e.target.value)} />
+                    <div className="picker-actions">
+                      <button className="picker-confirm" onClick={() => { addChildUnder(pos, childType, addChildName, addChildAbbr); setAddChildName(''); setAddChildAbbr('') }}>Add</button>
+                      <button className="picker-cancel" onClick={() => { setAddChildTo(null); setAddChildName(''); setAddChildAbbr('') }}>Cancel</button>
+                    </div>
+                  </div>
+                ) : (
+                  <button className="add-child-btn" onClick={(e) => { e.stopPropagation(); setAddChildTo(pos.position_key); setNestingPosition(null) }}>
+                    + Add Child
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         )}
       </div>
     )
@@ -942,95 +1089,45 @@ export default function Ics207Form() {
                   {oscSub.map((pos) => renderPositionCard(pos, 'card-accent-green-sub', true))}
                 </div>
 
-                {formType === 'expanded' && oscBranches.length > 0 && (
-                  <div className="osc-hierarchy-section">
-                    <div className="hierarchy-label">Branches</div>
-                    {oscBranches.map(branch => (
-                      <div key={branch.position_key} className="hierarchy-group">
-                        {renderPositionCard(branch, 'card-accent-green-sub', true)}
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {formType === 'expanded' && oscDivisions.length > 0 && (
-                  <div className="osc-hierarchy-section">
-                    <div className="hierarchy-label">Divisions</div>
-                    <div className="cards-row cards-sub">
-                      {oscDivisions.map(pos => renderPositionCard(pos, 'card-accent-green-sub', true))}
-                    </div>
-                  </div>
-                )}
-
-                {formType === 'expanded' && oscGroups.length > 0 && (
-                  <div className="osc-hierarchy-section">
-                    <div className="hierarchy-label">Groups</div>
-                    {oscGroups.map(group => {
-                      const groupChildren = positions.filter(p => p.parent_key === group.position_key)
-                      return (
-                        <div key={group.position_key} className="hierarchy-group">
-                          {renderPositionCard(group, 'card-accent-green-sub', true)}
-                          {groupChildren.length > 0 && (
-                            <div className="cards-row cards-sub hierarchy-children">
-                              {groupChildren.map(child => renderPositionCard(child, 'card-accent-green-sub', true))}
-                            </div>
-                          )}
-                          <div className="hierarchy-add-child">
-                            {addingTo === `group-child-${group.position_key}` ? (
-                              <div className="sub-position-picker inline">
-                                <select value={groupChildType} onChange={(e) => setGroupChildType(e.target.value as GroupChildType)}>
-                                  <option value="tf">Task Force</option>
-                                  <option value="st">Strike Team</option>
-                                  <option value="sr">Single Resource</option>
-                                </select>
-                                <input type="text" placeholder="Name" value={tfName} onChange={(e) => setTfName(e.target.value)} />
-                                <input type="text" placeholder="Abbr" value={tfAbbr} onChange={(e) => setTfAbbr(e.target.value)} />
-                                <div className="picker-actions">
-                                  <button className="picker-confirm" onClick={() => {
-                                    if (groupChildType === 'tf') { const n = tfCount+1; setPositions(prev=>[...prev,{position_key:`tf${n}`,position_title:tfName||`Task Force ${n}`,abbreviation:tfAbbr||`TF${n}`,section:'OSC Task Force',person_name:'',agency:'',parent_key:group.position_key}]); setTfCount(n) }
-                                    else if (groupChildType === 'st') { const n = stCount+1; setPositions(prev=>[...prev,{position_key:`st${n}`,position_title:stName||`Strike Team ${n}`,abbreviation:stAbbr||`ST${n}`,section:'OSC Strike Team',person_name:'',agency:'',parent_key:group.position_key}]); setStCount(n) }
-                                    else { const n = srCount+1; if(srName.trim()){setPositions(prev=>[...prev,{position_key:`sr${n}`,position_title:srName,abbreviation:srAbbr||`SR${n}`,section:'OSC Single Resource',person_name:'',agency:'',parent_key:group.position_key}]); setSrCount(n)} }
-                                    setAddingTo(null); setTfName(''); setTfAbbr(''); setSrName(''); setSrAbbr('')
-                                  }}>Add</button>
-                                  <button className="picker-cancel" onClick={() => { setAddingTo(null); setTfName(''); setTfAbbr(''); setSrName(''); setSrAbbr('') }}>Cancel</button>
-                                </div>
-                              </div>
-                            ) : (
-                              <button className="add-sub-fn-btn" onClick={() => setAddingTo(`group-child-${group.position_key}`)}>+ Add TF/ST/SR</button>
-                            )}
+                {formType === 'expanded' && (() => {
+                  const renderHierarchyNode = (pos: Position): React.ReactNode => {
+                    const children = getChildrenOf(pos.position_key)
+                    const hasDescendants = children.length > 0 || canHaveChildren(pos)
+                    return (
+                      <div key={pos.position_key} className={`hierarchy-node ${hasDescendants ? 'has-children' : ''}`}>
+                        {renderPositionCard(pos, 'card-accent-green-sub', true)}
+                        {children.length > 0 && (
+                          <div className="hierarchy-children">
+                            {children.map(child => renderHierarchyNode(child))}
                           </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
+                        )}
+                      </div>
+                    )
+                  }
 
-                {formType === 'expanded' && oscTF.filter(p => !p.parent_key).length > 0 && (
-                  <div className="osc-hierarchy-section">
-                    <div className="hierarchy-label">Task Forces (unassigned)</div>
-                    <div className="cards-row cards-sub">
-                      {oscTF.filter(p => !p.parent_key).map(pos => renderPositionCard(pos, 'card-accent-green-sub', true))}
-                    </div>
-                  </div>
-                )}
+                  const topLevelPositions = getTopLevelOscPositions()
+                  const unassignedChildTypes = ['tf', 'st', 'sr'] as const
 
-                {formType === 'expanded' && oscST.filter(p => !p.parent_key).length > 0 && (
-                  <div className="osc-hierarchy-section">
-                    <div className="hierarchy-label">Strike Teams (unassigned)</div>
-                    <div className="cards-row cards-sub">
-                      {oscST.filter(p => !p.parent_key).map(pos => renderPositionCard(pos, 'card-accent-green-sub', true))}
-                    </div>
-                  </div>
-                )}
-
-                {formType === 'expanded' && oscSR.filter(p => !p.parent_key).length > 0 && (
-                  <div className="osc-hierarchy-section">
-                    <div className="hierarchy-label">Single Resources (unassigned)</div>
-                    <div className="cards-row cards-sub">
-                      {oscSR.filter(p => !p.parent_key).map(pos => renderPositionCard(pos, 'card-accent-green-sub', true))}
-                    </div>
-                  </div>
-                )}
+                  return (
+                    <>
+                      {topLevelPositions.map(pos => renderHierarchyNode(pos))}
+                      {unassignedChildTypes.map(ct => {
+                        const sectionMap = { tf: 'OSC Task Force', st: 'OSC Strike Team', sr: 'OSC Single Resource' } as const
+                        const labelMap = { tf: 'Task Forces', st: 'Strike Teams', sr: 'Single Resources' } as const
+                        const unassigned = positions.filter(p => p.section === sectionMap[ct] && (!p.parent_key || p.parent_key === ''))
+                        if (unassigned.length === 0) return null
+                        return (
+                          <div key={ct} className="osc-hierarchy-section">
+                            <div className="hierarchy-label">{labelMap[ct]} (unassigned)</div>
+                            <div className="cards-row cards-sub">
+                              {unassigned.map(pos => renderPositionCard(pos, 'card-accent-green-sub', true))}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </>
+                  )
+                })()}
 
                 {positions.filter(p => p.section === 'osc Support').length > 0 && (
                   <div className="cards-row cards-sub">

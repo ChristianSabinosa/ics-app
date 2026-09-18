@@ -988,3 +988,148 @@
   border-radius: 6px;
   font-size: 0.7rem;
 }
+
+/* --- Hierarchy Tree (Expanded 207) --- */
+.hierarchy-node {
+  border: 1px dashed #d1d5db;
+  border-radius: 8px;
+  padding: 8px;
+  margin-bottom: 8px;
+  background: #f0fdf4;
+}
+.hierarchy-node > .hierarchy-children {
+  margin-top: 6px;
+  padding-left: 16px;
+}
+.hierarchy-node > .hierarchy-children .hierarchy-node {
+  background: #f8fdf8;
+}
+.hierarchy-node > .hierarchy-children .hierarchy-node .hierarchy-children {
+  background: #fbfcfb;
+}
+.hierarchy-node > .position-card {
+  border-left-width: 3px;
+}
+
+/* Card Hierarchy Controls */
+.card-hierarchy-controls {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #e5e7eb;
+}
+.nest-dropdown-wrapper,
+.add-child-wrapper {
+  position: relative;
+}
+.nest-under-btn,
+.add-child-btn {
+  background: #f0f9ff;
+  color: #0369a1;
+  border: 1px dashed #7dd3fc;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 0.6rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+.nest-under-btn:hover,
+.add-child-btn:hover {
+  background: #e0f2fe;
+  border-color: #38bdf8;
+}
+.add-child-btn {
+  background: #f3e8ff;
+  color: #7c3aed;
+  border-color: #c4b5fd;
+}
+.add-child-btn:hover {
+  background: #ede9fe;
+  border-color: #a78bfa;
+}
+
+/* Nest Under Dropdown */
+.nest-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 100;
+  background: white;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 6px;
+  min-width: 220px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+.nest-dropdown-label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #64748b;
+  padding: 2px 6px 4px;
+}
+.nest-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 5px 8px;
+  font-size: 0.7rem;
+  font-family: inherit;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #334155;
+}
+.nest-option:hover {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+.nest-cancel {
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 4px 8px;
+  font-size: 0.65rem;
+  font-family: inherit;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  margin-top: 2px;
+}
+.nest-cancel:hover { color: #64748b; }
+
+/* Add Child Picker */
+.add-child-picker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  background: white;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+.add-child-picker select {
+  padding: 4px 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-family: inherit;
+}
+.add-child-picker input {
+  padding: 4px 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-family: inherit;
+  width: 80px;
+}
+.add-child-picker input:focus,
+.add-child-picker select:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
