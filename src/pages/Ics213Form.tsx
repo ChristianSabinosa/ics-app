@@ -7,8 +7,7 @@ import './Ics213Form.css'
 
 interface PersonnelSuggestion {
   name: string
-  role: string
-  agency: string
+  source: 'participant' | 'personnel'
 }
 
 export default function Ics213Form() {
@@ -88,6 +87,23 @@ export default function Ics213Form() {
       .single()
     if (incident) setIncidentName(incident.name)
 
+    const suggestionsMap = new Map<string, PersonnelSuggestion>()
+
+    const { data: participants } = await supabase
+      .from('incident_participants')
+      .select('user_name')
+      .eq('incident_id', incidentId)
+      .eq('status', 'Active')
+
+    if (participants) {
+      for (const p of participants) {
+        const name = p.user_name?.trim()
+        if (name && !suggestionsMap.has(name.toLowerCase())) {
+          suggestionsMap.set(name.toLowerCase(), { name, source: 'participant' })
+        }
+      }
+    }
+
     const { data: manifestsData } = await supabase
       .from('checkin_manifests')
       .select('id')
@@ -97,18 +113,20 @@ export default function Ics213Form() {
       const manifestIds = manifestsData.map(m => m.id)
       const { data: personnelData } = await supabase
         .from('checkin_personnel')
-        .select('name, role, capabilities')
+        .select('name')
         .in('manifest_id', manifestIds)
 
       if (personnelData) {
-        const suggestions: PersonnelSuggestion[] = personnelData.map(p => ({
-          name: p.name,
-          role: p.role,
-          agency: p.capabilities || '',
-        }))
-        setToSuggestions(suggestions)
+        for (const p of personnelData) {
+          const name = p.name?.trim()
+          if (name && !suggestionsMap.has(name.toLowerCase())) {
+            suggestionsMap.set(name.toLowerCase(), { name, source: 'personnel' })
+          }
+        }
       }
     }
+
+    setToSuggestions(Array.from(suggestionsMap.values()))
 
     const formParam = searchParams.get('form')
     let formToLoad = null
@@ -212,7 +230,6 @@ export default function Ics213Form() {
 
   const selectToSuggestion = (suggestion: PersonnelSuggestion) => {
     setToName(suggestion.name)
-    setToPosition(suggestion.role)
     setShowToSuggestions(false)
   }
 
@@ -299,7 +316,7 @@ export default function Ics213Form() {
                 }}
                 onFocus={() => { if (toName.length > 0 && toSuggestions.length > 0) setShowToSuggestions(true) }}
                 disabled={isReadonly}
-                placeholder="Start typing to search checked-in personnel..."
+                placeholder="Type to search users or enter any name..."
               />
               {showToSuggestions && toSuggestions.length > 0 && (
                 <div className="suggestions-list">
@@ -309,7 +326,6 @@ export default function Ics213Form() {
                     .map((s, idx) => (
                       <div key={idx} className="suggestion-item" onClick={() => selectToSuggestion(s)}>
                         <div className="suggestion-name">{s.name}</div>
-                        <div className="suggestion-detail">{s.role}{s.agency ? ` - ${s.agency}` : ''}</div>
                       </div>
                     ))
                   }
