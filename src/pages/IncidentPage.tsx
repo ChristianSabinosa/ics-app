@@ -359,11 +359,11 @@ export default function IncidentPage() {
                 return row?.totalCases || '0'
               }
               const items = [
-                { label: 'Dead', value: getVal('Dead'), icon: 'Ms', color: '#991b1b', bg: '#fee2e2' },
-                { label: 'Injured', value: getVal('Injured'), icon: 'M+', color: '#92400e', bg: '#fef3c7' },
-                { label: 'Missing', value: getVal('Missing'), icon: 'Mi', color: '#1e40af', bg: '#dbeafe' },
-                { label: 'Needs Treatment', value: getVal('Needs treatment/immunization'), icon: '+', color: '#065f46', bg: '#d1fae5' },
-                { label: 'Needs Evacuation', value: getVal('Needs evacuation'), icon: 'V', color: '#7c2d12', bg: '#ffedd5' },
+                { label: 'Dead', value: getVal('Dead'), icon: '🪦', color: '#991b1b', bg: '#fee2e2' },
+                { label: 'Injured', value: getVal('Injured'), icon: '🩹', color: '#92400e', bg: '#fef3c7' },
+                { label: 'Missing', value: getVal('Missing'), icon: '?', color: '#1e40af', bg: '#dbeafe' },
+                { label: 'Needs Treatment', value: getVal('Needs treatment/immunization'), icon: '🩺', color: '#065f46', bg: '#d1fae5' },
+                { label: 'Needs Evacuation', value: getVal('Needs evacuation'), icon: '⛺', color: '#7c2d12', bg: '#ffedd5' },
               ]
               return (
                 <div className="public-status-card">
