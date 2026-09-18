@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -17,11 +17,7 @@ export default function JoinIncident() {
   const [joining, setJoining] = useState<string | null>(null)
   const [userParticipants, setUserParticipants] = useState<Map<string, IncidentParticipant>>(new Map())
 
-  useEffect(() => {
-    fetchIncidents()
-  }, [])
-
-  const fetchIncidents = async () => {
+  const fetchIncidents = useCallback(async () => {
     setLoading(true)
     const { data, error } = await supabase
       .from('incidents')
@@ -55,7 +51,11 @@ export default function JoinIncident() {
     }
 
     setLoading(false)
-  }
+  }, [user])
+
+  useEffect(() => {
+    fetchIncidents()
+  }, [fetchIncidents])
 
   const handleJoinByCode = () => {
     const code = searchCode.trim().toUpperCase()

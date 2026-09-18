@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -55,19 +55,7 @@ export default function Ics206Form() {
   const [isEditing, setIsEditing] = useState(false)
   const isReadonly = status === 'Submitted' && !isEditing
 
-  useEffect(() => {
-    if (!user) return
-    const now = new Date()
-    const pad = (n: number) => String(n).padStart(2, '0')
-    setPreparedBy(user.user_metadata?.first_name
-      ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`.trim()
-      : user.email || '')
-    setDatePrepared(`${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`)
-    setTimePrepared(`${pad(now.getHours())}:${pad(now.getMinutes())}`)
-    loadForm()
-  }, [incidentId, user, searchParams])
-
-  const loadForm = async () => {
+  const loadForm = useCallback(async () => {
     if (!incidentId) return
     setLoading(true)
 
@@ -135,7 +123,19 @@ export default function Ics206Form() {
     }
 
     setLoading(false)
-  }
+  }, [incidentId, searchParams])
+
+  useEffect(() => {
+    if (!user) return
+    const now = new Date()
+    const pad = (n: number) => String(n).padStart(2, '0')
+    setPreparedBy(user.user_metadata?.first_name
+      ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`.trim()
+      : user.email || '')
+    setDatePrepared(`${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`)
+    setTimePrepared(`${pad(now.getHours())}:${pad(now.getMinutes())}`)
+    loadForm()
+  }, [incidentId, user, searchParams, loadForm])
 
   const updateAidStation = (index: number, field: string, value: string | boolean) => {
     const updated = [...aidStations]

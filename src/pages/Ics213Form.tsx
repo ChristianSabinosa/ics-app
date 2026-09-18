@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -54,29 +54,7 @@ export default function Ics213Form() {
   const [showPrint, setShowPrint] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
 
-  useEffect(() => {
-    if (!user) return
-    const now = new Date()
-    const firstName = user.user_metadata?.first_name || ''
-    const lastName = user.user_metadata?.last_name || ''
-    const fullName = `${firstName} ${lastName}`.trim()
-    setFromName(fullName || user.email || '')
-    setMsgDate(now.toISOString().slice(0, 10))
-    setMsgTime(now.toTimeString().slice(0, 5))
-    loadForm()
-  }, [incidentId, user, searchParams])
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (toRef.current && !toRef.current.contains(e.target as Node)) {
-        setShowToSuggestions(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
-  const loadForm = async () => {
+  const loadForm = useCallback(async () => {
     if (!incidentId) return
     setLoading(true)
 
@@ -173,7 +151,29 @@ export default function Ics213Form() {
     }
 
     setLoading(false)
-  }
+  }, [incidentId, searchParams])
+
+  useEffect(() => {
+    if (!user) return
+    const now = new Date()
+    const firstName = user.user_metadata?.first_name || ''
+    const lastName = user.user_metadata?.last_name || ''
+    const fullName = `${firstName} ${lastName}`.trim()
+    setFromName(fullName || user.email || '')
+    setMsgDate(now.toISOString().slice(0, 10))
+    setMsgTime(now.toTimeString().slice(0, 5))
+    loadForm()
+  }, [incidentId, user, searchParams, loadForm])
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (toRef.current && !toRef.current.contains(e.target as Node)) {
+        setShowToSuggestions(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const saveForm = async (formStatus: 'Draft' | 'Submitted') => {
     if (!incidentId || !user) return

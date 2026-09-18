@@ -48,13 +48,14 @@
   padding: 12mm;
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 .ics208-form {
   width: 100%;
   border-collapse: collapse;
   border: 2px solid #000;
-  font-family: 'Times New Roman', Times, serif;
+  font-family: Arial, Helvetica, sans-serif;
   font-size: 10pt;
   table-layout: fixed;
 }
@@ -177,21 +178,18 @@
 }
 
 @media print {
-  @page {
-    size: A4 portrait;
-    margin: 0;
-  }
   .ics208-print-controls { display: none !important; }
   .ics208-print-overlay {
     background: none;
     position: static;
   }
   .ics208-print-page {
+    width: 100%;
     margin: 0;
-    padding: 12mm;
+    padding: 0;
     box-shadow: none;
-    width: 210mm;
-    min-height: 297mm;
+    min-height: auto;
     page-break-after: always;
   }
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 }

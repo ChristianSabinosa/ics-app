@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -54,18 +54,25 @@ export default function Ics202Form() {
   const [showPrint, setShowPrint] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
 
-  useEffect(() => {
-    if (!user) return
-    const now = new Date()
-    setPreparedByName(user.user_metadata?.first_name
-      ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`.trim()
-      : user.email || '')
-    setPreparedDate(now.toISOString().slice(0, 10))
-    setPreparedTime(now.toTimeString().slice(0, 5))
-    loadForm()
-  }, [incidentId, user, searchParams])
+  const autoCheckAttachments = useCallback(async (incId: string) => {
+    const checks = [
+      { table: 'ics_203_forms', setter: setAttach203 },
+      { table: 'ics_204_forms', setter: setAttach204 },
+      { table: 'ics_205_forms', setter: setAttach205 },
+      { table: 'ics_206_forms', setter: setAttach206 },
+      { table: 'ics_209_forms', setter: setAttach209 },
+    ]
+    for (const check of checks) {
+      const { data } = await supabase
+        .from(check.table)
+        .select('id')
+        .eq('incident_id', incId)
+        .limit(1)
+      if (data && data.length > 0) check.setter(true)
+    }
+  }, [])
 
-  const loadForm = async () => {
+  const loadForm = useCallback(async () => {
     if (!incidentId) return
     setLoading(true)
 
@@ -133,25 +140,18 @@ export default function Ics202Form() {
     await autoCheckAttachments(incidentId)
 
     setLoading(false)
-  }
+  }, [incidentId, searchParams, autoCheckAttachments])
 
-  const autoCheckAttachments = async (incId: string) => {
-    const checks = [
-      { table: 'ics_203_forms', setter: setAttach203 },
-      { table: 'ics_204_forms', setter: setAttach204 },
-      { table: 'ics_205_forms', setter: setAttach205 },
-      { table: 'ics_206_forms', setter: setAttach206 },
-      { table: 'ics_209_forms', setter: setAttach209 },
-    ]
-    for (const check of checks) {
-      const { data } = await supabase
-        .from(check.table)
-        .select('id')
-        .eq('incident_id', incId)
-        .limit(1)
-      if (data && data.length > 0) check.setter(true)
-    }
-  }
+  useEffect(() => {
+    if (!user) return
+    const now = new Date()
+    setPreparedByName(user.user_metadata?.first_name
+      ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`.trim()
+      : user.email || '')
+    setPreparedDate(now.toISOString().slice(0, 10))
+    setPreparedTime(now.toTimeString().slice(0, 5))
+    loadForm()
+  }, [incidentId, user, searchParams, loadForm])
 
   const saveForm = async (formStatus: 'Draft' | 'Submitted') => {
     if (!incidentId || !user) return

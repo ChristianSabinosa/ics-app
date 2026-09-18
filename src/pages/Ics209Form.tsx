@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -165,18 +165,7 @@ export default function Ics209Form() {
   const [showPrint, setShowPrint] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
 
-  useEffect(() => {
-    if (!user) return
-    const now = new Date()
-    setPreparedByName(user.user_metadata?.first_name
-      ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`.trim()
-      : user.email || '')
-    setPreparedDate(now.toISOString().slice(0, 10))
-    setPreparedTime(now.toTimeString().slice(0, 5))
-    loadForm()
-  }, [incidentId, user, searchParams])
-
-  const loadForm = async () => {
+  const loadForm = useCallback(async () => {
     if (!incidentId) return
     setLoading(true)
 
@@ -312,7 +301,18 @@ export default function Ics209Form() {
     }
 
     setLoading(false)
-  }
+  }, [incidentId, searchParams])
+
+  useEffect(() => {
+    if (!user) return
+    const now = new Date()
+    setPreparedByName(user.user_metadata?.first_name
+      ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`.trim()
+      : user.email || '')
+    setPreparedDate(now.toISOString().slice(0, 10))
+    setPreparedTime(now.toTimeString().slice(0, 5))
+    loadForm()
+  }, [incidentId, user, searchParams, loadForm])
 
   const saveForm = async (formStatus: 'Draft' | 'Submitted') => {
     if (!incidentId || !user) return

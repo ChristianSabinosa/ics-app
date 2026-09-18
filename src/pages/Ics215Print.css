@@ -1,4 +1,4 @@
-.ics205-print-overlay {
+.ics215-print-overlay {
   position: fixed;
   inset: 0;
   background: #e5e5e5;
@@ -6,7 +6,7 @@
   overflow-y: auto;
 }
 
-.ics205-print-controls {
+.ics215-print-controls {
   position: fixed;
   top: 16px;
   right: 16px;
@@ -15,7 +15,7 @@
   gap: 8px;
 }
 
-.ics205-print-controls button {
+.ics215-print-controls button {
   padding: 10px 20px;
   border: none;
   border-radius: 6px;
@@ -25,18 +25,18 @@
   font-family: inherit;
 }
 
-.ics205-print-controls button:first-child {
+.ics215-print-controls button:first-child {
   background: #950606;
   color: white;
 }
 
-.ics205-print-controls button:last-child {
+.ics215-print-controls button:last-child {
   background: white;
   color: #333;
   border: 1px solid #ccc;
 }
 
-.ics205-print-page {
+.ics215-print-page {
   width: 297mm;
   min-height: 210mm;
   margin: 16px auto;
@@ -47,78 +47,78 @@
   font-family: Arial, Helvetica, sans-serif;
 }
 
-.ics205-print-page .form-frame {
+.ics215-print-page .form-frame {
   width: 100%;
   border: 2px solid #000;
   border-collapse: collapse;
 }
 
-.ics205-print-page .form-frame td {
+.ics215-print-page .form-frame td {
   padding: 0;
 }
 
-.ics205-print-page .form-header {
+.ics215-print-page .form-header {
   width: 100%;
   border-bottom: 2px solid #000;
   border-collapse: collapse;
 }
 
-.ics205-print-page .form-frame td.logo-cell {
+.ics215-print-page .form-frame td.logo-cell {
   width: 80px;
   padding: 8px 10px;
   vertical-align: middle;
 }
 
-.ics205-print-page .ndrrmc-logo {
+.ics215-print-page .ndrrmc-logo {
   width: 65px;
   height: auto;
 }
 
-.ics205-print-page .form-frame td.title-cell {
+.ics215-print-page .form-frame td.title-cell {
   text-align: center;
   padding: 10px;
 }
 
-.ics205-print-page .title-cell h1 {
+.ics215-print-page .title-cell h1 {
   font-size: 1.4rem;
   letter-spacing: 3px;
   margin: 0;
   color: #000;
 }
 
-.ics205-print-page .title-cell h2 {
+.ics215-print-page .title-cell h2 {
   font-size: 1rem;
   margin: 2px 0 0;
   color: #000;
 }
 
-.ics205-print-page .top-fields {
+.ics215-print-page .top-fields {
   width: 100%;
   border-collapse: collapse;
 }
 
-.ics205-print-page .top-fields td {
+.ics215-print-page .top-fields td {
   border: 1px solid #000;
   padding: 6px 8px;
   vertical-align: top;
   font-size: 0.75rem;
 }
 
-.ics205-print-page .field-box.wide {
+.ics215-print-page .field-box.wide {
   width: 55%;
 }
 
-.ics205-print-page .field-num {
+.ics215-print-page .field-num {
   font-weight: 700;
 }
 
-.ics205-print-page .field-data {
+.ics215-print-page .field-data {
   margin-top: 4px;
   font-weight: 400;
   min-height: 14px;
 }
 
-.ics205-print-page .section-title {
+.ics215-print-page .section-title {
   text-align: center;
   padding: 4px;
   border: 1px solid #000;
@@ -127,14 +127,14 @@
   background: #f0f0f0;
 }
 
-.ics205-print-page .data-grid {
+.ics215-print-page .data-grid {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
 }
 
-.ics205-print-page .data-grid th,
-.ics205-print-page .data-grid td {
+.ics215-print-page .data-grid th,
+.ics215-print-page .data-grid td {
   border: 1px solid #000;
   padding: 3px 4px;
   font-size: 0.6rem;
@@ -142,31 +142,21 @@
   overflow: hidden;
 }
 
-.ics205-print-page .data-grid th {
+.ics215-print-page .data-grid th {
   background: #f5f5f5;
   font-weight: 700;
   font-size: 0.58rem;
   vertical-align: middle;
 }
 
-.ics205-print-page .data-grid td {
+.ics215-print-page .data-grid td {
   vertical-align: top;
   text-align: left;
   font-size: 0.6rem;
   height: 18px;
 }
 
-.ics205-print-page .data-grid th:nth-child(1) { width: 10%; }
-.ics205-print-page .data-grid th:nth-child(2) { width: 10%; }
-.ics205-print-page .data-grid th:nth-child(3) { width: 10%; }
-.ics205-print-page .data-grid th:nth-child(4) { width: 10%; }
-.ics205-print-page .data-grid th:nth-child(5) { width: 10%; }
-.ics205-print-page .data-grid th:nth-child(6) { width: 10%; }
-.ics205-print-page .data-grid th:nth-child(7) { width: 15%; }
-.ics205-print-page .data-grid th:nth-child(8) { width: 15%; }
-.ics205-print-page .data-grid th:nth-child(9) { width: 10%; }
-
-.ics205-print-page .coordinating-box {
+.ics215-print-page .coordinating-box {
   border: 1px solid #000;
   min-height: 35mm;
   padding: 2mm 3mm;
@@ -175,39 +165,39 @@
   word-wrap: break-word;
 }
 
-.ics205-print-page .footer-fields {
+.ics215-print-page .footer-fields {
   width: 100%;
   border-collapse: collapse;
 }
 
-.ics205-print-page .footer-fields td {
+.ics215-print-page .footer-fields td {
   border: 1px solid #000;
   padding: 6px 8px;
   font-size: 0.7rem;
 }
 
-.ics205-print-page .prepared-cell {
+.ics215-print-page .prepared-cell {
   width: 50%;
 }
 
-.ics205-print-page .date-cell {
+.ics215-print-page .date-cell {
   width: 25%;
 }
 
-.ics205-print-page .time-cell {
+.ics215-print-page .time-cell {
   width: 25%;
 }
 
 @media print {
   .no-print { display: none !important; }
 
-  .ics205-print-overlay {
+  .ics215-print-overlay {
     position: static;
     background: white;
     overflow: visible;
   }
 
-  .ics205-print-page {
+  .ics215-print-page {
     width: 100%;
     margin: 0;
     padding: 0;
@@ -216,7 +206,7 @@
     min-height: auto;
   }
 
-  .ics205-print-page:last-child {
+  .ics215-print-page:last-child {
     page-break-after: auto;
   }
 

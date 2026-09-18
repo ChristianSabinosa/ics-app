@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -176,19 +176,50 @@ export default function Ics207Form() {
   const [techSpecTitle, setTechSpecTitle] = useState('')
   const [agencyRepName, setAgencyRepName] = useState('')
 
-  useEffect(() => {
-    if (!user) return
-    const now = new Date()
-    setPreparedBy(user.user_metadata?.first_name
-      ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`.trim()
-      : user.email || '')
-    setDatePrepared(now.toISOString().slice(0, 10))
-    setTimePrepared(now.toTimeString().slice(0, 5))
-    loadForm()
-    loadPersonnel()
-  }, [incidentId, user, searchParams, formType])
+  const restoreCounters = (loadedPositions: Position[]) => {
+    const newSupportCount: Record<string, number> = {}
+    let newBranchCount = 0
+    let newDivisionCount = 0
+    let newGroupCount = 0
+    let newTfCount = 0
+    let newStCount = 0
+    let newSrCount = 0
+    const newUnitSubCount: Record<string, number> = {}
+    let newTechSpecCount = 0
+    let newAgencyRepCount = 0
 
-  const loadForm = async () => {
+    for (const pos of loadedPositions) {
+      if (pos.section.endsWith(' Support')) {
+        const parentKey = pos.section.replace(' Support', '')
+        newSupportCount[parentKey] = (newSupportCount[parentKey] || 0) + 1
+      }
+      if (pos.section === 'OSC Branch') newBranchCount++
+      if (pos.section === 'OSC Division') newDivisionCount++
+      if (pos.section === 'OSC Group') newGroupCount++
+      if (pos.section === 'OSC Task Force') newTfCount++
+      if (pos.section === 'OSC Strike Team') newStCount++
+      if (pos.section === 'OSC Single Resource') newSrCount++
+      if (pos.section.endsWith(' Sub') && pos.position_key.includes('-sub')) {
+        const unitKey = pos.section.replace(' Sub', '')
+        newUnitSubCount[unitKey] = (newUnitSubCount[unitKey] || 0) + 1
+      }
+      if (pos.section === 'PSC Tech Specialist') newTechSpecCount++
+      if (pos.section === 'PSC Agency Rep') newAgencyRepCount++
+    }
+
+    setSupportCount(newSupportCount)
+    setBranchCount(newBranchCount)
+    setDivisionCount(newDivisionCount)
+    setGroupCount(newGroupCount)
+    setTfCount(newTfCount)
+    setStCount(newStCount)
+    setSrCount(newSrCount)
+    setUnitSubCount(newUnitSubCount)
+    setTechSpecCount(newTechSpecCount)
+    setAgencyRepCount(newAgencyRepCount)
+  }
+
+  const loadForm = useCallback(async () => {
     if (!incidentId) return
     setLoading(true)
 
@@ -250,52 +281,9 @@ export default function Ics207Form() {
     }
 
     setLoading(false)
-  }
+  }, [incidentId, searchParams, formType])
 
-  const restoreCounters = (loadedPositions: Position[]) => {
-    const newSupportCount: Record<string, number> = {}
-    let newBranchCount = 0
-    let newDivisionCount = 0
-    let newGroupCount = 0
-    let newTfCount = 0
-    let newStCount = 0
-    let newSrCount = 0
-    const newUnitSubCount: Record<string, number> = {}
-    let newTechSpecCount = 0
-    let newAgencyRepCount = 0
-
-    for (const pos of loadedPositions) {
-      if (pos.section.endsWith(' Support')) {
-        const parentKey = pos.section.replace(' Support', '')
-        newSupportCount[parentKey] = (newSupportCount[parentKey] || 0) + 1
-      }
-      if (pos.section === 'OSC Branch') newBranchCount++
-      if (pos.section === 'OSC Division') newDivisionCount++
-      if (pos.section === 'OSC Group') newGroupCount++
-      if (pos.section === 'OSC Task Force') newTfCount++
-      if (pos.section === 'OSC Strike Team') newStCount++
-      if (pos.section === 'OSC Single Resource') newSrCount++
-      if (pos.section.endsWith(' Sub') && pos.position_key.includes('-sub')) {
-        const unitKey = pos.section.replace(' Sub', '')
-        newUnitSubCount[unitKey] = (newUnitSubCount[unitKey] || 0) + 1
-      }
-      if (pos.section === 'PSC Tech Specialist') newTechSpecCount++
-      if (pos.section === 'PSC Agency Rep') newAgencyRepCount++
-    }
-
-    setSupportCount(newSupportCount)
-    setBranchCount(newBranchCount)
-    setDivisionCount(newDivisionCount)
-    setGroupCount(newGroupCount)
-    setTfCount(newTfCount)
-    setStCount(newStCount)
-    setSrCount(newSrCount)
-    setUnitSubCount(newUnitSubCount)
-    setTechSpecCount(newTechSpecCount)
-    setAgencyRepCount(newAgencyRepCount)
-  }
-
-  const loadPersonnel = async () => {
+  const loadPersonnel = useCallback(async () => {
     if (!incidentId) return
 
     const { data: manifests } = await supabase
@@ -337,7 +325,19 @@ export default function Ics207Form() {
         }
       }))
     }
-  }
+  }, [incidentId])
+
+  useEffect(() => {
+    if (!user) return
+    const now = new Date()
+    setPreparedBy(user.user_metadata?.first_name
+      ? `${user.user_metadata.first_name} ${user.user_metadata.last_name|| ''}`.trim()
+      : user.email || '')
+    setDatePrepared(now.toISOString().slice(0, 10))
+    setTimePrepared(now.toTimeString().slice(0, 5))
+    loadForm()
+    loadPersonnel()
+  }, [incidentId, user, searchParams, formType, loadForm, loadPersonnel])
 
   const assignPersonToPosition = (positionKey: string, personName: string, agency: string) => {
     setPositions((prev) =>

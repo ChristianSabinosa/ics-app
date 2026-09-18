@@ -37,13 +37,14 @@
 }
 
 .ics206-print-page {
-  width: 210mm;
-  min-height: 297mm;
+  width: 297mm;
+  min-height: 210mm;
   margin: 16px auto;
   background: white;
   box-shadow: 0 2px 12px rgba(0,0,0,0.15);
   padding: 10mm;
   box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 /* Form frame */
@@ -240,11 +241,6 @@
 
   .ics206-print-page:last-child {
     page-break-after: auto;
-  }
-
-  @page {
-    size: A4 portrait;
-    margin: 0.5in;
   }
 
   * {

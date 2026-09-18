@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -21,12 +21,7 @@ export default function CheckInView() {
   const [error, setError] = useState('')
   const [showPrint, setShowPrint] = useState(false)
 
-  useEffect(() => {
-    if (!incidentId || !user) return
-    fetchManifest()
-  }, [incidentId, user])
-
-  const fetchManifest = async () => {
+  const fetchManifest = useCallback(async () => {
     setLoading(true)
     const manifestId = searchParams.get('manifest')
 
@@ -64,7 +59,11 @@ export default function CheckInView() {
     if (e) setEquipment(e)
 
     setLoading(false)
-  }
+  }, [incidentId, user, searchParams])
+
+  useEffect(() => {
+    fetchManifest()
+  }, [fetchManifest])
 
   if (loading) {
     return (

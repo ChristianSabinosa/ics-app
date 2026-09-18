@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -53,15 +53,7 @@ export default function CheckInForm() {
   const waterCount = vehicles.filter((v) => v.method_of_travel === 'Water').length
   const airCount = vehicles.filter((v) => v.method_of_travel === 'Air').length
 
-  useEffect(() => {
-    if (!user) return
-    setPreparedByName(user.user_metadata?.first_name
-      ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`.trim()
-      : user.email || '')
-    loadOrInitManifest()
-  }, [incidentId, user, searchParams])
-
-  const loadOrInitManifest = async () => {
+  const loadOrInitManifest = useCallback(async () => {
     if (!incidentId || !user) return
     setLoading(true)
 
@@ -115,7 +107,15 @@ export default function CheckInForm() {
     }
 
     setLoading(false)
-  }
+  }, [incidentId, user, searchParams])
+
+  useEffect(() => {
+    if (!user) return
+    setPreparedByName(user.user_metadata?.first_name
+      ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`.trim()
+      : user.email || '')
+    loadOrInitManifest()
+  }, [incidentId, user, searchParams, loadOrInitManifest])
 
   const updateMember = (index: number, field: string, value: string) => {
     const updated = [...members]

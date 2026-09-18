@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -41,18 +41,62 @@ export default function Ics211Form() {
 
   const isReadonly = status === 'Submitted' && !isEditing
 
-  useEffect(() => {
-    if (!user) return
-    const now = new Date()
-    setPreparedBy(user.user_metadata?.first_name
-      ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`.trim()
-      : user.email || '')
-    setDatePrepared(now.toISOString().slice(0, 10))
-    setTimePrepared(now.toTimeString().slice(0, 5))
-    loadForm()
-  }, [incidentId, user, searchParams])
+  const loadFromManifests = useCallback(async () => {
+    if (!incidentId) return
 
-  const loadForm = async () => {
+    const { data: manifests } = await supabase
+      .from('checkin_manifests')
+      .select('*')
+      .eq('incident_id', incidentId)
+      .eq('status', 'Submitted')
+      .order('created_at')
+
+    if (!manifests || manifests.length === 0) return
+
+    const manifestIds = manifests.map((m) => m.id)
+    const { data: allPersonnel } = await supabase
+      .from('checkin_personnel')
+      .select('*')
+      .in('manifest_id', manifestIds)
+
+    const loadedResources: Omit<Ics211Resource, 'id' | 'form_id'>[] = []
+
+    for (const manifest of manifests) {
+      const manifestPersonnel = allPersonnel?.filter((p) => p.manifest_id === manifest.id) || []
+      const leader = manifestPersonnel.find((p) => p.role === 'Leader')
+
+      const checkinTs = manifest.prepared_by_timestamp || manifest.created_at
+      const checkinDt = checkinTs ? new Date(checkinTs).toISOString().slice(0, 16) : ''
+
+      loadedResources.push({
+        order_request_no: manifest.checkin_id,
+        checkin_datetime: checkinDt,
+        kind: '',
+        type: '',
+        resource_identifier_single: true,
+        resource_identifier_st: false,
+        resource_identifier_tf: false,
+        agency_name: manifest.agency_name,
+        leader_name: leader?.name || '',
+        contact_details: leader?.contact_details || '',
+        total_personnel: manifest.total_personnel,
+        departure_point_of_origin: '',
+        departure_datetime: '',
+        departure_method_of_travel: '',
+        with_manifest: true,
+        incident_assignment: 'Waiting for assignment',
+        other_qualifications: leader?.capabilities || '',
+        data_sent_to_resl: '',
+        sort_order: loadedResources.length,
+      })
+    }
+
+    if (loadedResources.length > 0) {
+      setResources(loadedResources)
+    }
+  }, [incidentId])
+
+  const loadForm = useCallback(async () => {
     if (!incidentId) return
     setLoading(true)
 
@@ -110,62 +154,18 @@ export default function Ics211Form() {
     }
 
     setLoading(false)
-  }
+  }, [incidentId, searchParams, loadFromManifests])
 
-  const loadFromManifests = async () => {
-    if (!incidentId) return
-
-    const { data: manifests } = await supabase
-      .from('checkin_manifests')
-      .select('*')
-      .eq('incident_id', incidentId)
-      .eq('status', 'Submitted')
-      .order('created_at')
-
-    if (!manifests || manifests.length === 0) return
-
-    const manifestIds = manifests.map((m) => m.id)
-    const { data: allPersonnel } = await supabase
-      .from('checkin_personnel')
-      .select('*')
-      .in('manifest_id', manifestIds)
-
-    const loadedResources: Omit<Ics211Resource, 'id' | 'form_id'>[] = []
-
-    for (const manifest of manifests) {
-      const manifestPersonnel = allPersonnel?.filter((p) => p.manifest_id === manifest.id) || []
-      const leader = manifestPersonnel.find((p) => p.role === 'Leader')
-
-      const checkinTs = manifest.prepared_by_timestamp || manifest.created_at
-      const checkinDt = checkinTs ? new Date(checkinTs).toISOString().slice(0, 16) : ''
-
-      loadedResources.push({
-        order_request_no: manifest.checkin_id,
-        checkin_datetime: checkinDt,
-        kind: '',
-        type: '',
-        resource_identifier_single: true,
-        resource_identifier_st: false,
-        resource_identifier_tf: false,
-        agency_name: manifest.agency_name,
-        leader_name: leader?.name || '',
-        contact_details: leader?.contact_details || '',
-        total_personnel: manifest.total_personnel,
-        departure_point_of_origin: '',
-        departure_datetime: '',
-        departure_method_of_travel: '',
-        with_manifest: true,
-        incident_assignment: 'Waiting for assignment',
-        other_qualifications: leader?.capabilities || '',
-        data_sent_to_resl: '',
-        sort_order: loadedResources.length,
-      })
-    }
-
-    if (loadedResources.length > 0) {
-      setResources(loadedResources)
-    }
-  }
+  useEffect(() => {
+    if (!user) return
+    const now = new Date()
+    setPreparedBy(user.user_metadata?.first_name
+      ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`.trim()
+      : user.email || '')
+    setDatePrepared(now.toISOString().slice(0, 10))
+    setTimePrepared(now.toTimeString().slice(0, 5))
+    loadForm()
+  }, [incidentId, user, searchParams, loadForm])
 
   const fetchFromCheckins = async () => {
     if (!incidentId) return

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -49,11 +49,7 @@ export default function IncidentPage() {
   const [incidentCommander, setIncidentCommander] = useState('')
   const [publicStatus, setPublicStatus] = useState<{ description: string; totalCases: string }[]>([])
 
-  useEffect(() => {
-    if (id) fetchData()
-  }, [id])
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true)
     setError('')
 
@@ -233,7 +229,11 @@ export default function IncidentPage() {
     }
 
     setLoading(false)
-  }
+  }, [id, user])
+
+  useEffect(() => {
+    if (id) fetchData()
+  }, [id, fetchData])
 
   const handleLeaveIncident = async () => {
     if (!participant) return

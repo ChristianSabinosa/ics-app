@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
@@ -20,11 +20,7 @@ export default function OngoingIncidents() {
   const [editStatus, setEditStatus] = useState<'Ongoing' | 'Closed'>('Ongoing')
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
-    fetchIncidents()
-  }, [])
-
-  const fetchIncidents = async () => {
+  const fetchIncidents = useCallback(async () => {
     setLoading(true)
     const { data, error } = await supabase
       .from('incidents')
@@ -57,7 +53,11 @@ export default function OngoingIncidents() {
     }
 
     setLoading(false)
-  }
+  }, [user])
+
+  useEffect(() => {
+    fetchIncidents()
+  }, [fetchIncidents])
 
   const openEdit = (incident: Incident) => {
     setEditing(incident)

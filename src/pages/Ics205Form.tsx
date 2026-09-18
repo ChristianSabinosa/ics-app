@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -38,18 +38,7 @@ export default function Ics205Form() {
   const [isEditing, setIsEditing] = useState(false)
   const isReadonly = status === 'Submitted' && !isEditing
 
-  useEffect(() => {
-    if (!user) return
-    const now = new Date()
-    setPreparedBy(user.user_metadata?.first_name
-      ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`.trim()
-      : user.email || '')
-    setDatePrepared(now.toISOString().slice(0, 10))
-    setTimePrepared(now.toTimeString().slice(0, 5))
-    loadForm()
-  }, [incidentId, user, searchParams])
-
-  const loadForm = async () => {
+  const loadForm = useCallback(async () => {
     if (!incidentId) return
     setLoading(true)
 
@@ -105,7 +94,18 @@ export default function Ics205Form() {
     }
 
     setLoading(false)
-  }
+  }, [incidentId, searchParams])
+
+  useEffect(() => {
+    if (!user) return
+    const now = new Date()
+    setPreparedBy(user.user_metadata?.first_name
+      ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`.trim()
+      : user.email || '')
+    setDatePrepared(now.toISOString().slice(0, 10))
+    setTimePrepared(now.toTimeString().slice(0, 5))
+    loadForm()
+  }, [incidentId, user, searchParams, loadForm])
 
   const updateChannel = (index: number, field: string, value: string) => {
     const updated = [...channels]

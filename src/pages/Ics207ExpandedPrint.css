@@ -9,7 +9,7 @@
 .export-page {
   width: 1200px;
   padding: 24px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: Arial, Helvetica, sans-serif;
   color: #222;
 }
 
@@ -136,7 +136,7 @@
   padding: 1px 6px;
   border-radius: 3px;
   margin-bottom: 4px;
-  font-family: monospace;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 .export-card-title {
