@@ -202,11 +202,18 @@
     margin: 0;
     padding: 0;
     box-shadow: none;
-    page-break-after: always;
     min-height: auto;
   }
 
   .ics215-print-page:last-child {
+    page-break-after: auto;
+  }
+
+  .ics215-print-page .form-frame {
+    page-break-inside: auto;
+  }
+  .ics215-print-page .form-frame tr {
+    page-break-inside: avoid;
     page-break-after: auto;
   }
 

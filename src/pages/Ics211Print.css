@@ -282,6 +282,14 @@
     page-break-after: auto;
   }
 
+  .ics211-print-page .form-frame {
+    page-break-inside: auto;
+  }
+  .ics211-print-page .form-frame tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;

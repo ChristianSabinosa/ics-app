@@ -189,7 +189,13 @@
     padding: 0;
     box-shadow: none;
     min-height: auto;
-    page-break-after: always;
+  }
+  .ics208-form {
+    page-break-inside: auto;
+  }
+  .ics208-form tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
   }
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 }

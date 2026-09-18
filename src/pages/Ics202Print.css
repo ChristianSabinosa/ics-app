@@ -172,5 +172,12 @@
     box-shadow: none;
     min-height: auto;
   }
+  .ics202-form {
+    page-break-inside: auto;
+  }
+  .ics202-form tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 }

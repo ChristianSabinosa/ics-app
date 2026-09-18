@@ -260,6 +260,14 @@
     page-break-after: auto;
   }
 
+  .checkin-print-page .form-frame {
+    page-break-inside: auto;
+  }
+  .checkin-print-page .form-frame tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;

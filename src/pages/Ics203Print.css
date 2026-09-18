@@ -163,5 +163,12 @@
     page-break-after: always;
   }
   .ics203-print-page:last-child { page-break-after: auto; }
+  .ics203-form {
+    page-break-inside: auto;
+  }
+  .ics203-form tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 }
