@@ -16,6 +16,7 @@ import Ics203Form from './pages/Ics203Form'
 import Ics205Form from './pages/Ics205Form'
 import Ics206Form from './pages/Ics206Form'
 import Ics208Form from './pages/Ics208Form'
+import Ics209Form from './pages/Ics209Form'
 
 function App() {
   return (
@@ -37,6 +38,7 @@ function App() {
           <Route path="/incident/:id/ics-205" element={<ProtectedRoute><Ics205Form /></ProtectedRoute>} />
           <Route path="/incident/:id/ics-206" element={<ProtectedRoute><Ics206Form /></ProtectedRoute>} />
           <Route path="/incident/:id/ics-208" element={<ProtectedRoute><Ics208Form /></ProtectedRoute>} />
+          <Route path="/incident/:id/ics-209" element={<ProtectedRoute><Ics209Form /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
