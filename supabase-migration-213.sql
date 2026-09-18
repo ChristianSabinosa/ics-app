@@ -18,9 +18,16 @@ create table if not exists ics_213_forms (
   message text not null default '',
 
   approved_by_name text not null default '',
+  approved_by_position text not null default '',
   approved_by_sig text not null default '',
   approved_date text not null default '',
   approved_time text not null default '',
+
+  reply text not null default '',
+
+  received_by_name text not null default '',
+  received_by_position text not null default '',
+  received_by_sig text not null default '',
 
   status text not null default 'Draft' check (status in ('Draft', 'Submitted')),
   created_at timestamptz not null default now(),
