@@ -269,11 +269,11 @@ export default function Ics207Form() {
         .order('sort_order')
 
       if (posData && posData.length > 0) {
-        setPositions(posData.map(({ position_key, position_title, abbreviation, section, person_name, agency }) => ({
-          position_key, position_title, abbreviation, section, person_name, agency
+        setPositions(posData.map(({ position_key, position_title, abbreviation, section, person_name, agency, parent_key }) => ({
+          position_key, position_title, abbreviation, section, person_name, agency, parent_key: parent_key || ''
         })))
-        restoreCounters(posData.map(({ position_key, position_title, abbreviation, section, person_name, agency }) => ({
-          position_key, position_title, abbreviation, section, person_name, agency
+        restoreCounters(posData.map(({ position_key, position_title, abbreviation, section, person_name, agency, parent_key }) => ({
+          position_key, position_title, abbreviation, section, person_name, agency, parent_key: parent_key || ''
         })))
       }
     } else {
@@ -626,6 +626,7 @@ export default function Ics207Form() {
       section: p.section,
       person_name: p.person_name,
       agency: p.agency,
+      parent_key: p.parent_key || '',
       sort_order: i,
     }))
     const { error: posError } = await supabase.from('ics_207_positions').insert(posRows)
@@ -725,6 +726,11 @@ export default function Ics207Form() {
     if (formType !== 'expanded') return null
     return (
       <div className="expanded-add-section">
+        {!positions.some(p => p.position_key === 'osc-stam') && (
+          <div className="expanded-add-row">
+            <button className="add-position-btn" onClick={() => addSubPosition('osc', SUB_POSITION_OPTIONS.osc[0])}>+ Staging Area Manager</button>
+          </div>
+        )}
         <div className="expanded-add-row">
           {addingTo === 'osc-branch' ? (
             <div className="sub-position-picker">
@@ -1033,27 +1039,34 @@ export default function Ics207Form() {
                 )}
 
                 {formType === 'standard' ? (
-                  <div className="cards-add">
-                    {addingTo === 'osc' ? (
-                      <div className="sub-position-picker osc-picker">
-                        <div className="picker-label">Add Branch/Division/Group:</div>
-                        <div className="osc-type-row">
-                          {(['branch', 'division', 'group'] as OscSubType[]).map((type) => (
-                            <button key={type} className={`osc-type-btn ${oscSubType === type ? 'active' : ''}`} onClick={() => setOscSubType(type)}>
-                              {OSC_SUB_TYPE_LABELS[type]}
-                            </button>
-                          ))}
-                        </div>
-                        <input type="text" className="osc-name-input" placeholder={`${OSC_SUB_TYPE_LABELS[oscSubType]} name (e.g., Air Operations)`} value={oscSubName} onChange={(e) => setOscSubName(e.target.value)} />
-                        <div className="picker-actions">
-                          <button className="picker-confirm" onClick={addOscSubPosition}>Add</button>
-                          <button className="picker-cancel" onClick={() => { setAddingTo(null); setOscSubName('') }}>Cancel</button>
-                        </div>
+                  <>
+                    {!positions.some(p => p.position_key === 'osc-stam') && (
+                      <div className="cards-add">
+                        <button className="add-position-btn" onClick={() => addSubPosition('osc', SUB_POSITION_OPTIONS.osc[0])}>+ Staging Area Manager</button>
                       </div>
-                    ) : (
-                      <button className="add-position-btn" onClick={() => setAddingTo('osc')}>+ Add Branch/Division/Group</button>
                     )}
-                  </div>
+                    <div className="cards-add">
+                      {addingTo === 'osc' ? (
+                        <div className="sub-position-picker osc-picker">
+                          <div className="picker-label">Add Branch/Division/Group:</div>
+                          <div className="osc-type-row">
+                            {(['branch', 'division', 'group'] as OscSubType[]).map((type) => (
+                              <button key={type} className={`osc-type-btn ${oscSubType === type ? 'active' : ''}`} onClick={() => setOscSubType(type)}>
+                                {OSC_SUB_TYPE_LABELS[type]}
+                              </button>
+                            ))}
+                          </div>
+                          <input type="text" className="osc-name-input" placeholder={`${OSC_SUB_TYPE_LABELS[oscSubType]} name (e.g., Air Operations)`} value={oscSubName} onChange={(e) => setOscSubName(e.target.value)} />
+                          <div className="picker-actions">
+                            <button className="picker-confirm" onClick={addOscSubPosition}>Add</button>
+                            <button className="picker-cancel" onClick={() => { setAddingTo(null); setOscSubName('') }}>Cancel</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button className="add-position-btn" onClick={() => setAddingTo('osc')}>+ Add Branch/Division/Group</button>
+                      )}
+                    </div>
+                  </>
                 ) : (
                   renderOscExpandedAddButtons()
                 )}

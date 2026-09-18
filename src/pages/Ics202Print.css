@@ -35,7 +35,6 @@
 
 .ics202-print-page {
   width: 210mm;
-  min-height: 297mm;
   background: white;
   margin: 20px auto;
   padding: 10mm;

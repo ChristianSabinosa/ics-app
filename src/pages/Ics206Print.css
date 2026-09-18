@@ -37,8 +37,7 @@
 }
 
 .ics206-print-page {
-  width: 297mm;
-  min-height: 210mm;
+  width: 210mm;
   margin: 16px auto;
   background: white;
   box-shadow: 0 2px 12px rgba(0,0,0,0.15);

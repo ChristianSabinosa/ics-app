@@ -170,6 +170,18 @@
 
 .staff-role { font-weight: 500; }
 .staff-name { color: #333; }
+.staff-input {
+  color: #333;
+  border: none;
+  border-bottom: 1px solid #ccc;
+  background: transparent;
+  padding: 2px 4px;
+  font-size: inherit;
+  font-family: inherit;
+  width: 100%;
+  outline: none;
+}
+.staff-input:focus { border-bottom-color: #2563eb; }
 
 .staff-row.branch-label {
   grid-template-columns: 1fr;

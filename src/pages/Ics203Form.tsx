@@ -78,14 +78,29 @@ export default function Ics203Form() {
       setHas202(false)
     }
 
-    // Load positions from 207
-    const { data: form207 } = await supabase
+    // Load positions from 207 (prefer expanded, fall back to standard)
+    let form207 = null
+    const { data: expanded207 } = await supabase
       .from('ics_207_forms')
       .select('id')
       .eq('incident_id', incidentId)
+      .eq('form_type', 'expanded')
       .order('created_at', { ascending: false })
       .limit(1)
       .single()
+
+    if (expanded207) {
+      form207 = expanded207
+    } else {
+      const { data: standard207 } = await supabase
+        .from('ics_207_forms')
+        .select('id')
+        .eq('incident_id', incidentId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+      form207 = standard207
+    }
 
     if (form207) {
       setHas207(true)
@@ -341,7 +356,21 @@ export default function Ics203Form() {
                 {agencyReps.map(ar => (
                   <div key={ar.position_key} className="staff-row">
                     <span className="staff-role">{ar.agency || 'Agency'}</span>
-                    <span className="staff-name">{ar.person_name || '\u00A0'}</span>
+                    {isReadonly ? (
+                      <span className="staff-name">{ar.person_name || '\u00A0'}</span>
+                    ) : (
+                      <input
+                        type="text"
+                        className="staff-input"
+                        value={ar.person_name}
+                        placeholder="Name"
+                        onChange={(e) => {
+                          setPositions(prev => prev.map(p =>
+                            p.position_key === ar.position_key ? { ...p, person_name: e.target.value } : p
+                          ))
+                        }}
+                      />
+                    )}
                   </div>
                 ))}
               </div>
