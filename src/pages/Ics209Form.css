@@ -389,7 +389,9 @@ table.data-table textarea {
 }
 
 .add-row-btn:hover {
-  background: #d1d5db;
+  background: #dc2626;
+  color: white;
+  border-color: #dc2626;
 }
 
 .remove-row-btn {
