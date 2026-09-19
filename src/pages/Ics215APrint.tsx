@@ -61,8 +61,8 @@ export default function Ics215APrint({
     id: `empty-${i}`, division_group: '', hazards: [] as Hazard[],
   }))
 
-  // Column layout: Division (12%) | N hazard cols (3% each) | Mitigating Measures (remaining)
-  const gridCols = `12% repeat(${hazardCount}, 3%) auto`
+  // Column layout: Division (200px) | N hazard cols (120px each) | Mitigating Measures (remaining)
+  const gridCols = `200px repeat(${hazardCount}, 120px) auto`
 
   const R = (row: number) => `${row}`
 

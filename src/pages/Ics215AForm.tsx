@@ -442,9 +442,9 @@ export default function Ics215AForm() {
               <table className="hz-main-table">
                 <thead>
                   <tr>
-                    <th className="col-div-group">DIV/GROUP</th>
+                    <th className="col-div-group">Division/Group/Others</th>
                     {hazardIdentifiers.map((hid, i) => (
-                      <th key={i} className="col-hz-id">
+                      <th key={i} className={`col-hz-id ${!isReadonly ? 'edit-mode' : ''}`}>
                         <div className="hz-th-top">
                           <input
                             type="text"
@@ -465,7 +465,7 @@ export default function Ics215AForm() {
                     {!isReadonly && hazardIdentifiers.length < MAX_HAZARDS && (
                       <th className="col-add-hz">
                         <button className="add-hz-btn" onClick={addHazardIdentifier}>
-                          +add
+                          +add hazard
                         </button>
                       </th>
                     )}
@@ -482,13 +482,14 @@ export default function Ics215AForm() {
                             value={div.division_group}
                             onChange={e => updateDivision(div.id, 'division_group', e.target.value)}
                             disabled={isReadonly}
-                            placeholder="Div/Group"
+                            placeholder="Division/Group/Others"
                           />
                         </td>
                         {hazardIdentifiers.map((hid, hi) => (
                           <td key={hi} className="cell-check">
                             <input
                               type="checkbox"
+                              className="checkbox-lg"
                               checked={getHazardApplies(div.id, hid)}
                               onChange={e => setHazardApplies(div.id, hid, e.target.checked)}
                               disabled={isReadonly}
@@ -502,7 +503,7 @@ export default function Ics215AForm() {
                             value={div.mitigating_measures}
                             onChange={e => updateDivision(div.id, 'mitigating_measures', e.target.value)}
                             disabled={isReadonly}
-                            placeholder="Enter mitigating measures..."
+                            placeholder="e.g., Always wear proper PPEs"
                             className="measures-input"
                           />
                         </td>
