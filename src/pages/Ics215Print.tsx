@@ -121,16 +121,22 @@ export default function Ics215Print({
       { n: '13', l: 'TOTAL RESOURCES NEEDED TO REQUEST', field: 'need' as const },
     ]
 
-    const preparedCell = (
-      <div className="prep-cell" style={{ width: '100%', height: '100%' }}>
-        <div className="prep-title">14. PREPARED BY OSC</div>
-        <div className="prep-field">Name and Signature:</div>
-        <div className="prep-value">{preparedBy}</div>
-        <div className="prep-field">Date Prepared:</div>
-        <div className="prep-value">{datePrepared}</div>
-        <div className="prep-field">Time Prepared:</div>
-        <div className="prep-value">{formatMilitaryTimeShort(timePrepared)}</div>
-      </div>
+    const preparedCells = (
+      <>
+        <div className="g-cell prep-cell" style={{ gridColumn: '17 / 21', gridRow: `${R(nextRow)} / ${R(nextRow + 3)}` }}>
+          <div className="prep-title">14. PREPARED BY OSC</div>
+          <div className="prep-field">Name and Signature:</div>
+          <div className="prep-value">{preparedBy}</div>
+        </div>
+        <div className="g-cell prep-cell" style={{ gridColumn: '17 / 19', gridRow: `${R(nextRow + 3)} / ${R(nextRow + 6)}` }}>
+          <div className="prep-field">Date Prepared:</div>
+          <div className="prep-value">{datePrepared}</div>
+        </div>
+        <div className="g-cell prep-cell" style={{ gridColumn: '19 / 21', gridRow: `${R(nextRow + 3)} / ${R(nextRow + 6)}` }}>
+          <div className="prep-field">Time Prepared:</div>
+          <div className="prep-value">{formatMilitaryTimeShort(timePrepared)}</div>
+        </div>
+      </>
     )
 
     return items.map(({ n, l, field }, i) => {
@@ -145,15 +151,14 @@ export default function Ics215Print({
             Single Resource<br />ST or TF
           </div>
           {resSlots.map((id, ri) => (
-            <div key={ri} className="g-cell num-cell tot-num" style={{ gridColumn: String(5 + ri), gridRow: R(r1) }}>
-              {id ? total(id, field) || '' : ''}
-            </div>
+            <>
+              <div key={`${ri}-r1`} className="g-cell num-cell tot-num" style={{ gridColumn: String(5 + ri), gridRow: R(r1) }}>
+                {id ? total(id, field) || '' : ''}
+              </div>
+              <div key={`${ri}-r2`} className="g-cell num-cell tot-num" style={{ gridColumn: String(5 + ri), gridRow: R(r2) }} />
+            </>
           ))}
-          {i === 0 && (
-            <div className="g-cell prep-cell" style={{ gridColumn: `${periodStart} / 21`, gridRow: `${R(nextRow)} / ${R(nextRow + 6)}` }}>
-              {preparedCell}
-            </div>
-          )}
+          {i === 0 && preparedCells}
         </React.Fragment>
       )
     })
