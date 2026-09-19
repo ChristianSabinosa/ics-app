@@ -29,20 +29,14 @@
 .print-controls button:last-child { background: white; color: #333; border: 1px solid #ccc; }
 
 .print-page {
-  width: 11in;
-  height: 8.5in;
   margin: 16px auto;
   background: white;
   box-shadow: 0 2px 12px rgba(0,0,0,0.15);
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 /* ── GRID CONTAINER ── */
 .ics215-grid {
-  width: 10.64in;
-  height: 8.05in;
+  width: 100%;
   display: grid;
   font-family: Arial, Helvetica, sans-serif;
   font-size: 8px;
@@ -209,16 +203,10 @@
   }
 
   .print-page {
-    width: 11in;
-    height: 8.5in;
+    width: 100%;
     margin: 0;
     padding: 0;
     box-shadow: none;
-  }
-
-  @page {
-    size: 11in 8.5in landscape;
-    margin: 0;
   }
 
   * {

@@ -58,26 +58,15 @@ export default function Ics215Print({
     return s + (e ? ((e as any)[f] || 0) : 0)
   }, 0)
 
-  const emptyCount = Math.max(0, EMPTY_WA - workAssignments.length)
   const resIds = resourceIdentifiers.length > 0 ? resourceIdentifiers : ['']
-  const rc = resIds.length
+  const resSlots = Array.from({ length: 12 }, (_, i) => resIds[i] ?? '')
 
-  // Layout: Title(50%) cols 1-4 | Incident(20%) cols 5..4+rc | Period(30%) cols 5+rc..8+rc
-  const titleColCount = 4
-  const incidentColCount = rc
-  const periodColCount = 4
-  const totalCols = titleColCount + incidentColCount + periodColCount
+  // Layout: Title(50%) cols 1-10 | Incident(18%) cols 11-16 | Period(32%) cols 17-20
+  const gridCols = '8% 8% 8% 8% 3% 3% 3% 3% 3% 3% 3% 3% 3% 3% 3% 3% 8% 8% 8% 8%'
 
-  const titleW = (50 / titleColCount).toFixed(2)
-  const incidentW = (20 / incidentColCount).toFixed(2)
-  const periodW = (30 / periodColCount).toFixed(2)
-  const gridCols = `repeat(${titleColCount}, ${titleW}%) repeat(${incidentColCount}, ${incidentW}%) repeat(${periodColCount}, ${periodW}%)`
-
-  const incidentStart = titleColCount + 1
-  const periodStart = incidentStart + incidentColCount
+  const periodStart = 17
 
   const R = (row: number) => `${row}`
-  const CS = (span: number) => `span ${span}`
 
   let nextRow = 3
 
@@ -105,7 +94,7 @@ export default function Ics215Print({
               </>
             )}
             <div className="g-cell lbl-cell" style={{ gridColumn: '4', gridRow: R(row) }}>{rLabels[f]}</div>
-            {resIds.map((id, ri) => (
+            {resSlots.map((id, ri) => (
               <div key={ri} className="g-cell num-cell" style={{ gridColumn: String(5 + ri), gridRow: R(row) }}>
                 {id ? getVal(wa.resources, id, f) || '' : ''}
               </div>
@@ -127,31 +116,44 @@ export default function Ics215Print({
 
   const renderBottomRows = () => {
     const items = [
-      { n: '11', l: 'TOTAL RESOURCES REQUIRED', field: 'required' as const, prepared: <><div className="prep-title">14. PREPARED BY OSC</div><div className="prep-field">Name and Signature:</div><div className="prep-value">{preparedBy}</div></> },
-      { n: '12', l: 'TOTAL RESOURCES ON HAND', field: 'have' as const, prepared: <><div className="prep-field">Date Prepared:</div><div className="prep-value">{datePrepared}</div></> },
-      { n: '13', l: 'TOTAL RESOURCES NEEDED TO REQUEST', field: 'need' as const, prepared: <><div className="prep-field">Time Prepared:</div><div className="prep-value">{formatMilitaryTimeShort(timePrepared)}</div></> },
+      { n: '11', l: 'TOTAL RESOURCES REQUIRED', field: 'required' as const },
+      { n: '12', l: 'TOTAL RESOURCES ON HAND', field: 'have' as const },
+      { n: '13', l: 'TOTAL RESOURCES NEEDED TO REQUEST', field: 'need' as const },
     ]
 
-    return items.map(({ n, l, field, prepared }, i) => {
+    const preparedCell = (
+      <div className="prep-cell" style={{ width: '100%', height: '100%' }}>
+        <div className="prep-title">14. PREPARED BY OSC</div>
+        <div className="prep-field">Name and Signature:</div>
+        <div className="prep-value">{preparedBy}</div>
+        <div className="prep-field">Date Prepared:</div>
+        <div className="prep-value">{datePrepared}</div>
+        <div className="prep-field">Time Prepared:</div>
+        <div className="prep-value">{formatMilitaryTimeShort(timePrepared)}</div>
+      </div>
+    )
+
+    return items.map(({ n, l, field }, i) => {
       const r1 = nextRow + i * 2
       const r2 = r1 + 1
       return (
         <React.Fragment key={n}>
-          <div className="g-cell tot-lbl" style={{ gridColumn: `1 / ${CS(titleColCount - 1)}`, gridRow: `${R(r1)} / ${R(r2 + 1)}` }}>
+          <div className="g-cell tot-lbl" style={{ gridColumn: '1 / 3', gridRow: `${R(r1)} / ${R(r2 + 1)}` }}>
             <strong>{n}.</strong> {l}
           </div>
-          <div className="g-cell tot-type" style={{ gridColumn: String(titleColCount), gridRow: R(r1) }}>
+          <div className="g-cell tot-type" style={{ gridColumn: '3 / 5', gridRow: `${R(r1)} / ${R(r2 + 1)}` }}>
             Single Resource<br />ST or TF
           </div>
-          {resIds.map((id, ri) => (
-            <div key={ri} className="g-cell num-cell tot-num" style={{ gridColumn: String(incidentStart + ri), gridRow: R(r1) }}>
-              {id ? total(id, field) : ''}
+          {resSlots.map((id, ri) => (
+            <div key={ri} className="g-cell num-cell tot-num" style={{ gridColumn: String(5 + ri), gridRow: R(r1) }}>
+              {id ? total(id, field) || '' : ''}
             </div>
           ))}
-          <div className="g-cell prep-cell" style={{ gridColumn: `${periodStart} / ${CS(periodColCount)}`, gridRow: `${R(r1)} / ${R(r2 + 1)}` }}>
-            {prepared}
-          </div>
-          <div className="g-cell" style={{ gridColumn: `${titleColCount - 1} / ${CS(incidentColCount + 2)}`, gridRow: R(r2) }}>&nbsp;</div>
+          {i === 0 && (
+            <div className="g-cell prep-cell" style={{ gridColumn: `${periodStart} / 21`, gridRow: `${R(nextRow)} / ${R(nextRow + 6)}` }}>
+              {preparedCell}
+            </div>
+          )}
         </React.Fragment>
       )
     })
@@ -168,7 +170,7 @@ export default function Ics215Print({
         <div className="ics215-grid" style={{ gridTemplateColumns: gridCols, gridTemplateRows: `59px 70px repeat(${EMPTY_WA * 3}, 16px) repeat(6, 30px)` }}>
 
           {/* ROW 1: TITLE + INCIDENT + OPERATIONAL PERIOD */}
-          <div className="g-cell title-cell" style={{ gridColumn: `1 / ${CS(titleColCount)}`, gridRow: '1' }}>
+          <div className="g-cell title-cell" style={{ gridColumn: '1 / 11', gridRow: '1' }}>
             <div className="title-inner">
               <img src="/ndrrmc-logo.png" alt="" className="logo" />
               <div className="title-text">
@@ -177,11 +179,11 @@ export default function Ics215Print({
               </div>
             </div>
           </div>
-          <div className="g-cell incident-cell" style={{ gridColumn: `${incidentStart} / ${CS(incidentColCount)}`, gridRow: '1' }}>
+          <div className="g-cell incident-cell" style={{ gridColumn: '11 / 17', gridRow: '1' }}>
             <div className="section-label">1. INCIDENT/EVENT NAME</div>
             <div className="incident-val">{incidentName}</div>
           </div>
-          <div className="g-cell period-cell" style={{ gridColumn: `${periodStart} / ${CS(periodColCount)}`, gridRow: '1' }}>
+          <div className="g-cell period-cell" style={{ gridColumn: '17 / 21', gridRow: '1' }}>
             <div className="section-label">2. OPERATIONAL PERIOD</div>
             <div className="period-val">From (Date and Time): {opFrom}</div>
             <div className="period-val">To (Date and Time): {opTo}</div>
@@ -192,8 +194,8 @@ export default function Ics215Print({
           <div className="g-cell col-header" style={{ gridColumn: '2', gridRow: '2' }}>4.<br />DIVISION /<br />GROUP /<br />OTHERS</div>
           <div className="g-cell col-header" style={{ gridColumn: '3', gridRow: '2' }}>5. WORK<br />ASSIGNMENT</div>
           <div className="g-cell col-header" style={{ gridColumn: '4', gridRow: '2' }}>6.<br />RESOURCES</div>
-          {resIds.map((id, i) => (
-            <div key={i} className="g-cell col-header res-hdr" style={{ gridColumn: String(incidentStart + i), gridRow: '2' }}>{id || ''}</div>
+          {resSlots.map((id, i) => (
+            <div key={i} className="g-cell col-header res-hdr" style={{ gridColumn: String(5 + i), gridRow: '2' }}>{id || ''}</div>
           ))}
           <div className="g-cell col-header" style={{ gridColumn: String(periodStart), gridRow: '2' }}>7.<br />OVERHEAD<br />POSITION</div>
           <div className="g-cell col-header" style={{ gridColumn: String(periodStart + 1), gridRow: '2' }}>8. SPECIAL<br />EQPT. AND<br />SUPPLIES</div>
