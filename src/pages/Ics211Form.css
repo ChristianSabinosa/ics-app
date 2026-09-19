@@ -5,7 +5,10 @@
 
 .ics211-header {
   background: #950606;
+  color: white;
   padding: 12px 24px;
+  display: flex;
+  align-items: center;
 }
 
 .ics211-header .header-brand {
@@ -59,7 +62,7 @@
   background: #f0f0f0;
 }
 
-.ics211-topbar .topbar-info {
+.ics211-topbar .topbar-left {
   display: flex;
   gap: 10px;
   align-items: center;

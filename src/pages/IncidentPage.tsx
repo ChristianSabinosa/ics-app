@@ -168,6 +168,20 @@ export default function IncidentPage() {
     if (forms214 && forms214.length > 0) {
       statuses['214'] = forms214[0].status
     }
+    const { data: forms215 } = await supabase
+      .from('ics_215_forms')
+      .select('id, status, incident_id')
+      .eq('incident_id', id)
+    if (forms215 && forms215.length > 0) {
+      statuses['215'] = forms215[0].status
+    }
+    const { data: forms215a } = await supabase
+      .from('ics_215a_forms')
+      .select('id, status, incident_id')
+      .eq('incident_id', id)
+    if (forms215a && forms215a.length > 0) {
+      statuses['215-A'] = forms215a[0].status
+    }
     setFormStatuses(statuses)
 
     // Fetch operational period from 202
@@ -314,6 +328,10 @@ export default function IncidentPage() {
       navigate(`/incident/${incident.incident_id}/ics-213`)
     } else if (formNum === '214') {
       navigate(`/incident/${incident.incident_id}/ics-214`)
+    } else if (formNum === '215') {
+      navigate(`/incident/${incident.incident_id}/ics-215`)
+    } else if (formNum === '215-A') {
+      navigate(`/incident/${incident.incident_id}/ics-215a`)
     }
   }
 

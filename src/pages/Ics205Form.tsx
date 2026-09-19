@@ -201,8 +201,8 @@ export default function Ics205Form() {
       </header>
 
       <div className="ics205-topbar no-print">
-        <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}`)}>&larr; Back</button>
-        <div className="topbar-info">
+        <div className="topbar-left">
+          <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}`)}>&larr; Back</button>
           <span className="form-badge">ICS 205</span>
           <span className={`status-badge ${status.toLowerCase()}`}>{status}</span>
         </div>

@@ -1000,8 +1000,8 @@ export default function Ics207Form() {
       </header>
 
       <div className="ics207-topbar no-print">
-        <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}`)}>&larr; Back</button>
-        <div className="topbar-info">
+        <div className="topbar-left">
+          <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}`)}>&larr; Back</button>
           <span className="form-badge">ICS 207</span>
           <div className="form-type-tabs">
             <button className={`form-type-tab ${formType === 'standard' ? 'active' : ''}`} onClick={() => switchToTab('standard')}>Standard</button>

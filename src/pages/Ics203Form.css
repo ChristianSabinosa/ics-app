@@ -55,7 +55,7 @@
 
 .topbar-btn.back:hover { background: #f0f0f0; }
 
-.topbar-info { display: flex; align-items: center; gap: 10px; }
+.topbar-left { display: flex; align-items: center; gap: 10px; }
 
 .form-badge {
   background: #1e3a5f;

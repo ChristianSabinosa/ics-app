@@ -71,7 +71,7 @@
   background: #f0f0f0;
 }
 
-.ics205-topbar .topbar-info {
+.ics205-topbar .topbar-left {
   display: flex;
   align-items: center;
   gap: 10px;

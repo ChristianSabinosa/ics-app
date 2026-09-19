@@ -15,7 +15,7 @@
 .ics207-header {
   background: #950606;
   color: white;
-  padding: 14px 24px;
+  padding: 12px 24px;
   display: flex;
   align-items: center;
 }
@@ -27,8 +27,8 @@
 }
 
 .ics207-header .header-logo { height: 36px; width: auto; }
-.ics207-header h1 { font-size: 1rem; font-weight: 700; margin: 0; }
-.ics207-header p { font-size: 0.75rem; opacity: 0.85; margin: 0; }
+.ics207-header h1 { font-size: 1.1rem; font-weight: 700; margin: 0; }
+.ics207-header p { font-size: 0.8rem; opacity: 0.85; margin: 0; }
 
 .ics207-topbar {
   background: #fff;
@@ -55,7 +55,7 @@
 
 .ics207-topbar .topbar-btn.back:hover { background: #f0f0f0; }
 
-.ics207-topbar .topbar-info { display: flex; align-items: center; gap: 10px; }
+.ics207-topbar .topbar-left { display: flex; align-items: center; gap: 10px; }
 
 .ics207-topbar .form-badge {
   background: #1e3a5f;

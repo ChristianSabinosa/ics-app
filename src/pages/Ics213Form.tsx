@@ -256,8 +256,8 @@ export default function Ics213Form() {
       </header>
 
       <div className="ics213-topbar no-print">
-        <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}`)}>&larr; Back</button>
-        <div className="topbar-info">
+        <div className="topbar-left">
+          <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}`)}>&larr; Back</button>
           <span className="form-badge">ICS 213</span>
           <span className={`status-badge ${status.toLowerCase()}`}>{status}</span>
         </div>

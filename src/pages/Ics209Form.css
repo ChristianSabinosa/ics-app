@@ -69,7 +69,7 @@
   background: #f0f0f0;
 }
 
-.topbar-info {
+.topbar-left {
   display: flex;
   align-items: center;
   gap: 10px;

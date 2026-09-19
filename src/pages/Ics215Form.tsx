@@ -1,9 +1,12 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import Ics215Print from './Ics215Print'
 import './Ics215Form.css'
+
+let _nextId = 0
+const uid = () => `id-${Date.now()}-${++_nextId}`
 
 interface ResourceEntry {
   identifier: string
@@ -13,10 +16,10 @@ interface ResourceEntry {
 }
 
 interface WorkAssignment {
+  id: string
   branch: string
   division_group: string
   work_assignment: string
-  resource_type: 'Single Resource' | 'ST or TF'
   resources: ResourceEntry[]
   overhead_position: string
   special_equipment: string
@@ -24,13 +27,15 @@ interface WorkAssignment {
   requested_arrival_time: string
 }
 
-const emptyWorkAssignment: WorkAssignment = {
-  branch: '', division_group: '', work_assignment: '',
-  resource_type: 'Single Resource',
-  resources: [],
-  overhead_position: '', special_equipment: '',
-  reporting_location: '', requested_arrival_time: '',
-}
+const MAX_SPAN = 7
+const MAX_RESOURCES = 30
+const HEALTH_KEYWORDS = ['emt', 'med', 'health', 'first aid', 'ambulance', 'paramedic', 'nurse', 'rescue']
+const LOCATION_SUGGESTIONS = ['ICP', 'Base', 'Camp', 'Staging Area', 'Other']
+
+const makeWorkAssignment = (): WorkAssignment => ({
+  id: uid(), branch: '', division_group: '', work_assignment: '', resources: [],
+  overhead_position: '', special_equipment: '', reporting_location: '', requested_arrival_time: '',
+})
 
 export default function Ics215Form() {
   const { id: incidentId } = useParams<{ id: string }>()
@@ -45,9 +50,8 @@ export default function Ics215Form() {
   const [opToDate, setOpToDate] = useState('')
   const [opToTime, setOpToTime] = useState('')
 
-  const [resourceIdentifiers, setResourceIdentifiers] = useState<string[]>([])
   const [workAssignments, setWorkAssignments] = useState<WorkAssignment[]>([])
-
+  const [resourceIdentifiers, setResourceIdentifiers] = useState<string[]>([])
   const [preparedBy, setPreparedBy] = useState('')
   const [datePrepared, setDatePrepared] = useState('')
   const [timePrepared, setTimePrepared] = useState('')
@@ -60,8 +64,6 @@ export default function Ics215Form() {
   const [showPrint, setShowPrint] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
 
-  const [branchSuggestions, setBranchSuggestions] = useState<string[]>([])
-  const [divGrpSuggestions, setDivGrpSuggestions] = useState<string[]>([])
   const [overheadSuggestions, setOverheadSuggestions] = useState<string[]>([])
 
   const isReadonly = status === 'Submitted' && !isEditing
@@ -70,8 +72,7 @@ export default function Ics215Form() {
     if (!incidentId) return
     setLoading(true)
 
-    const { data: incident } = await supabase
-      .from('incidents').select('name').eq('incident_id', incidentId).single()
+    const { data: incident } = await supabase.from('incidents').select('name').eq('incident_id', incidentId).single()
     if (incident) setIncidentName(incident.name)
 
     const { data: form202 } = await supabase
@@ -84,21 +85,6 @@ export default function Ics215Form() {
       setOpToTime(form202.op_period_to_time)
     }
 
-    const { data: form207 } = await supabase
-      .from('ics_207_forms').select('id')
-      .eq('incident_id', incidentId).order('created_at', { ascending: false }).limit(1).maybeSingle()
-    if (form207) {
-      const { data: positions } = await supabase
-        .from('ics_207_positions').select('position_title, section')
-        .eq('form_id', form207.id)
-      if (positions) {
-        const branches = [...new Set(positions.filter((p: any) => p.section === 'OSC Branch').map((p: any) => p.position_title))].filter(Boolean)
-        const divs = [...new Set(positions.filter((p: any) => ['OSC Division', 'OSC Group'].includes(p.section)).map((p: any) => p.position_title))].filter(Boolean)
-        setBranchSuggestions(branches)
-        setDivGrpSuggestions(divs)
-      }
-    }
-
     const { data: resources211 } = await supabase
       .from('ics_211_resources').select('leader_name')
       .eq('form_id', (await supabase.from('ics_211_forms').select('id').eq('incident_id', incidentId).order('created_at', { ascending: false }).limit(1).maybeSingle()).data?.id || '')
@@ -107,7 +93,7 @@ export default function Ics215Form() {
     }
 
     const formParam = searchParams.get('form')
-    let formToLoad = null
+    let formToLoad: any = null
     if (formParam) {
       const { data } = await supabase.from('ics_215_forms').select('*').eq('id', formParam).single()
       formToLoad = data
@@ -124,14 +110,25 @@ export default function Ics215Form() {
       setOpFromTime(formToLoad.op_period_from_time || '')
       setOpToDate(formToLoad.op_period_to_date || '')
       setOpToTime(formToLoad.op_period_to_time || '')
-      setResourceIdentifiers(formToLoad.resource_identifiers || [])
-      setWorkAssignments(formToLoad.work_assignments || [])
-      setStatus(formToLoad.status)
       setPreparedBy(formToLoad.prepared_by || '')
       setDatePrepared(formToLoad.date_prepared || '')
       setTimePrepared(formToLoad.time_prepared || '')
-    } else {
-      setWorkAssignments([{ ...emptyWorkAssignment, resources: [] }])
+      setStatus(formToLoad.status)
+      setResourceIdentifiers(formToLoad.resource_identifiers ?? [])
+
+      if (formToLoad.work_assignments?.length > 0) {
+        setWorkAssignments(formToLoad.work_assignments.map((wa: any) => ({
+          id: wa.id || uid(),
+          branch: wa.branch || '',
+          division_group: wa.division_group || '',
+          work_assignment: wa.work_assignment || '',
+          resources: wa.resources || [],
+          overhead_position: wa.overhead_position || '',
+          special_equipment: wa.special_equipment || '',
+          reporting_location: wa.reporting_location || '',
+          requested_arrival_time: wa.requested_arrival_time || '',
+        })))
+      }
     }
 
     setLoading(false)
@@ -140,9 +137,7 @@ export default function Ics215Form() {
   useEffect(() => {
     if (!user) return
     const now = new Date()
-    setPreparedBy(user.user_metadata?.first_name
-      ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`.trim()
-      : user.email || '')
+    setPreparedBy(user.user_metadata?.first_name ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`.trim() : user.email || '')
     setDatePrepared(now.toISOString().slice(0, 10))
     setTimePrepared(now.toTimeString().slice(0, 5))
     loadForm()
@@ -150,26 +145,20 @@ export default function Ics215Form() {
 
   const saveForm = async (formStatus: 'Draft' | 'Submitted') => {
     if (!incidentId || !user) return
-    setSaving(true)
-    setError('')
-    setSuccess('')
-
+    setSaving(true); setError(''); setSuccess('')
     const now = new Date()
     const pad = (n: number) => String(n).padStart(2, '0')
     const localDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
     const localTime = `${pad(now.getHours())}:${pad(now.getMinutes())}`
 
-    const formData = {
+    const formData: any = {
       incident_id: incidentId,
       incident_name: incidentName,
-      op_period_from_date: opFromDate,
-      op_period_from_time: opFromTime,
-      op_period_to_date: opToDate,
-      op_period_to_time: opToTime,
+      op_period_from_date: opFromDate, op_period_from_time: opFromTime,
+      op_period_to_date: opToDate, op_period_to_time: opToTime,
       resource_identifiers: resourceIdentifiers,
       work_assignments: workAssignments,
-      status: formStatus,
-      prepared_by: preparedBy,
+      status: formStatus, prepared_by: preparedBy,
       date_prepared: formStatus === 'Submitted' ? localDate : datePrepared,
       time_prepared: formStatus === 'Submitted' ? localTime : timePrepared,
       updated_at: now.toISOString(),
@@ -182,69 +171,91 @@ export default function Ics215Form() {
     } else {
       const { data: inserted, error: e } = await supabase.from('ics_215_forms').insert(formData).select().single()
       if (e) { setError(e.message); setSaving(false); return }
-      fId = inserted.id
-      setFormId(fId)
+      fId = inserted.id; setFormId(fId)
     }
-
-    setStatus(formStatus)
-    setIsEditing(false)
-    setSaving(false)
+    setStatus(formStatus); setIsEditing(false); setSaving(false)
     setSuccess(formStatus === 'Draft' ? 'Progress saved as draft.' : 'ICS 215 submitted successfully!')
   }
 
-  const updateWorkAssignment = (index: number, field: keyof WorkAssignment, value: any) => {
-    const updated = [...workAssignments]
-    updated[index] = { ...updated[index], [field]: value }
-    setWorkAssignments(updated)
+  const addWorkAssignment = () => setWorkAssignments(prev => [...prev, makeWorkAssignment()])
+  const removeWorkAssignment = (id: string) => setWorkAssignments(prev => prev.filter(wa => wa.id !== id))
+
+  const updateWa = (waId: string, field: keyof WorkAssignment, value: any) => {
+    setWorkAssignments(prev => prev.map(wa => wa.id === waId ? { ...wa, [field]: value } : wa))
   }
 
-  const updateResource = (waIndex: number, resIndex: number, field: keyof ResourceEntry, value: any) => {
-    const updated = [...workAssignments]
-    const resources = [...updated[waIndex].resources]
-    resources[resIndex] = { ...resources[resIndex], [field]: value }
-    updated[waIndex] = { ...updated[waIndex], resources }
-    setWorkAssignments(updated)
+  const getResVal = (waId: string, identifier: string, field: 'required' | 'have' | 'need'): number => {
+    const wa = workAssignments.find(w => w.id === waId)
+    if (!wa) return 0
+    const entry = wa.resources.find(r => r.identifier === identifier)
+    return entry ? ((entry as any)[field] || 0) : 0
   }
 
-  const addResourceToWork = (waIndex: number) => {
-    const updated = [...workAssignments]
-    updated[waIndex] = {
-      ...updated[waIndex],
-      resources: [...updated[waIndex].resources, { identifier: '', required: 0, have: 0, need: 0 }]
+  const setResVal = (waId: string, identifier: string, field: 'required' | 'have' | 'need', value: number) => {
+    setWorkAssignments(prev => prev.map(wa => {
+      if (wa.id !== waId) return wa
+      const resources = [...wa.resources]
+      const idx = resources.findIndex(r => r.identifier === identifier)
+      if (idx >= 0) {
+        resources[idx] = { ...resources[idx], [field]: value }
+      } else {
+        resources.push({ identifier, required: 0, have: 0, need: 0, [field]: value })
+      }
+      return { ...wa, resources }
+    }))
+  }
+
+  const addResourceIdentifier = () => {
+    if (resourceIdentifiers.length >= MAX_RESOURCES) return
+    setResourceIdentifiers(prev => [...prev, ''])
+  }
+
+  const updateResourceIdentifier = (index: number, value: string) => {
+    setResourceIdentifiers(prev => { const n = [...prev]; n[index] = value; return n })
+  }
+
+  const removeResourceIdentifier = (index: number) => {
+    const removedId = resourceIdentifiers[index]
+    setResourceIdentifiers(prev => prev.filter((_, i) => i !== index))
+    if (removedId) {
+      setWorkAssignments(prev => prev.map(wa => ({
+        ...wa,
+        resources: wa.resources.filter(r => r.identifier !== removedId)
+      })))
     }
-    setWorkAssignments(updated)
   }
 
-  const removeResourceFromWork = (waIndex: number, resIndex: number) => {
-    const updated = [...workAssignments]
-    updated[waIndex] = {
-      ...updated[waIndex],
-      resources: updated[waIndex].resources.filter((_, i) => i !== resIndex)
+  const computeTotal = (identifier: string, field: 'required' | 'have' | 'need') => {
+    return workAssignments.reduce((sum, wa) => {
+      const entry = wa.resources.find(r => r.identifier === identifier)
+      return sum + (entry ? ((entry as any)[field] || 0) : 0)
+    }, 0)
+  }
+
+  const spanWarnings = useMemo(() => {
+    const warnings: string[] = []
+    const branches = [...new Set(workAssignments.map(wa => wa.branch).filter(Boolean))]
+    if (branches.length > MAX_SPAN) {
+      warnings.push(`Span of control exceeded: ${branches.length} branches (max ${MAX_SPAN}).`)
     }
-    setWorkAssignments(updated)
-  }
-
-  const addWorkAssignment = () => setWorkAssignments([...workAssignments, { ...emptyWorkAssignment, resources: [] }])
-  const removeWorkAssignment = (index: number) => setWorkAssignments(workAssignments.filter((_, i) => i !== index))
-
-  const addIdentifier = (id: string) => {
-    if (id && !resourceIdentifiers.includes(id)) {
-      setResourceIdentifiers([...resourceIdentifiers, id])
+    const divGroups = [...new Set(workAssignments.map(wa => wa.division_group).filter(Boolean))]
+    if (divGroups.length > MAX_SPAN) {
+      warnings.push(`Span of control exceeded: ${divGroups.length} divisions/groups (max ${MAX_SPAN}).`)
     }
-  }
-  const removeIdentifier = (id: string) => setResourceIdentifiers(resourceIdentifiers.filter(i => i !== id))
+    return warnings
+  }, [workAssignments])
 
-  const computeTotals = (resourceType: 'Single Resource' | 'ST or TF', field: 'required' | 'have' | 'need') => {
-    return workAssignments
-      .filter(wa => wa.resource_type === resourceType)
-      .reduce((sum, wa) => sum + wa.resources.reduce((s, r) => s + ((r as any)[field] || 0), 0), 0)
-  }
+  const resourceSuggestions = useMemo(() => {
+    const suggestions: string[] = []
+    const allIds = resourceIdentifiers.map(id => id.toUpperCase())
+    const healthRelated = allIds.filter(id => HEALTH_KEYWORDS.some(kw => id.toLowerCase().includes(kw)))
+    if (healthRelated.length >= 3) {
+      suggestions.push(`You have ${healthRelated.length} health-related resources (${healthRelated.join(', ')}). Consider combining them into a Health Group.`)
+    }
+    return suggestions
+  }, [resourceIdentifiers])
 
-  const [newIdentifier, setNewIdentifier] = useState('')
-
-  if (loading) {
-    return <div className="ics215-page"><div className="ics215-loading">Loading ICS Form 215...</div></div>
-  }
+  if (loading) return <div className="ics215-page"><div className="ics215-loading">Loading ICS Form 215...</div></div>
 
   return (
     <div className="ics215-page">
@@ -259,8 +270,8 @@ export default function Ics215Form() {
       </header>
 
       <div className="ics215-topbar no-print">
-        <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}`)}>&larr; Back</button>
-        <div className="topbar-info">
+        <div className="topbar-left">
+          <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}`)}>&larr; Back</button>
           <span className="form-badge">ICS 215</span>
           <span className={`status-badge ${status.toLowerCase()}`}>{status}</span>
         </div>
@@ -282,219 +293,166 @@ export default function Ics215Form() {
         <div className="ics215-container">
           {error && <div className="error-message">{error}</div>}
           {success && <div className="success-message">{success}</div>}
+          {spanWarnings.map((w, i) => <div key={`w-${i}`} className="warning-message">{w}</div>)}
+          {resourceSuggestions.map((s, i) => <div key={`s-${i}`} className="info-message">{s}</div>)}
 
           <div className="form-header-section">
             <h2>OPERATIONAL PLANNING WORKSHEET</h2>
             <h3>ICS 215</h3>
           </div>
 
-          <div className="form-top-row">
-            <div className="form-field wide">
-              <label>1. INCIDENT/EVENT NAME</label>
-              <input type="text" value={incidentName} onChange={(e) => setIncidentName(e.target.value)} />
-            </div>
-            <div className="form-field">
-              <label>2. OPERATIONAL PERIOD</label>
-              <div className="op-period-grid">
-                <div><label>From:</label><input type="date" value={opFromDate} onChange={(e) => setOpFromDate(e.target.value)} /><input type="time" value={opFromTime} onChange={(e) => setOpFromTime(e.target.value)} /></div>
-                <div><label>To:</label><input type="date" value={opToDate} onChange={(e) => setOpToDate(e.target.value)} /><input type="time" value={opToTime} onChange={(e) => setOpToTime(e.target.value)} /></div>
+          <div className="form-section">
+            <div className="form-row two-col">
+              <div className="form-field">
+                <label>1. INCIDENT/EVENT NAME</label>
+                <input type="text" value={incidentName} onChange={e => setIncidentName(e.target.value)} disabled={isReadonly} />
+              </div>
+              <div className="form-field">
+                <label>2. OPERATIONAL PERIOD</label>
+                <div className="op-period-row">
+                  <span>From:</span>
+                  <input type="date" value={opFromDate} onChange={e => setOpFromDate(e.target.value)} disabled={isReadonly} />
+                  <input type="time" value={opFromTime} onChange={e => setOpFromTime(e.target.value)} disabled={isReadonly} step="3600" />
+                </div>
+                <div className="op-period-row">
+                  <span>To:</span>
+                  <input type="date" value={opToDate} onChange={e => setOpToDate(e.target.value)} disabled={isReadonly} />
+                  <input type="time" value={opToTime} onChange={e => setOpToTime(e.target.value)} disabled={isReadonly} step="3600" />
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="form-section">
-            <h4>3. RESOURCE IDENTIFIERS</h4>
-            <div className="identifier-list">
-              {resourceIdentifiers.map((id) => (
-                <span key={id} className="identifier-tag">
-                  {id}
-                  <button className="remove-id" onClick={() => removeIdentifier(id)}>&times;</button>
-                </span>
-              ))}
-            </div>
-            <div className="identifier-input-row">
-              <input
-                type="text"
-                value={newIdentifier}
-                onChange={(e) => setNewIdentifier(e.target.value)}
-                placeholder="Add resource identifier..."
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    addIdentifier(newIdentifier)
-                    setNewIdentifier('')
-                  }
-                }}
-              />
-              <button onClick={() => { addIdentifier(newIdentifier); setNewIdentifier('') }}>+ Add</button>
-            </div>
-          </div>
-
-          <div className="form-section">
-            <h4>4. WORK ASSIGNMENTS</h4>
-            {workAssignments.map((wa, waIndex) => (
-              <div key={waIndex} style={{ border: '1px solid #e5e7eb', borderRadius: 4, padding: 12, marginBottom: 12 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <strong style={{ fontSize: '0.85rem' }}>Work Assignment #{waIndex + 1}</strong>
-                  <button className="remove-row-btn" onClick={() => removeWorkAssignment(waIndex)}>&times;</button>
-                </div>
-                <div className="form-top-row" style={{ marginBottom: 8 }}>
-                  <div className="form-field">
-                    <label>Branch</label>
-                    <input
-                      type="text"
-                      list={`branch-list-${waIndex}`}
-                      value={wa.branch}
-                      onChange={(e) => updateWorkAssignment(waIndex, 'branch', e.target.value)}
-                    />
-                    <datalist id={`branch-list-${waIndex}`}>
-                      {branchSuggestions.map((s) => <option key={s} value={s} />)}
-                    </datalist>
-                  </div>
-                  <div className="form-field">
-                    <label>Division/Group</label>
-                    <input
-                      type="text"
-                      list={`divgrp-list-${waIndex}`}
-                      value={wa.division_group}
-                      onChange={(e) => updateWorkAssignment(waIndex, 'division_group', e.target.value)}
-                    />
-                    <datalist id={`divgrp-list-${waIndex}`}>
-                      {divGrpSuggestions.map((s) => <option key={s} value={s} />)}
-                    </datalist>
-                  </div>
-                </div>
-                <div className="form-field" style={{ marginBottom: 8 }}>
-                  <label>Work Assignment Description</label>
-                  <input type="text" value={wa.work_assignment} onChange={(e) => updateWorkAssignment(waIndex, 'work_assignment', e.target.value)} />
-                </div>
-                <div className="form-top-row" style={{ marginBottom: 8 }}>
-                  <div className="form-field">
-                    <label>Resource Type</label>
-                    <select value={wa.resource_type} onChange={(e) => updateWorkAssignment(waIndex, 'resource_type', e.target.value)}>
-                      <option value="Single Resource">Single Resource</option>
-                      <option value="ST or TF">ST or TF (Strike Team / Task Force)</option>
-                    </select>
-                  </div>
-                  <div className="form-field">
-                    <label>Overhead Position</label>
-                    <input
-                      type="text"
-                      list={`overhead-list-${waIndex}`}
-                      value={wa.overhead_position}
-                      onChange={(e) => updateWorkAssignment(waIndex, 'overhead_position', e.target.value)}
-                    />
-                    <datalist id={`overhead-list-${waIndex}`}>
-                      {overheadSuggestions.map((s) => <option key={s} value={s} />)}
-                    </datalist>
-                  </div>
-                </div>
-                <div className="form-top-row" style={{ marginBottom: 8 }}>
-                  <div className="form-field">
-                    <label>Special Equipment</label>
-                    <input type="text" value={wa.special_equipment} onChange={(e) => updateWorkAssignment(waIndex, 'special_equipment', e.target.value)} />
-                  </div>
-                  <div className="form-field">
-                    <label>Reporting Location</label>
-                    <input type="text" value={wa.reporting_location} onChange={(e) => updateWorkAssignment(waIndex, 'reporting_location', e.target.value)} />
-                  </div>
-                </div>
-                <div className="form-field" style={{ marginBottom: 8 }}>
-                  <label>Requested Arrival Time</label>
-                  <input type="time" value={wa.requested_arrival_time} onChange={(e) => updateWorkAssignment(waIndex, 'requested_arrival_time', e.target.value)} />
-                </div>
-
-                <div style={{ marginTop: 8 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                    <strong style={{ fontSize: '0.8rem' }}>Resources</strong>
-                    <button className="add-row-btn" style={{ padding: '4px 10px', fontSize: '0.75rem' }} onClick={() => addResourceToWork(waIndex)}>+ Add Resource</button>
-                  </div>
-                  <div className="channels-table-wrapper">
-                    <table className="channels-table">
-                      <thead>
-                        <tr>
-                          <th>Identifier</th>
-                          <th>Required</th>
-                          <th>Have</th>
-                          <th>Need</th>
-                          <th></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {wa.resources.map((r, rIndex) => (
-                          <tr key={rIndex}>
-                            <td><input value={r.identifier} onChange={(e) => updateResource(waIndex, rIndex, 'identifier', e.target.value)} /></td>
-                            <td><input type="number" value={r.required || ''} onChange={(e) => updateResource(waIndex, rIndex, 'required', parseInt(e.target.value) || 0)} /></td>
-                            <td><input type="number" value={r.have || ''} onChange={(e) => updateResource(waIndex, rIndex, 'have', parseInt(e.target.value) || 0)} /></td>
-                            <td><input type="number" value={r.need || ''} onChange={(e) => updateResource(waIndex, rIndex, 'need', parseInt(e.target.value) || 0)} /></td>
-                            <td className="actions-cell">
-                              <button className="remove-row-btn" onClick={() => removeResourceFromWork(waIndex, rIndex)}>&times;</button>
+          <div className="form-section table-section">
+            <label>3. WORK ASSIGNMENTS</label>
+            <div className="table-wrapper">
+              <table className="wa-main-table">
+                <thead>
+                  <tr>
+                    <th>BRANCH</th>
+                    <th>DIV/GROUP</th>
+                    <th>WORK ASSIGNMENT</th>
+                    <th>RESOURCES</th>
+                    {resourceIdentifiers.map((rid, i) => (
+                      <th key={i} className="col-res-id">
+                        <div className="res-th-top">
+                          <input type="text" value={rid} onChange={e => updateResourceIdentifier(i, e.target.value)} disabled={isReadonly} placeholder={`Res ${i + 1}`} className="res-th-input" />
+                          {!isReadonly && <button className="res-th-remove" onClick={() => removeResourceIdentifier(i)}>&times;</button>}
+                        </div>
+                      </th>
+                    ))}
+                    {!isReadonly && resourceIdentifiers.length < MAX_RESOURCES && (
+                      <th className="col-add-res">
+                        <button className="add-res-btn" onClick={addResourceIdentifier}>+add</button>
+                      </th>
+                    )}
+                    <th>OVERHEAD</th>
+                    <th>EQPT</th>
+                    <th>LOCATION</th>
+                    <th>ARRIVAL</th>
+                    <th className="col-action"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {workAssignments.map(wa => (
+                    ['required', 'have', 'need'].map((field, fi) => {
+                      const isFirst = fi === 0
+                      return (
+                        <tr key={`${wa.id}-${field}`}>
+                          {isFirst && <td rowSpan={3} className="cell-text"><input type="text" value={wa.branch} onChange={e => updateWa(wa.id, 'branch', e.target.value)} disabled={isReadonly} placeholder="Branch" /></td>}
+                          {isFirst && <td rowSpan={3} className="cell-text"><input type="text" value={wa.division_group} onChange={e => updateWa(wa.id, 'division_group', e.target.value)} disabled={isReadonly} placeholder="Div/Group" /></td>}
+                          {isFirst && <td rowSpan={3} className="cell-text"><input type="text" value={wa.work_assignment} onChange={e => updateWa(wa.id, 'work_assignment', e.target.value)} disabled={isReadonly} placeholder="Work assignment" /></td>}
+                          <td className="cell-label">{field === 'required' ? 'Required' : field === 'have' ? 'Have' : 'Need'}</td>
+                          {resourceIdentifiers.map((rid, ri) => (
+                            <td key={ri} className="cell-num">
+                              <input type="number" min="0" value={getResVal(wa.id, rid, field as any) || ''} onChange={e => setResVal(wa.id, rid, field as any, parseInt(e.target.value) || 0)} disabled={isReadonly} />
                             </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            ))}
-            <div className="add-row-buttons">
-              <button className="add-row-btn" onClick={addWorkAssignment}>+ Add Work Assignment</button>
+                          ))}
+                          {!isReadonly && resourceIdentifiers.length < MAX_RESOURCES && <td className="cell-num"></td>}
+                          {isFirst && <td rowSpan={3} className="cell-text"><input type="text" list={`overhead-${wa.id}`} value={wa.overhead_position} onChange={e => updateWa(wa.id, 'overhead_position', e.target.value)} disabled={isReadonly} placeholder="Position" />
+                            <datalist id={`overhead-${wa.id}`}>{overheadSuggestions.map(s => <option key={s} value={s} />)}</datalist>
+                          </td>}
+                          {isFirst && <td rowSpan={3} className="cell-text"><input type="text" value={wa.special_equipment} onChange={e => updateWa(wa.id, 'special_equipment', e.target.value)} disabled={isReadonly} placeholder="Equipment" /></td>}
+                          {isFirst && <td rowSpan={3} className="cell-text"><input type="text" list={`location-${wa.id}`} value={wa.reporting_location} onChange={e => updateWa(wa.id, 'reporting_location', e.target.value)} disabled={isReadonly} placeholder="Location" />
+                            <datalist id={`location-${wa.id}`}>{LOCATION_SUGGESTIONS.map(s => <option key={s} value={s} />)}</datalist>
+                          </td>}
+                          {isFirst && <td rowSpan={3} className="cell-time"><input type="time" value={wa.requested_arrival_time} onChange={e => updateWa(wa.id, 'requested_arrival_time', e.target.value)} disabled={isReadonly} /></td>}
+                          {isFirst && <td rowSpan={3} className="col-action">{!isReadonly && <button className="wa-remove-btn" onClick={() => removeWorkAssignment(wa.id)}>&times;</button>}</td>}
+                        </tr>
+                      )
+                    })
+                  ))}
+                  {workAssignments.length === 0 && (
+                    <tr><td colSpan={4 + Math.max(resourceIdentifiers.length, 1) + 5} className="wa-empty-cell">No work assignments yet. Click "+add entry" below.</td></tr>
+                  )}
+                </tbody>
+              </table>
             </div>
+            {!isReadonly && (
+              <button className="add-entry-btn" onClick={addWorkAssignment}>+add entry</button>
+            )}
           </div>
 
           <div className="form-section">
-            <h4>TOTALS</h4>
-            <div style={{ display: 'flex', gap: 24, fontSize: '0.85rem' }}>
-              <div>
-                <strong>Single Resource:</strong>{' '}
-                Required: {computeTotals('Single Resource', 'required')} |{' '}
-                Have: {computeTotals('Single Resource', 'have')} |{' '}
-                Need: {computeTotals('Single Resource', 'need')}
+            <label>TOTALS</label>
+            {resourceIdentifiers.length > 0 ? (
+              <div className="totals-wrapper">
+                <table className="totals-table">
+                  <thead>
+                    <tr>
+                      <th></th>
+                      {resourceIdentifiers.map((rid, i) => <th key={i}>{rid || `Res ${i + 1}`}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>12. Total Required</td>
+                      {resourceIdentifiers.map((rid, i) => <td key={i}>{computeTotal(rid, 'required')}</td>)}
+                    </tr>
+                    <tr>
+                      <td>13. Total Have</td>
+                      {resourceIdentifiers.map((rid, i) => <td key={i}>{computeTotal(rid, 'have')}</td>)}
+                    </tr>
+                    <tr>
+                      <td>14. Total Needed</td>
+                      {resourceIdentifiers.map((rid, i) => <td key={i}>{computeTotal(rid, 'need')}</td>)}
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-              <div>
-                <strong>ST/TF:</strong>{' '}
-                Required: {computeTotals('ST or TF', 'required')} |{' '}
-                Have: {computeTotals('ST or TF', 'have')} |{' '}
-                Need: {computeTotals('ST or TF', 'need')}
+            ) : (
+              <p className="wa-empty-hint">Add resource identifiers above to see totals.</p>
+            )}
+          </div>
+
+          <div className="form-section signature-section">
+            <div className="sig-row">
+              <div className="sig-field num">15. PREPARED BY OSC</div>
+              <div className="sig-field">
+                <label>Name and Signature:</label>
+                <input type="text" value={preparedBy} onChange={e => setPreparedBy(e.target.value)} disabled={isReadonly} />
+              </div>
+              <div className="sig-field">
+                <label>Date Prepared:</label>
+                <input type="date" value={datePrepared} onChange={e => setDatePrepared(e.target.value)} disabled={isReadonly} />
+              </div>
+              <div className="sig-field">
+                <label>Time Prepared:</label>
+                <input type="time" value={timePrepared} onChange={e => setTimePrepared(e.target.value)} disabled={isReadonly} />
               </div>
             </div>
           </div>
-
-          <div className="form-footer-section">
-            <div className="footer-field">
-              <label>5. Prepared by:</label>
-              <input type="text" value={preparedBy} onChange={(e) => setPreparedBy(e.target.value)} />
-            </div>
-            <div className="footer-field">
-              <label>Name and Signature:</label>
-              <input type="text" value={preparedBy} readOnly />
-            </div>
-            <div className="footer-field">
-              <label>Date Prepared:</label>
-              <input type="date" value={datePrepared} onChange={(e) => setDatePrepared(e.target.value)} />
-            </div>
-            <div className="footer-field">
-              <label>Time Prepared:</label>
-              <input type="time" value={timePrepared} onChange={(e) => setTimePrepared(e.target.value)} />
-            </div>
-          </div>
-
         </div>
       </main>
 
       {showPrint && (
         <Ics215Print
           incidentName={incidentName}
-          opFromDate={opFromDate}
-          opFromTime={opFromTime}
-          opToDate={opToDate}
-          opToTime={opToTime}
+          opFromDate={opFromDate} opFromTime={opFromTime}
+          opToDate={opToDate} opToTime={opToTime}
           resourceIdentifiers={resourceIdentifiers}
           workAssignments={workAssignments}
-          preparedBy={preparedBy}
-          datePrepared={datePrepared}
-          timePrepared={timePrepared}
+          preparedBy={preparedBy} datePrepared={datePrepared} timePrepared={timePrepared}
           onClose={() => setShowPrint(false)}
         />
       )}
