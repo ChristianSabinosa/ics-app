@@ -1,4 +1,4 @@
-.ics215-print-overlay {
+.print-overlay {
   position: fixed;
   inset: 0;
   background: #e5e5e5;
@@ -6,7 +6,7 @@
   overflow-y: auto;
 }
 
-.ics215-print-controls {
+.print-controls {
   position: fixed;
   top: 16px;
   right: 16px;
@@ -15,7 +15,7 @@
   gap: 8px;
 }
 
-.ics215-print-controls button {
+.print-controls button {
   padding: 10px 20px;
   border: none;
   border-radius: 6px;
@@ -25,196 +25,200 @@
   font-family: inherit;
 }
 
-.ics215-print-controls button:first-child {
-  background: #950606;
-  color: white;
-}
+.print-controls button:first-child { background: #950606; color: white; }
+.print-controls button:last-child { background: white; color: #333; border: 1px solid #ccc; }
 
-.ics215-print-controls button:last-child {
-  background: white;
-  color: #333;
-  border: 1px solid #ccc;
-}
-
-.ics215-print-page {
-  width: 297mm;
-  min-height: 210mm;
+.print-page {
+  width: 11in;
+  height: 8.5in;
   margin: 16px auto;
   background: white;
   box-shadow: 0 2px 12px rgba(0,0,0,0.15);
-  padding: 10mm;
-  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── GRID CONTAINER ── */
+.ics215-grid {
+  width: 10.64in;
+  height: 8.05in;
+  display: grid;
   font-family: Arial, Helvetica, sans-serif;
+  font-size: 8px;
+  line-height: 1.1;
+  color: #000;
 }
 
-.ics215-print-page .form-frame {
-  width: 100%;
-  border: 2px solid #000;
-  border-collapse: collapse;
-}
-
-.ics215-print-page .form-frame td {
+/* ── SHARED CELL ── */
+.g-cell {
+  border: 1px solid #000;
   padding: 0;
-}
-
-.ics215-print-page .form-header {
-  width: 100%;
-  border-bottom: 2px solid #000;
-  border-collapse: collapse;
-}
-
-.ics215-print-page .form-frame td.logo-cell {
-  width: 80px;
-  padding: 8px 10px;
-  vertical-align: middle;
-}
-
-.ics215-print-page .ndrrmc-logo {
-  width: 65px;
-  height: auto;
-}
-
-.ics215-print-page .form-frame td.title-cell {
-  text-align: center;
-  padding: 10px;
-}
-
-.ics215-print-page .title-cell h1 {
-  font-size: 1.4rem;
-  letter-spacing: 3px;
-  margin: 0;
-  color: #000;
-}
-
-.ics215-print-page .title-cell h2 {
-  font-size: 1rem;
-  margin: 2px 0 0;
-  color: #000;
-}
-
-.ics215-print-page .top-fields {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.ics215-print-page .top-fields td {
-  border: 1px solid #000;
-  padding: 6px 8px;
-  vertical-align: top;
-  font-size: 0.75rem;
-}
-
-.ics215-print-page .field-box.wide {
-  width: 55%;
-}
-
-.ics215-print-page .field-num {
-  font-weight: 700;
-}
-
-.ics215-print-page .field-data {
-  margin-top: 4px;
-  font-weight: 400;
-  min-height: 14px;
-}
-
-.ics215-print-page .section-title {
-  text-align: center;
-  padding: 4px;
-  border: 1px solid #000;
-  border-top: none;
-  font-size: 0.8rem;
-  background: #f0f0f0;
-}
-
-.ics215-print-page .data-grid {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-}
-
-.ics215-print-page .data-grid th,
-.ics215-print-page .data-grid td {
-  border: 1px solid #000;
-  padding: 3px 4px;
-  font-size: 0.6rem;
-  text-align: center;
   overflow: hidden;
 }
 
-.ics215-print-page .data-grid th {
-  background: #f5f5f5;
-  font-weight: 700;
-  font-size: 0.58rem;
-  vertical-align: middle;
+/* ── ROW 1: TITLE HEADER ── */
+.title-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.ics215-print-page .data-grid td {
-  vertical-align: top;
-  text-align: left;
-  font-size: 0.6rem;
-  height: 18px;
-}
-
-.ics215-print-page .coordinating-box {
-  border: 1px solid #000;
-  min-height: 35mm;
-  padding: 2mm 3mm;
-  font-size: 8pt;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-}
-
-.ics215-print-page .footer-fields {
+.title-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   width: 100%;
-  border-collapse: collapse;
 }
 
-.ics215-print-page .footer-fields td {
-  border: 1px solid #000;
-  padding: 6px 8px;
-  font-size: 0.7rem;
+.logo {
+  width: 57px;
+  height: auto;
+  flex-shrink: 0;
 }
 
-.ics215-print-page .prepared-cell {
-  width: 50%;
+.title-text {
+  text-align: center;
 }
 
-.ics215-print-page .date-cell {
-  width: 25%;
+.title-main {
+  font-size: 16px;
+  font-weight: bold;
+  line-height: 20px;
 }
 
-.ics215-print-page .time-cell {
-  width: 25%;
+.title-sub {
+  font-size: 14px;
+  font-weight: bold;
+  line-height: 16px;
 }
 
+.incident-cell,
+.period-cell {
+  padding: 4px 6px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.section-label {
+  font-size: 9px;
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+
+.incident-val {
+  font-size: 8px;
+}
+
+.period-val {
+  font-size: 8px;
+  margin-top: 1px;
+}
+
+/* ── ROW 2: COLUMN HEADERS ── */
+.col-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  text-align: center;
+  font-weight: bold;
+  font-size: 7px;
+  line-height: 1.2;
+  padding: 2px 3px;
+  white-space: pre-line;
+}
+
+.res-hdr {
+  font-size: 7px;
+}
+
+/* ── DATA ROWS ── */
+.lbl-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 7px;
+}
+
+.num-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+}
+
+/* ── BOTTOM TOTALS ── */
+.tot-lbl {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  font-size: 8px;
+  padding: 2px 4px;
+}
+
+.tot-type {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+.tot-num {
+  font-size: 8px;
+  font-weight: 600;
+}
+
+.prep-cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: 4px 8px;
+  border-left: 2px solid #000;
+}
+
+.prep-title {
+  font-size: 10px;
+  font-weight: bold;
+  margin-bottom: 3px;
+}
+
+.prep-field {
+  font-size: 9px;
+  font-weight: 600;
+  margin-top: 3px;
+}
+
+.prep-value {
+  font-size: 9px;
+  font-weight: 400;
+}
+
+/* ── Print ── */
 @media print {
   .no-print { display: none !important; }
 
-  .ics215-print-overlay {
+  .print-overlay {
     position: static;
     background: white;
     overflow: visible;
   }
 
-  .ics215-print-page {
-    width: 100%;
+  .print-page {
+    width: 11in;
+    height: 8.5in;
     margin: 0;
     padding: 0;
     box-shadow: none;
-    min-height: auto;
   }
 
-  .ics215-print-page:last-child {
-    page-break-after: auto;
-  }
-
-  .ics215-print-page .form-frame {
-    page-break-inside: auto;
-  }
-  .ics215-print-page .form-frame tr {
-    page-break-inside: avoid;
-    page-break-after: auto;
+  @page {
+    size: 11in 8.5in landscape;
+    margin: 0;
   }
 
   * {
