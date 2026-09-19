@@ -145,7 +145,7 @@ export default function Ics215Print({
       return (
         <React.Fragment key={n}>
           <div className="g-cell tot-lbl" style={{ gridColumn: '1 / 3', gridRow: `${R(r1)} / ${R(r2 + 1)}` }}>
-            <strong>{n}.</strong> {l}
+            <div className="prep-title"><strong>{n}.</strong> {l}</div>
           </div>
           <div className="g-cell tot-type" style={{ gridColumn: '3 / 5', gridRow: `${R(r1)} / ${R(r2 + 1)}` }}>
             Single Resource<br />ST or TF
@@ -172,7 +172,7 @@ export default function Ics215Print({
       </div>
 
       <div className="print-page">
-        <div className="ics215-grid" style={{ gridTemplateColumns: gridCols, gridTemplateRows: `59px 70px repeat(${EMPTY_WA * 3}, 16px) repeat(6, 30px)` }}>
+        <div className="ics215-grid" style={{ gridTemplateColumns: gridCols, gridTemplateRows: `60px 50px repeat(${EMPTY_WA * 3}, 16px) repeat(6, 20px)` }}>
 
           {/* ROW 1: TITLE + INCIDENT + OPERATIONAL PERIOD */}
           <div className="g-cell title-cell" style={{ gridColumn: '1 / 11', gridRow: '1' }}>
@@ -185,11 +185,11 @@ export default function Ics215Print({
             </div>
           </div>
           <div className="g-cell incident-cell" style={{ gridColumn: '11 / 17', gridRow: '1' }}>
-            <div className="section-label">1. INCIDENT/EVENT NAME</div>
+            <div className="prep-title">1. INCIDENT/EVENT NAME</div>
             <div className="incident-val">{incidentName}</div>
           </div>
           <div className="g-cell period-cell" style={{ gridColumn: '17 / 21', gridRow: '1' }}>
-            <div className="section-label">2. OPERATIONAL PERIOD</div>
+            <div className="prep-title">2. OPERATIONAL PERIOD</div>
             <div className="period-val">From (Date and Time): {opFrom}</div>
             <div className="period-val">To (Date and Time): {opTo}</div>
           </div>
