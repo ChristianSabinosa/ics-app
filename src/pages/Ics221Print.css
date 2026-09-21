@@ -54,28 +54,94 @@
 
 .ics221-form td {
   border: 1px solid #000;
-  padding: 0;
+  padding: 4px 6px;
   vertical-align: top;
 }
 
-.ics221-form td.header-cell { padding: 6px 10px; }
+/* ── Header ── */
+.header-cell {
+  padding: 6px 10px;
+  border: 1px solid #000;
+}
 
-.header-content { display: flex; align-items: center; gap: 10px; }
-.ndrrmc-logo { width: 55px; height: auto; }
-.title-section { text-align: center; flex: 1; }
-.main-title { font-size: 15pt; font-weight: 700; letter-spacing: 1px; }
-.form-number { font-size: 13pt; font-weight: 700; margin-top: 2px; }
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
-.ics221-form td.top-cell { padding: 6px 10px; }
-.field-label { font-weight: 700; font-size: 8.5pt; margin-bottom: 2px; text-transform: uppercase; }
-.field-value { font-size: 8.5pt; min-height: 12pt; line-height: 1.3; }
+.logo-section {
+  flex-shrink: 0;
+}
 
-.ics221-form td.content-cell { padding: 6px 10px; }
+.ndrrmc-logo {
+  width: 55px;
+  height: auto;
+}
 
-.clearance-cell .clearance-desc {
+.title-section {
+  text-align: center;
+  flex: 1;
+}
+
+.main-title {
+  font-size: 15pt;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.form-number {
+  font-size: 13pt;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+/* ── Top cells (Row 1) ── */
+.top-cell {
+  padding: 6px 10px;
+}
+
+.field-label {
+  font-weight: 700;
   font-size: 8.5pt;
-  line-height: 1.4;
-  margin-top: 4px;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+}
+
+.field-value {
+  font-size: 8.5pt;
+  min-height: 12pt;
+  line-height: 1.3;
+}
+
+/* ── Content cells ── */
+.content-cell {
+  padding: 6px 10px;
+}
+
+.clearance-cell {
+  height: 40px;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  white-space: normal;
+}
+
+.empty-cell {
+  border: none;
+  padding: 0;
+}
+
+.clearance-cell .field-label {
+  margin-bottom: 0;
+  white-space: normal;
+}
+
+.clearance-inline {
+  font-weight: 400;
+  font-size: 8pt;
+  text-transform: none;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
 /* ── Section Headers ── */
@@ -96,21 +162,16 @@
   background: #f9fafb;
 }
 
-/* ── Clearance Table ── */
-.check-cell {
-  width: 30px;
-  text-align: center;
-  vertical-align: middle;
-}
-
-.checkbox-mark {
-  font-size: 12pt;
-  line-height: 1;
-}
-
+/* ── Clearance Table Cells ── */
 .unit-cell {
   padding: 4px 6px;
   font-size: 8.5pt;
+}
+
+.checkbox-mark {
+  font-size: 11pt;
+  line-height: 1;
+  margin-right: 2px;
 }
 
 .remarks-cell,
@@ -122,10 +183,20 @@
 }
 
 /* ── Remarks + Travel ── */
-.remarks-cell,
-.travel-cell {
+.remarks-cell {
   vertical-align: top;
   padding: 6px 10px;
+}
+
+.travel-label-cell {
+  vertical-align: top;
+  padding: 6px 10px;
+}
+
+.travel-cell {
+  vertical-align: top;
+  padding: 4px 10px;
+  font-size: 8.5pt;
 }
 
 .field-textarea {
@@ -137,35 +208,22 @@
 }
 
 /* ── Signature Row ── */
-.sig-cell {
-  padding: 0 !important;
-}
-
-.sig-row-print {
-  display: grid;
-  grid-template-columns: 160px 1fr 1fr 1fr;
-  min-height: 36pt;
+.sig-cell-content {
+  padding: 6px 10px;
+  vertical-align: top;
 }
 
 .sig-num {
   font-weight: 700;
   font-size: 9pt;
-  display: flex;
-  align-items: center;
-  padding: 6px 8px;
-  border-right: 1px solid #000;
+  margin-bottom: 4px;
 }
 
 .sig-field-print {
   display: flex;
   flex-direction: column;
-  padding: 4px 8px;
-  border-right: 1px solid #000;
+  padding: 2px 0;
   justify-content: center;
-}
-
-.sig-field-print:last-child {
-  border-right: none;
 }
 
 .sig-label {
@@ -183,13 +241,13 @@
 
 @media print {
   .ics221-print-controls { display: none !important; }
-  .ics221-print-overlay { background: none; position: static; }
+  .ics221-print-overlay { background: none !important; position: static !important; overflow: visible !important; }
   .ics221-print-page {
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    box-shadow: none;
-    min-height: auto;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    min-height: auto !important;
   }
   .ics221-form {
     page-break-inside: auto;

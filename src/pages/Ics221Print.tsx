@@ -41,30 +41,43 @@ interface Ics221PrintProps {
 const fmtTime = (t: string) => t ? t.replace(':', '') + 'H' : ''
 const fmtDT = (d: string, t: string) => (!d && !t) ? '' : `${d} ${fmtTime(t)}`.trim()
 
+const EMPTY_ROWS: number[] = []
+
 export default function Ics221Print(props: Ics221PrintProps) {
   const handlePrint = () => window.print()
 
-  const renderClearanceTable = (title: string, units: UnitSignoff[]) => (
+  const renderClearanceSection = (
+    title: string,
+    units: UnitSignoff[],
+    extraEmptyRows: number[] = EMPTY_ROWS,
+  ) => (
     <React.Fragment>
       <tr>
-        <td colSpan={5} className="section-header-cell">{title}</td>
+        <td colSpan={9} className="section-header-cell">{title}</td>
       </tr>
       <tr className="sub-header-row">
-        <td className="col-check"></td>
-        <td className="col-unit-header">Unit/Manager</td>
-        <td className="col-remarks-header">Remarks</td>
-        <td className="col-name-header">Name</td>
-        <td className="col-sig-header">Signature</td>
+        <td colSpan={2} className="col-unit-header">Unit/Manager</td>
+        <td colSpan={2} className="col-remarks-header">Remarks</td>
+        <td colSpan={3} className="col-name-header">Name</td>
+        <td colSpan={2} className="col-sig-header">Signature</td>
       </tr>
       {units.map((unit, i) => (
         <tr key={i}>
-          <td className="check-cell">
-            <span className="checkbox-mark">{unit.checked ? '\u2611' : '\u2610'}</span>
+          <td colSpan={2} className="unit-cell">
+            <span className="checkbox-mark">{unit.checked ? '\u2611 ' : '\u2610 '}</span>
+            {unit.unit_name}
           </td>
-          <td className="unit-cell">{unit.unit_name}</td>
-          <td className="remarks-cell">{unit.remarks || '\u00A0'}</td>
-          <td className="name-cell">{unit.name || '\u00A0'}</td>
-          <td className="sig-cell">{unit.signature || '\u00A0'}</td>
+          <td colSpan={2} className="remarks-cell">{unit.remarks || '\u00A0'}</td>
+          <td colSpan={3} className="name-cell">{unit.name || '\u00A0'}</td>
+          <td colSpan={2} className="sig-cell">{unit.signature || '\u00A0'}</td>
+        </tr>
+      ))}
+      {extraEmptyRows.map((_, i) => (
+        <tr key={`empty-${i}`}>
+          <td colSpan={2} className="unit-cell">&nbsp;</td>
+          <td colSpan={2} className="remarks-cell">&nbsp;</td>
+          <td colSpan={3} className="name-cell">&nbsp;</td>
+          <td colSpan={2} className="sig-cell">&nbsp;</td>
         </tr>
       ))}
     </React.Fragment>
@@ -79,9 +92,21 @@ export default function Ics221Print(props: Ics221PrintProps) {
 
       <div className="ics221-print-page">
         <table className="ics221-form">
+          <colgroup>
+            <col style={{ width: '7%' }} />
+            <col style={{ width: '10%' }} />
+            <col style={{ width: '5%' }} />
+            <col style={{ width: '10%' }} />
+            <col style={{ width: '6%' }} />
+            <col style={{ width: '6%' }} />
+            <col style={{ width: '9%' }} />
+            <col style={{ width: '7%' }} />
+            <col style={{ width: '7%' }} />
+          </colgroup>
           <thead>
+            {/* R0: Header - Logo + Title merged across all columns */}
             <tr>
-              <td colSpan={4} className="header-cell">
+              <td colSpan={9} className="header-cell">
                 <div className="header-content">
                   <div className="logo-section">
                     <img src="/ndrrmc-logo.png" alt="NDRRMC" className="ndrrmc-logo" />
@@ -95,90 +120,120 @@ export default function Ics221Print(props: Ics221PrintProps) {
             </tr>
           </thead>
           <tbody>
-            {/* Row 1: Incident Name, Resource, Planned Release */}
+            {/* R1: Incident Name, Resource, Planned Release */}
             <tr>
-              <td className="top-cell" style={{ width: '33%' }}>
+              <td colSpan={3} className="top-cell">
                 <div className="field-label">1. INCIDENT/EVENT NAME</div>
                 <div className="field-value">{props.incidentName || '\u00A0'}</div>
               </td>
-              <td className="top-cell" style={{ width: '33%' }}>
-                <div className="field-label">2. RESOURCE TO BE RELEASED</div>
+              <td colSpan={3} className="top-cell">
+                <div className="field-label">2. RESOURCES TO BE RELEASED</div>
                 <div className="field-value">{props.resourceToRelease || '\u00A0'}</div>
               </td>
-              <td colSpan={2} className="top-cell">
-                <div className="field-label">3. PLANNED RELEASE DATE AND TIME</div>
+              <td colSpan={3} className="top-cell">
+                <div className="field-label">3. PLANNED RELEASED DATE AND TIME</div>
                 <div className="field-value">{fmtDT(props.plannedReleaseDate, props.plannedReleaseTime) || '\u00A0'}</div>
               </td>
             </tr>
 
-            {/* Row 2: Clearance */}
+            {/* R3: Clearance description */}
             <tr>
-              <td colSpan={4} className="content-cell clearance-cell">
-                <div className="field-label">4. CLEARANCE</div>
-                <div className="clearance-desc">
-                  You and your resources are in the process of being released. Resources are not released until the checked boxes below have been signed off by the appropriate overhead and the Demobilization Unit Leader (or Planning Section representative).
-                </div>
+              <td colSpan={9} className="content-cell clearance-cell">
+                <div className="field-label">4. CLEARANCE:</div>
+                <div className="clearance-inline">You and your resources are in the process of being released.  Resources are not released until the checked boxes below have been signed off by the appropriate overhead and the Demobilization Unit Leader (or Planning Section representative)</div>
               </td>
             </tr>
 
             {/* Logistics Section */}
-            {renderClearanceTable('LOGISTICS SECTION', props.logisticsUnits)}
+            {renderClearanceSection('LOGISTICS SECTION', props.logisticsUnits, [0, 0])}
 
             {/* Finance Section */}
-            {renderClearanceTable('FINANCE/ADMINISTRATION SECTION', props.financeUnits)}
+            {renderClearanceSection('FINANCE/ADMINISTRATION SECTION', props.financeUnits, [0, 0, 0])}
 
             {/* Planning Section */}
-            {renderClearanceTable('PLANNING SECTION', props.planningUnits)}
+            {renderClearanceSection('PLANNING SECTION', props.planningUnits, [0, 0])}
 
             {/* Operations Section */}
-            {renderClearanceTable('OPERATIONS SECTION', props.operationsUnits)}
+            {renderClearanceSection('OPERATIONS SECTION', props.operationsUnits, [0, 0])}
 
-            {/* Row: Remarks + Reassignment + Travel */}
+            {/* R33-37: Remarks (left) + Travel Information (right) */}
             <tr>
-              <td colSpan={2} className="content-cell remarks-cell">
+              <td colSpan={5} rowSpan={5} className="content-cell remarks-cell">
                 <div className="field-label">5. REMARKS</div>
                 <div className="field-textarea">{props.remarks || '\u00A0'}</div>
-
-                <div className="field-label" style={{ marginTop: '12px' }}>6. REASSIGNMENT INFORMATION</div>
-                <div className="field-value">
-                  For reassignment? {props.forReassignment ? '\u2611' : '\u2610'} Yes &nbsp;
-                  {!props.forReassignment ? '\u2611' : '\u2610'} No
-                </div>
-                <div className="field-value">Name of Incident/Event: {props.reassignmentIncident || '\u00A0'}</div>
-                <div className="field-value">Location: {props.reassignmentLocation || '\u00A0'}</div>
               </td>
-              <td colSpan={2} className="content-cell travel-cell">
+              <td colSpan={4} className="content-cell travel-label-cell">
                 <div className="field-label">7. TRAVEL INFORMATION</div>
-                <div className="field-value">Room overnight: {props.roomOvernight ? '\u2611' : '\u2610'} Yes &nbsp;
-                  {!props.roomOvernight ? '\u2611' : '\u2610'} No</div>
-                <div className="field-value">Estimated Time of Departure: {props.etd || '\u00A0'}</div>
-                <div className="field-value">Destination: {props.destination || '\u00A0'}</div>
-                <div className="field-value">Travel Method: {props.travelMethod || '\u00A0'}</div>
-                <div className="field-value">Manifest: {props.manifest ? '\u2611' : '\u2610'} Yes &nbsp;
-                  {!props.manifest ? '\u2611' : '\u2610'} No</div>
-                <div className="field-value">Actual Release Date and Time: {fmtDT(props.actualReleaseDate, props.actualReleaseTime) || '\u00A0'}</div>
-                <div className="field-value">Contact Details: {props.contactDetails || '\u00A0'}</div>
-                <div className="field-value">Agency/Office Notified: {props.agencyNotified || '\u00A0'}</div>
+              </td>
+            </tr>
+            <tr>
+              <td colSpan={4} className="content-cell travel-cell">
+                <div className="field-value">Room overnight: ___Yes ___No</div>
+              </td>
+            </tr>
+            <tr>
+              <td colSpan={4} className="content-cell travel-cell">
+                <div className="field-value">Estimated Time of Departure: _____</div>
+              </td>
+            </tr>
+            <tr>
+              <td colSpan={4} className="content-cell travel-cell">
+                <div className="field-value">Destination: ________________________</div>
+              </td>
+            </tr>
+            <tr>
+              <td colSpan={4} className="content-cell travel-cell">
+                <div className="field-value">Travel Method: _____________________</div>
               </td>
             </tr>
 
-            {/* Prepared by */}
+            {/* R38-39: Reassignment + remaining travel */}
             <tr>
-              <td colSpan={4} className="sig-cell">
-                <div className="sig-row-print">
-                  <div className="sig-num">8. Prepared by DMOB:</div>
-                  <div className="sig-field-print">
-                    <span className="sig-label">Name and Signature:</span>
-                    <span className="sig-value">{props.preparedByName || props.preparedBySig || '\u00A0'}</span>
-                  </div>
-                  <div className="sig-field-print">
-                    <span className="sig-label">Date Prepared:</span>
-                    <span className="sig-value">{props.preparedDate || '\u00A0'}</span>
-                  </div>
-                  <div className="sig-field-print">
-                    <span className="sig-label">Time Prepared:</span>
-                    <span className="sig-value">{fmtTime(props.preparedTime) || '\u00A0'}</span>
-                  </div>
+              <td colSpan={5} rowSpan={4} className="content-cell remarks-cell">
+                <div className="field-label">6. REASSIGNMENT INFORMATION</div>
+                <div className="field-value">For reassignment? ___Yes ___No</div>
+                <div className="field-value">Name of Incident/Event______________</div>
+                <div className="field-value">Location: _________________________</div>
+              </td>
+              <td colSpan={4} className="content-cell travel-cell">
+                <div className="field-value">Manifest: ___Yes ___No</div>
+              </td>
+            </tr>
+            <tr>
+              <td colSpan={4} className="content-cell travel-cell">
+                <div className="field-value">Actual Release Date and Time: _____</div>
+              </td>
+            </tr>
+            <tr>
+              <td colSpan={4} className="content-cell travel-cell">
+                <div className="field-value">Contact Details: ________________</div>
+              </td>
+            </tr>
+            <tr>
+              <td colSpan={4} className="content-cell travel-cell">
+                <div className="field-value">Agency/Office Notified: ___________</div>
+              </td>
+            </tr>
+
+            {/* R42: Prepared by DMOB */}
+            <tr>
+              <td colSpan={3} className="sig-cell-content">
+                <div className="sig-num">8. Prepared by DMOB:</div>
+                <div className="sig-field-print">
+                  <span className="sig-label">Name and Signature:</span>
+                  <span className="sig-value">{props.preparedByName || props.preparedBySig || '\u00A0'}</span>
+                </div>
+              </td>
+              <td colSpan={3} className="sig-cell-content">
+                <div className="sig-field-print">
+                  <span className="sig-label">Date Prepared:</span>
+                  <span className="sig-value">{props.preparedDate || '\u00A0'}</span>
+                </div>
+              </td>
+              <td colSpan={3} className="sig-cell-content">
+                <div className="sig-field-print">
+                  <span className="sig-label">Time Prepared:</span>
+                  <span className="sig-value">{fmtTime(props.preparedTime) || '\u00A0'}</span>
                 </div>
               </td>
             </tr>
