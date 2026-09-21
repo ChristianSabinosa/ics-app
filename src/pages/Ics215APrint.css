@@ -39,23 +39,6 @@
 .ics215a-grid {
   width: 100%;
   display: grid;
-  grid-template-columns: repeat(13, 1fr);
-  grid-template-rows:
-    60px    /* row 1: title */
-    22px    /* row 2: op period label */
-    22px    /* row 3: from */
-    22px    /* row 4: to */
-    24px    /* row 5: hazard header */
-    50px    /* row 6: hazard sub-headers */
-    20px    /* row 7: check box label */
-    50px    /* row 8: data 1 */
-    50px    /* row 9: data 2 */
-    50px    /* row 10: data 3 */
-    50px    /* row 11: data 4 */
-    50px    /* row 12: data 5 */
-    20px    /* row 13: note */
-    28px    /* row 14: SOFR */
-    28px;   /* row 15: OSC */
   font-family: Arial, Helvetica, sans-serif;
   font-size: 10px;
   line-height: 1.3;
