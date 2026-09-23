@@ -1,0 +1,285 @@
+/*
+ * ICS 201 print styles.
+ * NOTE: every rule scoped under .ics201-form on purpose — all page CSS ships in one
+ * bundle, and unscoped generic class names (.actions-cell, .footer-row, .footer-field,
+ * .sheet-note, ...) defined by other pages (OngoingIncidents, ICS 203/206, ICS 201 form)
+ * would otherwise hijack this layout depending on import order.
+ */
+
+.ics201-print-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: #e5e5e5;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ics201-print-controls {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #333;
+  padding: 10px 20px;
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ics201-print-controls button {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.ics201-print-controls button:first-child { background: #2563eb; color: white; }
+.ics201-print-controls button:last-child { background: #6b7280; color: white; }
+
+.ics201-print-page {
+  width: 210mm;
+  background: white;
+  margin: 20px auto;
+  padding: 8mm;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.ics201-form {
+  width: 100%;
+  border-collapse: collapse;
+  border: 2px solid #000;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 9pt;
+  table-layout: fixed;
+}
+
+/* Base cell rule. `display: table-cell` + `white-space: normal` neutralize the
+   unscoped `.actions-cell { display: flex; white-space: nowrap }` from
+   OngoingIncidents.css that would otherwise break section 8. */
+.ics201-form td {
+  border: 1px solid #000;
+  padding: 0;
+  vertical-align: top;
+  display: table-cell;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+/* ── Header ── */
+.ics201-form td.header-cell { padding: 6px 10px; }
+
+.ics201-form .header-content { display: flex; align-items: center; gap: 10px; }
+.ics201-form .logo-section { flex-shrink: 0; }
+.ics201-form .ndrrmc-logo { width: 55px; height: auto; }
+.ics201-form .title-section { text-align: center; flex: 1; }
+.ics201-form .main-title { font-size: 15pt; font-weight: 700; letter-spacing: 1px; }
+.ics201-form .form-number { font-size: 13pt; font-weight: 700; margin-top: 2px; }
+
+/* ── Row 1/2/3 ── */
+.ics201-form td.top-row { padding: 0; }
+
+.ics201-form .top-row-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr;
+}
+
+.ics201-form .top-cell {
+  padding: 6px 10px;
+  border-right: 1px solid #000;
+  min-height: 34pt;
+}
+
+.ics201-form .top-cell:last-child { border-right: none; }
+
+.ics201-form .field-label { font-weight: 700; font-size: 8.5pt; margin-bottom: 2px; text-transform: uppercase; }
+.ics201-form .field-value { font-size: 9pt; min-height: 14pt; line-height: 1.3; }
+
+/* ── Content cells ── */
+.ics201-form td.content-cell { padding: 0; }
+
+.ics201-form .section-bar {
+  text-align: center;
+  font-weight: 700;
+  font-size: 9.5pt;
+  text-transform: uppercase;
+  padding: 5px 8px;
+  border-bottom: 1px solid #000;
+}
+
+.ics201-form .section-hint {
+  text-align: center;
+  font-size: 8pt;
+  padding: 4px 10px 6px;
+  border-bottom: 1px solid #000;
+  line-height: 1.3;
+}
+
+.ics201-form .field-textarea {
+  font-size: 8.5pt;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  padding: 6px 10px;
+}
+
+/* ── 4. Map sketch ── */
+.ics201-form .map-cell { height: 430pt; }
+
+.ics201-form .map-body {
+  height: calc(430pt - 52pt);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.ics201-form .map-print-img {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* ── 5. Situation summary ── */
+.ics201-form .situation-cell { height: 300pt; }
+
+/* ── 7. Objectives ── */
+.ics201-form .objectives-cell { height: 380pt; }
+
+.ics201-form .objectives-list {
+  margin: 8px 12px;
+  padding-left: 22px;
+  font-size: 9pt;
+  line-height: 1.6;
+}
+
+.ics201-form .objectives-list li { margin-bottom: 3pt; }
+
+/* ── Entry tables (8 / 12) ──
+   Column sizes, section 8: DATE and TIME = 24%, ACTIONS = 76% (fixed layout). */
+.ics201-form .print-entry-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.ics201-form .print-entry-table th,
+.ics201-form .print-entry-table td {
+  border: 1px solid #000;
+  padding: 4px 8px;
+  font-size: 8pt;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.ics201-form .print-entry-table th {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 8.5pt;
+  background: #fff;
+}
+
+.ics201-form .print-entry-table td {
+  text-align: left;
+  height: 24pt;
+  vertical-align: middle;
+}
+
+.ics201-form .actions-print-table .col-datetime { width: 24%; }
+.ics201-form .actions-print-table th:nth-child(2) { width: 76%; }
+
+.ics201-form .resources-print-table th { font-size: 7.5pt; line-height: 1.2; }
+.ics201-form .resources-print-table td { height: 30pt; font-size: 8pt; }
+
+.ics201-form .sheet-note {
+  text-align: right;
+  font-size: 8pt;
+  font-style: italic;
+  padding: 4px 8px;
+}
+
+/* ── 10. Current organization ── */
+.ics201-form .org-cell { height: 640pt; }
+
+.ics201-form .org-body {
+  height: calc(640pt - 44pt);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 6px;
+}
+
+.ics201-form .org-body .org-svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Footers (6 / 9 / 11 / 13) ── */
+.ics201-form td.footer-cell { padding: 0; }
+
+.ics201-form .footer-row {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  min-height: 25px;
+}
+
+.ics201-form .footer-row.with-datetime {
+  grid-template-columns: 150px 1.6fr 1fr 1fr;
+}
+
+.ics201-form .footer-num {
+  font-weight: 700;
+  font-size: 9pt;
+  display: flex;
+  align-items: center;
+  padding: 6px 8px;
+  border-right: 1px solid #000;
+}
+
+.ics201-form .footer-field {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 8px;
+  border-right: 1px solid #000;
+  justify-content: center;
+}
+
+.ics201-form .footer-field:last-child { border-right: none; }
+
+.ics201-form .footer-label { font-size: 7.5pt; font-weight: 600; color: #333; }
+
+.ics201-form .footer-value {
+  font-size: 9pt;
+  min-height: 14pt;
+  border-bottom: 1px solid #999;
+  margin-top: 2px;
+}
+
+@media print {
+  .ics201-print-controls { display: none !important; }
+  .ics201-print-overlay {
+    background: none !important;
+    position: static !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+  .ics201-print-page {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+    min-height: auto;
+    page-break-after: always;
+  }
+  .ics201-print-page:last-child { page-break-after: auto; }
+  .ics201-form { page-break-inside: auto; }
+  .ics201-form tr { page-break-inside: avoid; page-break-after: auto; }
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+}

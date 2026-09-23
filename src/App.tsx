@@ -11,6 +11,8 @@ import CheckInForm from './pages/CheckInForm'
 import CheckInView from './pages/CheckInView'
 import Ics211Form from './pages/Ics211Form'
 import Ics207Form from './pages/Ics207Form'
+import Ics201Form from './pages/Ics201Form'
+import IncidentMapForm from './pages/IncidentMapForm'
 import Ics202Form from './pages/Ics202Form'
 import Ics203Form from './pages/Ics203Form'
 import Ics205Form from './pages/Ics205Form'
@@ -38,6 +40,8 @@ function App() {
           <Route path="/incident/:id/checkin/view" element={<ProtectedRoute><CheckInView /></ProtectedRoute>} />
           <Route path="/incident/:id/ics-211" element={<ProtectedRoute><Ics211Form /></ProtectedRoute>} />
           <Route path="/incident/:id/ics-207" element={<ProtectedRoute><Ics207Form /></ProtectedRoute>} />
+          <Route path="/incident/:id/ics-201" element={<ProtectedRoute><Ics201Form /></ProtectedRoute>} />
+          <Route path="/incident/:id/incident-map" element={<ProtectedRoute><IncidentMapForm /></ProtectedRoute>} />
           <Route path="/incident/:id/ics-202" element={<ProtectedRoute><Ics202Form /></ProtectedRoute>} />
           <Route path="/incident/:id/ics-203" element={<ProtectedRoute><Ics203Form /></ProtectedRoute>} />
           <Route path="/incident/:id/ics-205" element={<ProtectedRoute><Ics205Form /></ProtectedRoute>} />

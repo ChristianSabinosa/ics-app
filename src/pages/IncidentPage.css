@@ -381,6 +381,7 @@
 .sidebar-status-badge.draft { background: #fef3c7; color: #92400e; }
 .sidebar-status-badge.submitted { background: #d1fae5; color: #065f46; }
 .sidebar-status-badge.approved { background: #dbeafe; color: #1e40af; }
+.sidebar-status-badge.saved { background: #cffafe; color: #155e75; }
 
 /* ============================
    MODALS

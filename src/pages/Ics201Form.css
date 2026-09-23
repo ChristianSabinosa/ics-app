@@ -1,0 +1,627 @@
+.ics201-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+
+.ics201-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-size: 1.1rem;
+  color: #555;
+}
+
+/* ── Brand header ── */
+.ics201-header {
+  background: #950606;
+  color: white;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-brand h1 {
+  font-size: 1.1rem;
+  margin: 0;
+  font-weight: 600;
+}
+
+.header-brand p {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.header-logo {
+  height: 40px;
+}
+
+/* ── Sticky topbar ── */
+.ics201-topbar {
+  background: #fff;
+  border-bottom: 1px solid #ddd;
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.topbar-btn.back {
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.topbar-btn.back:hover {
+  background: #f0f0f0;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-badge {
+  background: #1e3a5f;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.status-badge.draft {
+  background: #fbbf24;
+  color: #92400e;
+}
+
+.status-badge.submitted {
+  background: #34d399;
+  color: #065f46;
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  padding: 6px 14px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.action-btn.save { background: #e5e7eb; color: #374151; }
+.action-btn.submit { background: #1e3a5f; color: white; }
+.action-btn.edit { background: #f59e0b; color: white; }
+.action-btn.print { background: #059669; color: white; }
+
+/* ── Main ── */
+.ics201-main {
+  padding: 24px;
+}
+
+.ics201-container {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.error-message {
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 10px 14px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+}
+
+.success-message {
+  background: #d1fae5;
+  color: #065f46;
+  padding: 10px 14px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+}
+
+/* ── Form sheet (one per print page) ── */
+.form-sheet {
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin-bottom: 28px;
+  overflow: hidden;
+}
+
+.sheet-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border-bottom: 2px solid #000;
+}
+
+.sheet-logo {
+  height: 48px;
+  width: auto;
+}
+
+.sheet-title {
+  flex: 1;
+  text-align: center;
+}
+
+.sheet-title h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.sheet-title h3 {
+  margin: 2px 0 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+/* ── Row 1/2/3 of page 1 ── */
+.sheet-row {
+  display: grid;
+  border-bottom: 1px solid #000;
+}
+
+.sheet-row.three-col {
+  grid-template-columns: 1.6fr 1fr 1fr;
+}
+
+.sheet-row .form-field {
+  padding: 10px 14px;
+  border-right: 1px solid #000;
+}
+
+.sheet-row .form-field:last-child {
+  border-right: none;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-field label {
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+
+.form-field input {
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.form-field input.readonly {
+  background: #f9f9f9;
+  color: #555;
+}
+
+.form-field input:disabled {
+  background: #f9f9f9;
+  color: #555;
+}
+
+/* ── Blocks (4, 5, 7, 8, 10, 12) ── */
+.sheet-block {
+  padding: 12px 16px;
+  border-bottom: 1px solid #000;
+}
+
+.block-title {
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.block-hint {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.block-textarea,
+.sheet-block textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.sheet-block textarea:disabled {
+  background: #f9f9f9;
+  color: #555;
+}
+
+.sheet-note {
+  text-align: right;
+  font-size: 0.78rem;
+  font-style: italic;
+  color: #555;
+  margin-top: 6px;
+}
+
+/* ── Map sketch ── */
+.map-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.map-btn {
+  padding: 6px 16px;
+  border-radius: 4px;
+  border: 1px solid #1e3a5f;
+  background: #1e3a5f;
+  color: white;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.map-btn.view {
+  background: #059669;
+  border-color: #059669;
+}
+
+.map-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.map-preview {
+  min-height: 300px;
+  border: 1px dashed #bbb;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.map-preview img {
+  max-width: 100%;
+  max-height: 420px;
+}
+
+/* ── Map preview modal ── */
+.map-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.map-modal {
+  background: white;
+  border-radius: 6px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: auto;
+  padding: 0 0 16px;
+}
+
+.map-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid #ddd;
+}
+
+.map-modal-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.map-modal-close {
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: #b91c1c;
+  cursor: pointer;
+}
+
+.map-modal img {
+  display: block;
+  max-width: 100%;
+  margin: 16px auto 0;
+}
+
+/* ── Bullet inputs (7. Objectives) ── */
+.bullet-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.bullet-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bullet-mark {
+  font-size: 1.1rem;
+  font-weight: 700;
+  width: 14px;
+  text-align: center;
+}
+
+.bullet-row input {
+  flex: 1;
+  padding: 7px 9px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.bullet-row input:disabled {
+  background: #f9f9f9;
+  color: #555;
+}
+
+.remove-row {
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  color: #b91c1c;
+  font-size: 0.95rem;
+  line-height: 1;
+  padding: 3px 8px;
+  cursor: pointer;
+}
+
+.remove-row:hover:not(:disabled) {
+  background: #fee2e2;
+}
+
+.remove-row:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.add-row-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.add-row-btn {
+  padding: 6px 14px;
+  border: 1px solid #1e3a5f;
+  border-radius: 4px;
+  background: #1e3a5f;
+  color: white;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.add-row-btn:hover:not(:disabled) {
+  background: #16324f;
+}
+
+.add-row-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.add-row-btn.manifest {
+  background: #059669;
+  border-color: #059669;
+}
+
+.add-row-btn.manifest:hover:not(:disabled) {
+  background: #047857;
+}
+
+/* ── Entry tables (8. Actions / 12. Resources) ── */
+.entry-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.entry-table th,
+.entry-table td {
+  border: 1px solid #000;
+  padding: 4px 6px;
+  font-size: 0.78rem;
+  text-align: center;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.entry-table td {
+  text-align: left;
+  font-weight: 400;
+}
+
+.entry-table td input {
+  width: 100%;
+  border: none;
+  padding: 6px 4px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  background: transparent;
+  box-sizing: border-box;
+}
+
+.entry-table td input:disabled {
+  color: #555;
+}
+
+.entry-table .col-datetime {
+  width: 26%;
+}
+
+.entry-table .remove-th {
+  width: 32px;
+}
+
+.entry-table td.remove-cell {
+  text-align: center;
+  padding: 2px 4px;
+}
+
+.entry-table .empty-row td {
+  text-align: center;
+  font-style: italic;
+  color: #777;
+  padding: 16px;
+}
+
+.resources-table th,
+.resources-table td {
+  font-size: 0.7rem;
+}
+
+.resources-table td input {
+  font-size: 0.8rem;
+}
+
+/* ── Org chart preview (10. Current Organization) ── */
+.org-preview {
+  height: 520px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #fff;
+}
+
+.org-preview .org-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.org-empty {
+  text-align: center;
+  color: #777;
+  font-size: 0.9rem;
+  padding: 20px;
+  max-width: 420px;
+}
+
+/* ── Prepared by IC footers ── */
+.sheet-footer {
+  display: grid;
+  grid-template-columns: 170px 1fr;
+  background: #fafafa;
+}
+
+.sheet-footer.with-datetime {
+  grid-template-columns: 170px 1.6fr 1fr 1fr;
+}
+
+.footer-num {
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-right: 1px solid #000;
+}
+
+.footer-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 12px;
+  border-right: 1px solid #000;
+  justify-content: center;
+}
+
+.footer-field:last-child {
+  border-right: none;
+}
+
+.footer-field label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #555;
+}
+
+.footer-field input {
+  border: none;
+  border-bottom: 1px solid #ccc;
+  padding: 4px 2px;
+  font-size: 0.85rem;
+  background: transparent;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.footer-field input:disabled {
+  background: transparent;
+  color: #555;
+}
+
+@media print {
+  .no-print { display: none !important; }
+}

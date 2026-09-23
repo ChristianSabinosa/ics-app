@@ -23,6 +23,7 @@ const ICS_FORMS = [
   { num: '215', name: 'Operational Planning Worksheet' },
   { num: '215-A', name: 'Incident/Event Safety, Risk and Health Analysis' },
   { num: '221', name: 'Demobilization Check-out' },
+  { num: 'MAP', name: 'Incident Map' },
 ]
 
 export default function IncidentPage() {
@@ -111,6 +112,21 @@ export default function IncidentPage() {
       .eq('incident_id', id)
     if (forms207 && forms207.length > 0) {
       statuses['207'] = forms207[0].status
+    }
+    const { data: forms201 } = await supabase
+      .from('ics_201_forms')
+      .select('id, status, incident_id')
+      .eq('incident_id', id)
+    if (forms201 && forms201.length > 0) {
+      statuses['201'] = forms201[0].status
+    }
+    const { data: incidentMap } = await supabase
+      .from('incident_maps')
+      .select('id, map_image')
+      .eq('incident_id', id)
+      .maybeSingle()
+    if (incidentMap?.map_image) {
+      statuses['MAP'] = 'Saved'
     }
     const { data: forms202 } = await supabase
       .from('ics_202_forms')
@@ -319,6 +335,10 @@ export default function IncidentPage() {
       navigate(`/incident/${incident.incident_id}/ics-211`)
     } else if (formNum === '207') {
       navigate(`/incident/${incident.incident_id}/ics-207`)
+    } else if (formNum === '201') {
+      navigate(`/incident/${incident.incident_id}/ics-201`)
+    } else if (formNum === 'MAP') {
+      navigate(`/incident/${incident.incident_id}/incident-map`)
     } else if (formNum === '202') {
       navigate(`/incident/${incident.incident_id}/ics-202`)
     } else if (formNum === '203') {
