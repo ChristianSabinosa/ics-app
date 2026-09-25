@@ -1,0 +1,198 @@
+.ics204-print-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: #e5e5e5;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ics204-print-controls {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #333;
+  padding: 10px 20px;
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ics204-print-controls button {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.ics204-print-controls button:first-child { background: #2563eb; color: white; }
+.ics204-print-controls button:last-child { background: #6b7280; color: white; }
+
+.ics204-print-page {
+  width: 210mm;
+  background: white;
+  margin: 20px auto;
+  padding: 10mm;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.ics204-form {
+  width: 100%;
+  border-collapse: collapse;
+  border: 2px solid #000;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 9pt;
+}
+
+.ics204-form td {
+  border: 1px solid #000;
+  padding: 0;
+  vertical-align: top;
+}
+
+.ics204-form td.header-cell { padding: 6px 10px; }
+
+.header-content { display: flex; align-items: center; gap: 10px; }
+.ndrrmc-logo { width: 55px; height: auto; }
+.title-section { text-align: center; flex: 1; }
+.logo-spacer { width: 55px; flex-shrink: 0; }
+.main-title { font-size: 15pt; font-weight: 700; letter-spacing: 1px; }
+.form-number { font-size: 13pt; font-weight: 700; margin-top: 2px; }
+
+.ics204-form td.top-cell { padding: 6px 10px; }
+.field-label { font-weight: 700; font-size: 8.5pt; margin-bottom: 2px; text-transform: uppercase; }
+.field-value { font-size: 8.5pt; min-height: 12pt; line-height: 1.4; }
+
+.ics204-form td.content-cell { padding: 4px 6px; }
+
+.section-title {
+  font-weight: 700;
+  font-size: 8.5pt;
+  text-transform: uppercase;
+  padding: 2px 0;
+  margin-bottom: 3px;
+}
+
+.section-title.center { text-align: center; }
+
+.print-subtable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 7.5pt;
+}
+
+.print-subtable th,
+.print-subtable td {
+  border: 1px solid #000;
+  padding: 3px 4px;
+  vertical-align: middle;
+}
+
+.print-subtable th {
+  font-weight: 700;
+  text-align: center;
+  background: #fff;
+}
+
+.print-subtable td.center { text-align: center; }
+
+.ops-table th,
+.ops-table td { font-size: 8pt; }
+.ops-table th:first-child,
+.ops-table td:first-child { width: 34%; }
+.ops-table th:last-child,
+.ops-table td:last-child { width: 30%; }
+
+.resources-table { font-size: 6.5pt; }
+.resources-table th,
+.resources-table td { padding: 2px 3px; }
+.resources-table th:nth-child(1) { width: 13%; }
+.resources-table th:nth-child(2) { width: 12%; }
+.resources-table th:nth-child(3) { width: 11%; }
+.resources-table th:nth-child(4) { width: 7%; }
+.resources-table th:nth-child(5),
+.resources-table th:nth-child(6) { width: 4%; }
+.resources-table th:nth-child(7) { width: 16%; }
+.resources-table th:nth-child(8) { width: 14%; }
+.resources-table th:nth-child(9) { width: 13%; }
+
+.comms-table th:first-child,
+.comms-table td:first-child { width: 16%; }
+.comms-table th:nth-child(2),
+.comms-table td:nth-child(2) { width: 16%; }
+.comms-table th:nth-child(3),
+.comms-table td:nth-child(3) { width: 12%; }
+.comms-table th:nth-child(4),
+.comms-table td:nth-child(4) { width: 14%; }
+
+.print-textbox {
+  min-height: 115pt;
+  padding: 4px 6px;
+  font-size: 8.5pt;
+  line-height: 1.4;
+  white-space: pre-line;
+}
+
+.ics204-form td.footer-cell { padding: 0; }
+
+.footer-row {
+  display: grid;
+  grid-template-columns: 140px 1.4fr 1fr 1fr;
+  min-height: 30pt;
+}
+
+.footer-num {
+  font-weight: 700;
+  font-size: 8.5pt;
+  display: flex;
+  align-items: center;
+  padding: 4px 6px;
+  border-right: 1px solid #000;
+}
+
+.footer-field {
+  display: flex;
+  flex-direction: column;
+  padding: 3px 6px;
+  border-right: 1px solid #000;
+  justify-content: center;
+}
+
+.footer-field:last-child { border-right: none; }
+
+.footer-label { font-size: 7pt; font-weight: 600; color: #333; }
+
+.footer-value {
+  font-size: 8.5pt;
+  min-height: 12pt;
+  border-bottom: 1px solid #999;
+  margin-top: 2px;
+}
+
+@media print {
+  .ics204-print-controls { display: none !important; }
+  .ics204-print-overlay { background: none; position: static; }
+  .ics204-print-page {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+    min-height: auto;
+    page-break-after: always;
+  }
+  .ics204-print-page:last-child { page-break-after: auto; }
+  .ics204-form { page-break-inside: auto; }
+  .ics204-form tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+  .print-subtable tr { page-break-inside: avoid; }
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+}

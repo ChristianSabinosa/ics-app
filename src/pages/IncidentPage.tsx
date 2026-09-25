@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -6,6 +6,10 @@ import { generateRoleId, formatMilitaryTime } from '../lib/utils'
 import type { Incident, IncidentParticipant, CheckinManifest, CheckinPersonnel } from '../lib/types'
 import ConfirmModal from '../components/ConfirmModal'
 import './IncidentPage.css'
+
+// Only these fields are rendered on this page, so queries select just these columns
+type ManifestSummary = Pick<CheckinManifest, 'id' | 'checkin_id' | 'incident_id' | 'user_id' | 'agency_name' | 'total_personnel' | 'created_at'>
+type PersonnelSummary = Pick<CheckinPersonnel, 'manifest_id' | 'name' | 'role' | 'capabilities'>
 
 const ICS_FORMS = [
   { num: '201', name: 'Incident Briefing' },
@@ -43,23 +47,57 @@ export default function IncidentPage() {
   const [pendingNewRole, setPendingNewRole] = useState<'IMT' | 'Tactical Resources' | 'Observer' | null>(null)
   const [processing, setProcessing] = useState(false)
 
-  const [manifests, setManifests] = useState<CheckinManifest[]>([])
-  const [allPersonnel, setAllPersonnel] = useState<CheckinPersonnel[]>([])
+  const [manifests, setManifests] = useState<ManifestSummary[]>([])
+  const [allPersonnel, setAllPersonnel] = useState<PersonnelSummary[]>([])
   const [formStatuses, setFormStatuses] = useState<Record<string, string>>({})
+  const [formCounts, setFormCounts] = useState<Record<string, number>>({})
   const [operationalPeriod, setOperationalPeriod] = useState('')
   const [incidentCommander, setIncidentCommander] = useState('')
   const [publicStatus, setPublicStatus] = useState<{ description: string; totalCases: string }[]>([])
+  const [manifestsLoaded, setManifestsLoaded] = useState(false)
+  const [detailsLoaded, setDetailsLoaded] = useState(false)
+
+  const fetchGen = useRef(0)
+  const userId = user?.id
 
   const fetchData = useCallback(async () => {
+    const gen = ++fetchGen.current
+    const isCurrent = () => gen === fetchGen.current
+
     setLoading(true)
     setError('')
+    setManifestsLoaded(false)
+    setDetailsLoaded(false)
+    setManifests([])
+    setAllPersonnel([])
+    setFormStatuses({})
+    setFormCounts({})
+    setOperationalPeriod('')
+    setIncidentCommander('')
+    setPublicStatus([])
 
-    const { data: incidentData, error: incidentError } = await supabase
-      .from('incidents')
-      .select('*')
-      .eq('incident_id', id)
-      .single()
+    // Wave 1: incident header + current participant (independent, run in parallel)
+    const fetchParticipant = async (): Promise<IncidentParticipant | null> => {
+      if (!userId) return null
+      const { data } = await supabase
+        .from('incident_participants')
+        .select('*')
+        .eq('incident_id', id)
+        .eq('user_id', userId)
+        .eq('status', 'Active')
+        .order('joined_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      return data ?? null
+    }
 
+    const [incidentResult, participantData] = await Promise.all([
+      supabase.from('incidents').select('*').eq('incident_id', id).single(),
+      fetchParticipant(),
+    ])
+    if (!isCurrent()) return
+
+    const { data: incidentData, error: incidentError } = incidentResult
     if (incidentError || !incidentData) {
       setError('Incident not found.')
       setLoading(false)
@@ -67,157 +105,98 @@ export default function IncidentPage() {
     }
 
     setIncident(incidentData)
+    setParticipant(participantData)
+    setLoading(false) // render the page shell now; remaining data fills in below
 
-    if (user) {
-      const { data: participantData } = await supabase
-        .from('incident_participants')
-        .select('*')
+    // Wave 2: check-in manifests + every form status + operational period + public status
+    // (one parallel batch instead of ~19 sequential queries)
+    const fetchFormStatus = async (table: string): Promise<string | null> => {
+      const { data } = await supabase.from(table).select('status').eq('incident_id', id).limit(1).maybeSingle()
+      return data?.status ?? null
+    }
+
+    const [
+      manifestsResult,
+      status211, status201, status203, status205, status206, status208,
+      status213, status214, status215, status215a, status221,
+      forms204Result,
+      mapResult, form202Result, form207Result, form209Result,
+    ] = await Promise.all([
+      supabase
+        .from('checkin_manifests')
+        .select('id, checkin_id, incident_id, user_id, agency_name, total_personnel, created_at')
         .eq('incident_id', id)
-        .eq('user_id', user.id)
-        .eq('status', 'Active')
-        .order('joined_at', { ascending: false })
+        .order('created_at', { ascending: false }),
+      fetchFormStatus('ics_211_forms'),
+      fetchFormStatus('ics_201_forms'),
+      fetchFormStatus('ics_203_forms'),
+      fetchFormStatus('ics_205_forms'),
+      fetchFormStatus('ics_206_forms'),
+      fetchFormStatus('ics_208_forms'),
+      fetchFormStatus('ics_213_forms'),
+      fetchFormStatus('ics_214_forms'),
+      fetchFormStatus('ics_215_forms'),
+      fetchFormStatus('ics_215a_forms'),
+      fetchFormStatus('ics_221_forms'),
+      // ICS 204: many instances per incident — fetch all statuses for count + aggregate badge
+      supabase.from('ics_204_forms').select('id, status').eq('incident_id', id).limit(100),
+      supabase.from('incident_maps').select('id, map_image').eq('incident_id', id).maybeSingle(),
+      supabase
+        .from('ics_202_forms')
+        .select('status, op_period_from_date, op_period_from_time, op_period_to_date, op_period_to_time')
+        .eq('incident_id', id)
+        .order('created_at', { ascending: false })
         .limit(1)
-        .single()
+        .maybeSingle(),
+      supabase
+        .from('ics_207_forms')
+        .select('id, status')
+        .eq('incident_id', id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from('ics_209_forms')
+        .select('status, public_status')
+        .eq('incident_id', id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ])
+    if (!isCurrent()) return
 
-      setParticipant(participantData)
-    }
-
-    const { data: manifestsData } = await supabase
-      .from('checkin_manifests')
-      .select('*')
-      .eq('incident_id', id)
-      .order('created_at', { ascending: false })
-
-    if (manifestsData && manifestsData.length > 0) {
-      setManifests(manifestsData)
-      const manifestIds = manifestsData.map((m) => m.id)
-      const { data: personnelData } = await supabase
-        .from('checkin_personnel')
-        .select('*')
-        .in('manifest_id', manifestIds)
-      setAllPersonnel(personnelData || [])
-    }
+    const manifestsData = manifestsResult.data ?? []
+    setManifests(manifestsData)
+    setManifestsLoaded(true)
 
     const statuses: Record<string, string> = {}
-    const { data: forms211 } = await supabase
-      .from('ics_211_forms')
-      .select('id, status, incident_id')
-      .eq('incident_id', id)
-    if (forms211 && forms211.length > 0) {
-      statuses['211'] = forms211[0].status
-    }
-    const { data: forms207 } = await supabase
-      .from('ics_207_forms')
-      .select('id, status, incident_id')
-      .eq('incident_id', id)
-    if (forms207 && forms207.length > 0) {
-      statuses['207'] = forms207[0].status
-    }
-    const { data: forms201 } = await supabase
-      .from('ics_201_forms')
-      .select('id, status, incident_id')
-      .eq('incident_id', id)
-    if (forms201 && forms201.length > 0) {
-      statuses['201'] = forms201[0].status
-    }
-    const { data: incidentMap } = await supabase
-      .from('incident_maps')
-      .select('id, map_image')
-      .eq('incident_id', id)
-      .maybeSingle()
-    if (incidentMap?.map_image) {
-      statuses['MAP'] = 'Saved'
-    }
-    const { data: forms202 } = await supabase
-      .from('ics_202_forms')
-      .select('id, status, incident_id')
-      .eq('incident_id', id)
-    if (forms202 && forms202.length > 0) {
-      statuses['202'] = forms202[0].status
-    }
-    const { data: forms203 } = await supabase
-      .from('ics_203_forms')
-      .select('id, status, incident_id')
-      .eq('incident_id', id)
-    if (forms203 && forms203.length > 0) {
-      statuses['203'] = forms203[0].status
-    }
-    const { data: forms205 } = await supabase
-      .from('ics_205_forms')
-      .select('id, status, incident_id')
-      .eq('incident_id', id)
-    if (forms205 && forms205.length > 0) {
-      statuses['205'] = forms205[0].status
-    }
-    const { data: forms206 } = await supabase
-      .from('ics_206_forms')
-      .select('id, status, incident_id')
-      .eq('incident_id', id)
-    if (forms206 && forms206.length > 0) {
-      statuses['206'] = forms206[0].status
-    }
-    const { data: forms208 } = await supabase
-      .from('ics_208_forms')
-      .select('id, status, incident_id')
-      .eq('incident_id', id)
-    if (forms208 && forms208.length > 0) {
-      statuses['208'] = forms208[0].status
-    }
-    const { data: forms209 } = await supabase
-      .from('ics_209_forms')
-      .select('id, status, incident_id')
-      .eq('incident_id', id)
-    if (forms209 && forms209.length > 0) {
-      statuses['209'] = forms209[0].status
-    }
-    const { data: forms213 } = await supabase
-      .from('ics_213_forms')
-      .select('id, status, incident_id')
-      .eq('incident_id', id)
-    if (forms213 && forms213.length > 0) {
-      statuses['213'] = forms213[0].status
-    }
-    const { data: forms214 } = await supabase
-      .from('ics_214_forms')
-      .select('id, status, incident_id')
-      .eq('incident_id', id)
-    if (forms214 && forms214.length > 0) {
-      statuses['214'] = forms214[0].status
-    }
-    const { data: forms215 } = await supabase
-      .from('ics_215_forms')
-      .select('id, status, incident_id')
-      .eq('incident_id', id)
-    if (forms215 && forms215.length > 0) {
-      statuses['215'] = forms215[0].status
-    }
-    const { data: forms215a } = await supabase
-      .from('ics_215a_forms')
-      .select('id, status, incident_id')
-      .eq('incident_id', id)
-    if (forms215a && forms215a.length > 0) {
-      statuses['215-A'] = forms215a[0].status
-    }
-    const { data: forms221 } = await supabase
-      .from('ics_221_forms')
-      .select('id, status, incident_id')
-      .eq('incident_id', id)
-    if (forms221 && forms221.length > 0) {
-      statuses['221'] = forms221[0].status
+    if (status211) statuses['211'] = status211
+    if (status201) statuses['201'] = status201
+    if (status203) statuses['203'] = status203
+    if (status205) statuses['205'] = status205
+    if (status206) statuses['206'] = status206
+    if (status208) statuses['208'] = status208
+    if (status213) statuses['213'] = status213
+    if (status214) statuses['214'] = status214
+    if (status215) statuses['215'] = status215
+    if (status215a) statuses['215-A'] = status215a
+    if (status221) statuses['221'] = status221
+    if (mapResult.data?.map_image) statuses['MAP'] = 'Saved'
+    if (form207Result.data?.status) statuses['207'] = form207Result.data.status
+    if (form202Result.data?.status) statuses['202'] = form202Result.data.status
+    if (form209Result.data?.status) statuses['209'] = form209Result.data.status
+    // ICS 204: aggregate status (Draft if any instance is a draft) + instance count
+    const forms204Rows: { status?: string }[] = forms204Result.data ?? []
+    if (forms204Rows.length > 0) {
+      statuses['204'] = forms204Rows.some((r) => r.status === 'Draft') ? 'Draft' : 'Submitted'
     }
     setFormStatuses(statuses)
+    setFormCounts(forms204Rows.length > 0 ? { '204': forms204Rows.length } : {})
 
-    // Fetch operational period from 202
-    const { data: form202Data } = await supabase
-      .from('ics_202_forms')
-      .select('op_period_from_date, op_period_from_time, op_period_to_date, op_period_to_time')
-      .eq('incident_id', id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single()
-
+    // Operational period from the latest ICS 202
+    const form202Data = form202Result.data
     if (form202Data && (form202Data.op_period_from_date || form202Data.op_period_to_date)) {
-      const fmtMil = (t: string) => t ? t.replace(':', '') + 'H' : ''
+      const fmtMil = (t: string) => (t ? t.replace(':', '') + 'H' : '')
       const from = form202Data.op_period_from_date
         ? `${form202Data.op_period_from_date} ${fmtMil(form202Data.op_period_from_time)}`.trim()
         : fmtMil(form202Data.op_period_from_time)
@@ -229,44 +208,41 @@ export default function IncidentPage() {
       setOperationalPeriod('')
     }
 
-    // Fetch incident commander from 207
-    const { data: form207Data } = await supabase
-      .from('ics_207_forms')
-      .select('id')
-      .eq('incident_id', id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single()
+    // Public status from the latest ICS 209
+    const form209Data = form209Result.data
+    setPublicStatus(
+      form209Data?.public_status && Array.isArray(form209Data.public_status)
+        ? form209Data.public_status
+        : [],
+    )
 
-    if (form207Data) {
-      const { data: icPos } = await supabase
-        .from('ics_207_positions')
-        .select('person_name')
-        .eq('form_id', form207Data.id)
-        .eq('position_key', 'ic')
-        .single()
-      setIncidentCommander(icPos?.person_name || '')
-    } else {
-      setIncidentCommander('')
-    }
+    // Wave 3: personnel (needs manifest ids) + incident commander (needs latest 207 form id)
+    const manifestIds = manifestsData.map((m: { id: string }) => m.id)
+    const form207Id = form207Result.data?.id ?? null
+    const [personnelResult, icPositionResult] = await Promise.all([
+      (async () => {
+        if (manifestIds.length === 0) return null
+        return supabase
+          .from('checkin_personnel')
+          .select('manifest_id, name, role, capabilities')
+          .in('manifest_id', manifestIds)
+      })(),
+      (async () => {
+        if (!form207Id) return null
+        return supabase
+          .from('ics_207_positions')
+          .select('person_name')
+          .eq('form_id', form207Id)
+          .eq('position_key', 'ic')
+          .maybeSingle()
+      })(),
+    ])
+    if (!isCurrent()) return
 
-    // Fetch public status from ICS 209
-    const { data: form209Data } = await supabase
-      .from('ics_209_forms')
-      .select('public_status')
-      .eq('incident_id', id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single()
-
-    if (form209Data?.public_status && Array.isArray(form209Data.public_status)) {
-      setPublicStatus(form209Data.public_status)
-    } else {
-      setPublicStatus([])
-    }
-
-    setLoading(false)
-  }, [id, user])
+    setAllPersonnel(personnelResult?.data ?? [])
+    setIncidentCommander(icPositionResult?.data?.person_name ?? '')
+    setDetailsLoaded(true)
+  }, [id, userId])
 
   useEffect(() => {
     if (id) fetchData()
@@ -343,6 +319,8 @@ export default function IncidentPage() {
       navigate(`/incident/${incident.incident_id}/ics-202`)
     } else if (formNum === '203') {
       navigate(`/incident/${incident.incident_id}/ics-203`)
+    } else if (formNum === '204') {
+      navigate(`/incident/${incident.incident_id}/ics-204`)
     } else if (formNum === '205') {
       navigate(`/incident/${incident.incident_id}/ics-205`)
     } else if (formNum === '206') {
@@ -408,12 +386,12 @@ export default function IncidentPage() {
               </div>
               <div className="incident-meta-row">
                 <span>
-                  Operational Period: {operationalPeriod || <em>Please indicate the operational period using ICS form 202</em>}
+                  Operational Period: {detailsLoaded ? (operationalPeriod || <em>Please indicate the operational period using ICS form 202</em>) : <em>Loading...</em>}
                 </span>
               </div>
               <div className="incident-meta-row">
                 <span>
-                  Incident Commander: {incidentCommander || <em>Please assign the Incident Commander in the organizational chart</em>}
+                  Incident Commander: {detailsLoaded ? (incidentCommander || <em>Please assign the Incident Commander in the organizational chart</em>) : <em>Loading...</em>}
                 </span>
               </div>
             </div>
@@ -445,7 +423,7 @@ export default function IncidentPage() {
               )
             })()}
 
-            {isIMTOrTactical && (() => {
+            {isIMTOrTactical && manifestsLoaded && (() => {
               const myManifest = manifests.find((m) => m.user_id === user?.id)
               const isCheckedIn = !!myManifest
               return (
@@ -468,7 +446,9 @@ export default function IncidentPage() {
 
             <div className="resource-section">
               <h3>Checked-in Resources</h3>
-              {manifests.length === 0 ? (
+              {!manifestsLoaded ? (
+                <p className="no-resources-text">Loading check-ins...</p>
+              ) : manifests.length === 0 ? (
                 <p className="no-resources-text">No resources have been checked in yet.</p>
               ) : (
                 <div className="resource-table-wrapper">
@@ -527,6 +507,9 @@ export default function IncidentPage() {
                   >
                     <span className="sidebar-form-num">{form.num}</span>
                     <span className="sidebar-form-name">{form.name}</span>
+                    {(formCounts[form.num] || 0) > 0 && (
+                      <span className="sidebar-count-badge">&times;{formCounts[form.num]}</span>
+                    )}
                     {status && (
                       <span className={`sidebar-status-badge ${status.toLowerCase()}`}>{status}</span>
                     )}

@@ -258,3 +258,69 @@ export interface Ics206Hospital {
   with_helipad: boolean
   sort_order: number
 }
+
+// ICS 204 — Assignment List (multiple instances per incident)
+export interface Ics204OpsPerson {
+  position: string
+  name: string
+  contact: string
+}
+
+export interface Ics204CommsRow {
+  function: string
+  system: string
+  channel: string
+  frequency: string
+  others: string
+}
+
+export interface Ics204Form {
+  id: string
+  incident_id: string
+  incident_name: string
+  op_period_from_date: string
+  op_period_from_time: string
+  op_period_to_date: string
+  op_period_to_time: string
+  branch: string
+  group_name: string
+  division: string
+  staging_area: string
+  ops_personnel: Ics204OpsPerson[]
+  specific_work_assignment: string
+  special_instructions: string
+  comms: Ics204CommsRow[]
+  prepared_by_name: string
+  prepared_by_sig: string
+  prepared_date: string
+  prepared_time: string
+  status: 'Draft' | 'Submitted'
+  created_at: string
+  updated_at: string
+}
+
+export interface Ics204Row {
+  id: string
+  form_id: string
+  resource_identifier: string
+  leader_name: string
+  contact_numbers: string
+  personnel: string
+  trans_needed: boolean
+  drop_off: string
+  pick_up_time: string
+  remarks: string
+  sort_order: number
+}
+
+// Lightweight list projection used by the assignment-list overview page
+export interface Ics204Summary {
+  id: string
+  branch: string
+  group_name: string
+  division: string
+  staging_area: string
+  status: 'Draft' | 'Submitted'
+  created_at: string
+  updated_at: string
+}

@@ -15,6 +15,8 @@ import Ics201Form from './pages/Ics201Form'
 import IncidentMapForm from './pages/IncidentMapForm'
 import Ics202Form from './pages/Ics202Form'
 import Ics203Form from './pages/Ics203Form'
+import Ics204List from './pages/Ics204List'
+import Ics204Form from './pages/Ics204Form'
 import Ics205Form from './pages/Ics205Form'
 import Ics206Form from './pages/Ics206Form'
 import Ics208Form from './pages/Ics208Form'
@@ -44,6 +46,8 @@ function App() {
           <Route path="/incident/:id/incident-map" element={<ProtectedRoute><IncidentMapForm /></ProtectedRoute>} />
           <Route path="/incident/:id/ics-202" element={<ProtectedRoute><Ics202Form /></ProtectedRoute>} />
           <Route path="/incident/:id/ics-203" element={<ProtectedRoute><Ics203Form /></ProtectedRoute>} />
+          <Route path="/incident/:id/ics-204" element={<ProtectedRoute><Ics204List /></ProtectedRoute>} />
+          <Route path="/incident/:id/ics-204/edit" element={<ProtectedRoute><Ics204Form /></ProtectedRoute>} />
           <Route path="/incident/:id/ics-205" element={<ProtectedRoute><Ics205Form /></ProtectedRoute>} />
           <Route path="/incident/:id/ics-206" element={<ProtectedRoute><Ics206Form /></ProtectedRoute>} />
           <Route path="/incident/:id/ics-208" element={<ProtectedRoute><Ics208Form /></ProtectedRoute>} />
