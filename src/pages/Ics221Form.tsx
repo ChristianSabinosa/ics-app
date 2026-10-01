@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { completeLeave } from '../lib/leaveIncident'
 import Ics221Print from './Ics221Print'
 import './Ics221Form.css'
 
@@ -86,6 +87,9 @@ export default function Ics221Form() {
   const navigate = useNavigate()
   const { user } = useAuth()
 
+  // Set when the user arrived here from the "Leave Incident" flow (step 2 of 2)
+  const isLeaveMode = searchParams.get('leave') === '1'
+
   const [formId, setFormId] = useState<string | null>(null)
   const [incidentName, setIncidentName] = useState('')
   const [resourceToRelease, setResourceToRelease] = useState('')
@@ -125,6 +129,7 @@ export default function Ics221Form() {
   const [showPrint, setShowPrint] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [positions203, setPositions203] = useState<Position203[]>([])
+  const [leaveParticipantId, setLeaveParticipantId] = useState('')
 
   const loadPositionsFrom203 = useCallback(async () => {
     if (!incidentId) return
@@ -204,6 +209,8 @@ export default function Ics221Form() {
     const formParam = searchParams.get('form')
     let formToLoad = null
 
+    // Many 221s per incident (same as ICS 204): only ?form=<id> opens a saved
+    // instance — every other visit starts a brand-new check-out.
     if (formParam) {
       const { data: form } = await supabase
         .from('ics_221_forms')
@@ -211,15 +218,6 @@ export default function Ics221Form() {
         .eq('id', formParam)
         .single()
       formToLoad = form
-    } else {
-      const { data: existingForm } = await supabase
-        .from('ics_221_forms')
-        .select('*')
-        .eq('incident_id', incidentId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
-      formToLoad = existingForm
     }
 
     if (formToLoad) {
@@ -255,6 +253,45 @@ export default function Ics221Form() {
     setLoading(false)
   }, [incidentId, searchParams])
 
+  // Leaving the incident: identify the departing participant and pre-fill the check-out.
+  const loadLeaveContext = useCallback(async () => {
+    if (!isLeaveMode || !incidentId || !user) return
+
+    const [participantRes, form211Res] = await Promise.all([
+      supabase
+        .from('incident_participants')
+        .select('id, user_name, role')
+        .eq('incident_id', incidentId)
+        .eq('user_id', user.id)
+        .eq('status', 'Active')
+        .order('joined_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from('ics_211_forms')
+        .select('id')
+        .eq('incident_id', incidentId)
+        .eq('status', 'Submitted')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ])
+
+    const participant = participantRes.data
+    if (participant) setLeaveParticipantId(participant.id)
+
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const now = new Date()
+    setResourceToRelease((prev) =>
+      prev || [participant?.user_name, participant?.role ? `(${participant.role})` : ''].filter(Boolean).join(' '),
+    )
+    setPlannedReleaseDate(
+      (prev) => prev || `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`,
+    )
+    setPlannedReleaseTime((prev) => prev || `${pad(now.getHours())}:${pad(now.getMinutes())}`)
+    if (form211Res.data) setManifest(true)
+  }, [isLeaveMode, incidentId, user])
+
   useEffect(() => {
     if (!user) return
     const now = new Date()
@@ -265,7 +302,8 @@ export default function Ics221Form() {
     setPreparedTime(now.toTimeString().slice(0, 5))
     loadForm()
     loadPositionsFrom203()
-  }, [incidentId, user, searchParams, loadForm, loadPositionsFrom203])
+    loadLeaveContext()
+  }, [incidentId, user, searchParams, loadForm, loadPositionsFrom203, loadLeaveContext])
 
   useEffect(() => {
     if (positions203.length === 0) return
@@ -300,6 +338,29 @@ export default function Ics221Form() {
       setOperationsUnits(updatedOperations)
     }
   }, [positions203])
+
+  /** Second step of the leave flow: end the membership and report the outcome on the dashboard. */
+  const finishLeave = async () => {
+    if (!incidentId) return
+    setSaving(true)
+
+    let notice: string
+    if (!leaveParticipantId) {
+      notice = 'You are no longer an active participant of this incident.'
+    } else {
+      const result = await completeLeave(incidentId, leaveParticipantId)
+      if (result.error) {
+        notice = `You left ${incidentName || 'the incident'}, but a problem occurred: ${result.error}`
+      } else if (result.deleted) {
+        notice = `You left ${incidentName || 'the incident'}. No IMT members remained, so the incident and all of its data were deleted.`
+      } else {
+        notice = `You have left ${incidentName || 'the incident'}.`
+      }
+    }
+
+    setSaving(false)
+    navigate('/dashboard', { state: { notice }, replace: true })
+  }
 
   const saveForm = async (formStatus: 'Draft' | 'Submitted') => {
     if (!incidentId || !user) return
@@ -359,6 +420,11 @@ export default function Ics221Form() {
     setStatus(formStatus)
     setIsEditing(false)
     setSuccess(formStatus === 'Draft' ? 'Progress saved as draft.' : 'ICS Form 221 submitted successfully!')
+
+    // Leaving the incident: submitting this check-out is what actually ends the membership.
+    if (isLeaveMode && formStatus === 'Submitted') {
+      await finishLeave()
+    }
   }
 
   const updateUnit = (
@@ -457,7 +523,7 @@ export default function Ics221Form() {
             {saving ? 'Saving...' : 'Save Progress'}
           </button>
           <button className="action-btn submit" onClick={() => saveForm('Submitted')} disabled={saving || isReadonly}>
-            Submit
+            {saving ? 'Submitting...' : isLeaveMode ? 'Submit & Finish Leaving' : 'Submit'}
           </button>
           {status === 'Submitted' && (
             <button className="action-btn edit" onClick={() => setIsEditing(true)} disabled={isEditing}>
@@ -473,6 +539,17 @@ export default function Ics221Form() {
       </div>
 
       <main className="ics221-main">
+        {isLeaveMode && (
+          <div className="leave-step-notice no-print">
+            <div className="leave-step-text">
+              <strong>Leaving {incidentName || 'this incident'} — step 2 of 2.</strong>{' '}
+              Submit this Demobilization Check-out to finish leaving. You remain a member of the incident until it is submitted.
+            </div>
+            <button className="leave-step-cancel" onClick={() => navigate(`/incident/${incidentId}`)}>
+              Cancel and stay
+            </button>
+          </div>
+        )}
         {error && <div className="error-message">{error}</div>}
         {success && <div className="success-message">{success}</div>}
 

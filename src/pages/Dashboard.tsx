@@ -1,11 +1,16 @@
 import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import './Dashboard.css'
 
 export default function Dashboard() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  // Message carried over from a completed action (e.g. leaving an incident / deleting it)
+  const [notice, setNotice] = useState(
+    () => ((location.state as { notice?: string } | null)?.notice ?? ''),
+  )
   const [showMenu, setShowMenu] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -73,6 +78,15 @@ export default function Dashboard() {
       </header>
 
       <main className="dashboard-main">
+        {notice && (
+          <div className="dashboard-notice">
+            <span>{notice}</span>
+            <button className="dashboard-notice-close" onClick={() => setNotice('')} aria-label="Dismiss">
+              &times;
+            </button>
+          </div>
+        )}
+
         <div className="welcome-section">
           <h2>Welcome, {user?.user_metadata?.first_name || 'User'}</h2>
           <p>What would you like to do?</p>

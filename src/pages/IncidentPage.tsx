@@ -143,8 +143,8 @@ export default function IncidentPage() {
     const [
       manifestsResult,
       status211, status201, status203, status205, status206, status208,
-      status213, status214, status215, status215a, status221,
-      forms204Result,
+      status213, status214, status215, status215a,
+      forms204Result, forms221Result,
       mapResult, form202Result, form207Result, form209Result, iapResult,
     ] = await Promise.all([
       supabase
@@ -162,9 +162,9 @@ export default function IncidentPage() {
       fetchFormStatus('ics_214_forms'),
       fetchFormStatus('ics_215_forms'),
       fetchFormStatus('ics_215a_forms'),
-      fetchFormStatus('ics_221_forms'),
-      // ICS 204: many instances per incident — fetch all statuses for count + aggregate badge
+      // ICS 204 / ICS 221: many instances per incident — fetch all statuses for count + aggregate badge
       supabase.from('ics_204_forms').select('id, status').eq('incident_id', id).limit(100),
+      supabase.from('ics_221_forms').select('id, status').eq('incident_id', id).limit(100),
       supabase.from('incident_maps').select('id, map_image').eq('incident_id', id).maybeSingle(),
       supabase
         .from('ics_202_forms')
@@ -212,18 +212,25 @@ export default function IncidentPage() {
     if (status214) statuses['214'] = status214
     if (status215) statuses['215'] = status215
     if (status215a) statuses['215-A'] = status215a
-    if (status221) statuses['221'] = status221
     if (mapResult.data?.map_image) statuses['MAP'] = 'Saved'
     if (form207Result.data?.status) statuses['207'] = form207Result.data.status
     if (form202Result.data?.status) statuses['202'] = form202Result.data.status
     if (form209Result.data?.status) statuses['209'] = form209Result.data.status
-    // ICS 204: aggregate status (Draft if any instance is a draft) + instance count
+    // ICS 204 / ICS 221: aggregate status (Draft if any instance is a draft) + instance
+    // count for the sidebar ×N badge
     const forms204Rows: { status?: string }[] = forms204Result.data ?? []
     if (forms204Rows.length > 0) {
       statuses['204'] = forms204Rows.some((r) => r.status === 'Draft') ? 'Draft' : 'Submitted'
     }
+    const forms221Rows: { status?: string }[] = forms221Result.data ?? []
+    if (forms221Rows.length > 0) {
+      statuses['221'] = forms221Rows.some((r) => r.status === 'Draft') ? 'Draft' : 'Submitted'
+    }
     setFormStatuses(statuses)
-    setFormCounts(forms204Rows.length > 0 ? { '204': forms204Rows.length } : {})
+    const counts: Record<string, number> = {}
+    if (forms204Rows.length > 0) counts['204'] = forms204Rows.length
+    if (forms221Rows.length > 0) counts['221'] = forms221Rows.length
+    setFormCounts(counts)
     const iapList = (!iapResult.error && (iapResult.data as IapSummary[] | null)) || []
     setIapRows(iapList)
     setIapStatus(iapList.find((r) => r.status !== 'Approved')?.status as IapStatus ?? '')
@@ -283,17 +290,27 @@ export default function IncidentPage() {
     if (id) fetchData()
   }, [id, fetchData])
 
+  // Leaving is a two-step form flow, not a single update: after the password confirm the
+  // user is sent to ICS 211 (skipped when it is already Submitted) and then to ICS 221.
+  // The membership only ends when that check-out is submitted (Ics221Form -> completeLeave).
+  // The 211 status is re-read here rather than taken from state, because the leave button
+  // can be clicked before the incident page has finished loading its form statuses.
   const handleLeaveIncident = async () => {
-    if (!participant) return
-    setProcessing(true)
-    const { error: updateError } = await supabase
-      .from('incident_participants')
-      .update({ status: 'Left', left_at: new Date().toISOString() })
-      .eq('id', participant.id)
-    setProcessing(false)
+    if (!participant) {
+      setShowLeaveModal(false) // already left — never strand the password dialog
+      return
+    }
+    const base = `/incident/${participant.incident_id}`
+    const { data: form211 } = await supabase
+      .from('ics_211_forms')
+      .select('id')
+      .eq('incident_id', participant.incident_id)
+      .eq('status', 'Submitted')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
     setShowLeaveModal(false)
-    if (updateError) { setError(updateError.message); return }
-    navigate('/dashboard')
+    navigate(form211 ? `${base}/ics-221/edit?new=1&leave=1` : `${base}/ics-211?leave=1`)
   }
 
   const handlePickRole = (newRole: 'IMT' | 'Tactical Resources' | 'Observer') => {

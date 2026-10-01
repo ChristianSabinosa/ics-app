@@ -27,6 +27,7 @@ import Ics214Form from './pages/Ics214Form'
 import Ics215Form from './pages/Ics215Form'
 import Ics215AForm from './pages/Ics215AForm'
 import Ics221Form from './pages/Ics221Form'
+import Ics221List from './pages/Ics221List'
 
 /**
  * Fallback for any URL that does not match a route.
@@ -122,7 +123,8 @@ function App() {
           <Route path="/incident/:id/ics-214" element={<ProtectedRoute><Ics214Form /></ProtectedRoute>} />
           <Route path="/incident/:id/ics-215" element={<ProtectedRoute><Ics215Form /></ProtectedRoute>} />
           <Route path="/incident/:id/ics-215a" element={<ProtectedRoute><Ics215AForm /></ProtectedRoute>} />
-          <Route path="/incident/:id/ics-221" element={<ProtectedRoute><Ics221Form /></ProtectedRoute>} />
+          <Route path="/incident/:id/ics-221" element={<ProtectedRoute><Ics221List /></ProtectedRoute>} />
+        <Route path="/incident/:id/ics-221/edit" element={<ProtectedRoute><Ics221Form /></ProtectedRoute>} />
           <Route path="*" element={<RouteFallback />} />
         </Routes>
       </BrowserRouter>

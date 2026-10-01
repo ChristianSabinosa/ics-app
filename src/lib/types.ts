@@ -324,3 +324,14 @@ export interface Ics204Summary {
   created_at: string
   updated_at: string
 }
+
+// ICS 221 — Demobilization Check-out (multiple instances per incident)
+export interface Ics221Summary {
+  id: string
+  resource_to_release: string
+  planned_release_date: string
+  planned_release_time: string
+  status: 'Draft' | 'Submitted'
+  created_at: string
+  updated_at: string
+}

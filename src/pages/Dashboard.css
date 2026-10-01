@@ -342,3 +342,34 @@
     padding: 24px 16px;
   }
 }
+
+/* -- Post-action notice (e.g. after leaving an incident) -- */
+.dashboard-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #fff7e6;
+  border: 2px solid #950606;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+  color: #444;
+  line-height: 1.45;
+}
+
+.dashboard-notice-close {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #950606;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.dashboard-notice-close:hover { background: #fee2e2; }

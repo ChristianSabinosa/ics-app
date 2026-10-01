@@ -21,6 +21,9 @@ export default function Ics211Form() {
   const navigate = useNavigate()
   const { user } = useAuth()
 
+  // Set when the user arrived here from the "Leave Incident" flow (step 1 of 2)
+  const isLeaveMode = searchParams.get('leave') === '1'
+
   const [formId, setFormId] = useState<string | null>(null)
   const [incidentName, setIncidentName] = useState('')
   const [startDate, setStartDate] = useState('')
@@ -140,6 +143,15 @@ export default function Ics211Form() {
       setTimePrepared(formToLoad.time_prepared)
       setStatus(formToLoad.status)
 
+      // Leaving the incident: if the 211 got submitted in the meantime (another user, or
+      // an earlier attempt), continue straight to step 2 instead of stranding the user
+      // on a read-only form they cannot submit again.
+      if (searchParams.get('leave') === '1' && formToLoad.status === 'Submitted') {
+        setLoading(false)
+        navigate(`/incident/${incidentId}/ics-221/edit?new=1&leave=1`, { replace: true })
+        return
+      }
+
       const { data: resData } = await supabase
         .from('ics_211_resources')
         .select('*')
@@ -154,7 +166,7 @@ export default function Ics211Form() {
     }
 
     setLoading(false)
-  }, [incidentId, searchParams, loadFromManifests])
+  }, [incidentId, searchParams, loadFromManifests, navigate])
 
   useEffect(() => {
     if (!user) return
@@ -322,6 +334,11 @@ export default function Ics211Form() {
     setSaving(false)
     setStatus(formStatus)
     setSuccess(formStatus === 'Draft' ? 'Progress saved as draft.' : 'ICS Form 211 submitted successfully!')
+
+    // Leaving the incident: a submitted 211 unlocks step 2 — the ICS 221 check-out.
+    if (isLeaveMode && formStatus === 'Submitted') {
+      navigate(`/incident/${incidentId}/ics-221/edit?new=1&leave=1`, { replace: true })
+    }
   }
 
   if (loading) {
@@ -355,7 +372,7 @@ export default function Ics211Form() {
             {saving ? 'Saving...' : 'Save Progress'}
           </button>
           <button className="action-btn submit" onClick={() => saveForm('Submitted')} disabled={saving || isReadonly}>
-            {saving ? 'Submitting...' : 'Submit'}
+            {saving ? 'Submitting...' : isLeaveMode ? 'Submit & Continue' : 'Submit'}
           </button>
           {status === 'Submitted' && !isEditing && (
             <button className="action-btn edit" onClick={() => setIsEditing(true)}>Edit</button>
@@ -366,6 +383,17 @@ export default function Ics211Form() {
 
       <main className="ics211-main no-print">
         <div className="ics211-container">
+          {isLeaveMode && (
+            <div className="leave-step-notice">
+              <div className="leave-step-text">
+                <strong>Leaving {incidentName || 'this incident'} — step 1 of 2.</strong>{' '}
+                Submit the Incident Check-In List to continue to your Demobilization Check-out (ICS 221). You remain a member of the incident until that is submitted.
+              </div>
+              <button className="leave-step-cancel" onClick={() => navigate(`/incident/${incidentId}`)}>
+                Cancel and stay
+              </button>
+            </div>
+          )}
           {error && <div className="error-message">{error}</div>}
           {success && <div className="success-message">{success}</div>}
 
