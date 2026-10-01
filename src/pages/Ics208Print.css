@@ -1,3 +1,10 @@
+/* ==========================================================
+   ICS 208 - Safety Message / Plan (print preview)
+   All rules are scoped under .ics208-print-page so that no
+   other form's stylesheet (they are bundled together) can
+   leak rules such as `.field-cell { display: flex }` into it.
+   ========================================================== */
+
 .ics208-print-overlay {
   position: fixed;
   inset: 0;
@@ -28,6 +35,7 @@
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 500;
+  font-family: inherit;
 }
 
 .ics208-print-controls button:first-child {
@@ -40,161 +48,229 @@
   color: white;
 }
 
+/* ---------- page ---------- */
 .ics208-print-page {
   width: 210mm;
+  height: 297mm;
+  flex: 0 0 auto;
   background: white;
   margin: 20px auto;
-  padding: 12mm;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  padding: 10mm;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   box-sizing: border-box;
   font-family: Arial, Helvetica, sans-serif;
+  font-size: 9pt;
+  color: #000;
+  display: flex;
+  flex-direction: column;
 }
 
-.ics208-form {
+/* outer frame - grows to fill the whole page */
+.ics208-print-page .ics208-frame {
+  flex: 1 1 auto;
+  min-height: 0;
+  border: 2px solid #000;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.ics208-print-page .ics208-frame > * {
+  flex: 0 0 auto;
+}
+
+.ics208-print-page .ics208-frame > table {
   width: 100%;
   border-collapse: collapse;
-  border: 2px solid #000;
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 10pt;
   table-layout: fixed;
 }
 
-.ics208-form td {
-  border: 1px solid #000;
-  padding: 0;
-  vertical-align: top;
+.ics208-print-page .ics208-frame td {
+  box-sizing: border-box;
 }
 
-.ics208-form td.header-cell {
-  padding: 8px 12px;
+/* ---------- header ---------- */
+.ics208-print-page .ics208-form-header td {
+  border-bottom: 2px solid #000;
+  padding: 8px 10px;
+  vertical-align: middle;
 }
 
-.header-content {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.ics208-print-page .ics208-form-header td.ics208-logo-cell {
+  width: 80px;
 }
 
-.ndrrmc-logo {
-  width: 60px;
+.ics208-print-page .ics208-logo {
+  display: block;
+  width: 70px;
   height: auto;
 }
 
-.title-section {
+.ics208-print-page .ics208-title-cell {
   text-align: center;
-  flex: 1;
+  padding: 6px 10px;
 }
 
-.main-title {
-  font-size: 16pt;
+.ics208-print-page .ics208-main-title {
+  font-size: 17pt;
   font-weight: 700;
   letter-spacing: 1px;
+  line-height: 1.15;
 }
 
-.form-number {
+.ics208-print-page .ics208-form-number {
   font-size: 14pt;
   font-weight: 700;
+  line-height: 1.15;
   margin-top: 2px;
 }
 
-.ics208-form td.field-cell {
-  padding: 12px 14px;
+/* ---------- 1. incident / 2. operational period ---------- */
+.ics208-print-page .ics208-top-fields td.ics208-field-cell {
+  border-bottom: 1px solid #000;
+  padding: 7px 9px;
+  vertical-align: top;
 }
 
-.field-label {
+.ics208-print-page .ics208-top-fields td.ics208-wide {
+  width: 47%;
+}
+
+.ics208-print-page .ics208-top-fields td.ics208-op {
+  border-left: 1px solid #000;
+}
+
+.ics208-print-page .ics208-field-label {
   font-weight: 700;
   font-size: 9pt;
-  margin-bottom: 4px;
-  text-transform: uppercase;
+  line-height: 1.35;
 }
 
-.field-value {
+.ics208-print-page .ics208-field-data {
   font-size: 9pt;
-  min-height: 14pt;
+  line-height: 1.35;
+  margin-top: 3px;
+  min-height: 12px;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- 3. safety message ---------- */
+.ics208-print-page .ics208-section-title {
+  padding: 5px 8px;
+  border-bottom: 1px solid #000;
+  text-align: center;
+  font-weight: 700;
+  font-size: 10pt;
+}
+
+.ics208-print-page .ics208-message-box {
+  flex: 1 1 auto;
+  min-height: 0;
+  border-bottom: 1px solid #000;
+  padding: 8px 10px;
+  font-size: 9pt;
   line-height: 1.4;
   white-space: pre-wrap;
-  word-break: break-word;
+  overflow-wrap: anywhere;
+  overflow: auto;
 }
 
-.field-value.tall {
-  min-height: 160pt;
+/* ---------- 4. site safety plan ---------- */
+.ics208-print-page .ics208-plan td {
+  border-bottom: 1px solid #000;
+  padding: 8px 10px;
+  vertical-align: top;
 }
 
-.check-item {
-  margin-right: 20px;
+.ics208-print-page .ics208-line {
+  line-height: 1.7;
 }
 
-.print-checkbox {
-  width: 14px;
-  height: 14px;
-  margin-right: 6px;
-  vertical-align: middle;
+.ics208-print-page .ics208-strong {
+  font-weight: 700;
+}
+
+.ics208-print-page .ics208-opt {
+  font-weight: 700;
+  margin-left: 14px;
+  white-space: nowrap;
+}
+
+.ics208-print-page .ics208-checkbox {
+  width: 13px;
+  height: 13px;
+  margin: 0 4px 0 0;
+  padding: 0;
+  vertical-align: -2px;
   accent-color: #000;
 }
 
-.ics208-form td.sig-cell {
-  padding: 0;
+.ics208-print-page .ics208-loc {
+  display: inline-block;
+  min-width: 85mm;
+  margin-left: 8px;
+  padding: 0 4px 1px;
+  border-bottom: 1px solid #000;
+  font-weight: 400;
 }
 
-.sig-row-print {
-  display: grid;
-  grid-template-columns: 140px 1fr 1fr 1fr;
-  min-height: 36pt;
-}
-
-.sig-num {
-  font-weight: 700;
+/* ---------- 5. prepared by ---------- */
+.ics208-print-page .ics208-footer td {
+  padding: 7px 8px;
   font-size: 9pt;
-  display: flex;
-  align-items: center;
-  padding: 6px 8px;
-  border-right: 1px solid #000;
+  line-height: 1.35;
+  vertical-align: middle;
+  overflow-wrap: anywhere;
 }
 
-.sig-field-print {
-  display: flex;
-  flex-direction: column;
-  padding: 4px 8px;
-  border-right: 1px solid #000;
-  justify-content: center;
+.ics208-print-page .ics208-footer td.ics208-c1 {
+  width: 22%;
 }
 
-.sig-field-print:last-child {
-  border-right: none;
+.ics208-print-page .ics208-footer td.ics208-c2 {
+  width: 32%;
+  border-left: 1px solid #000;
 }
 
-.sig-label {
-  font-size: 7.5pt;
-  font-weight: 600;
-  color: #333;
+.ics208-print-page .ics208-footer td.ics208-c3 {
+  width: 23%;
+  border-left: 1px solid #000;
 }
 
-.sig-value {
-  font-size: 9pt;
-  min-height: 14pt;
-  border-bottom: 1px solid #999;
-  margin-top: 2px;
+.ics208-print-page .ics208-footer td.ics208-c4 {
+  width: 23%;
+  border-left: 1px solid #000;
+}
+
+.ics208-print-page .ics208-value {
+  font-weight: 400;
 }
 
 @media print {
+  .no-print { display: none !important; }
   .ics208-print-controls { display: none !important; }
+
   .ics208-print-overlay {
-    background: none;
     position: static;
+    display: block;
+    background: #fff;
+    overflow: visible;
   }
+
   .ics208-print-page {
     width: 100%;
+    height: calc(100vh - 1mm);
     margin: 0;
-    padding: 0;
+    padding: 6mm;
     box-shadow: none;
-    min-height: auto;
   }
-  .ics208-form {
-    page-break-inside: auto;
+
+  .ics208-print-page .ics208-message-box {
+    overflow: hidden;
   }
-  .ics208-form tr {
-    page-break-inside: avoid;
-    page-break-after: auto;
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
-  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 }
