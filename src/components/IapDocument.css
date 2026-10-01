@@ -1,0 +1,179 @@
+/* ============================================================
+   IAP document — embeds the ICS print views inline
+   ============================================================ */
+
+.iap-doc {
+  display: block;
+}
+
+/* Each ICS print component renders a fixed-position overlay with its own
+   Print/Close bar. Inside the IAP document they must flow inline instead. */
+.iap-doc [class*='print-overlay'] {
+  position: static !important;
+  inset: auto !important;
+  z-index: auto !important;
+  overflow: visible !important;
+}
+
+.iap-doc [class*='print-controls'] {
+  display: none !important;
+}
+
+.iap-section-label {
+  max-width: 210mm;
+  margin: 22px auto 6px;
+  padding: 0 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #950606;
+}
+
+.iap-doc-section:first-child .iap-section-label {
+  margin-top: 0;
+}
+
+/* A4 portrait page used by the cover and the incident map */
+.iap-a4-page {
+  box-sizing: border-box;
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto;
+  padding: 10mm;
+  background: white;
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* ── Cover page: incident name header + operational period / IC footer ── */
+.iap-cover-page {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  padding: 0;
+  height: 297mm;
+}
+
+.iap-cover-header {
+  flex: 0 0 auto;
+  padding: 12px 16px 14px;
+  background: #950606;
+  color: white;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.iap-cover-kicker {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.iap-cover-name {
+  font-size: 1.2rem;
+  font-weight: 800;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.iap-cover-image {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: white;
+}
+
+.iap-cover-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.iap-cover-footer {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 16px 12px;
+  background: #fff5f5;
+  border-top: 2px solid #950606;
+}
+
+.iap-cover-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.iap-cover-label {
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  color: #950606;
+}
+
+.iap-cover-field strong {
+  font-family: monospace;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #222;
+  word-break: break-word;
+}
+
+.iap-map-page img {
+  display: block;
+  max-width: 100%;
+  max-height: 277mm;
+  object-fit: contain;
+}
+
+@media print {
+  .iap-no-print,
+  .iap-section-label {
+    display: none !important;
+  }
+
+  .iap-doc-section {
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .iap-doc-section:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+
+  .iap-a4-page {
+    width: 100%;
+    min-height: auto;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+  }
+
+  /* Keep the cover (header + artwork + footer) on a single printed page */
+  .iap-cover-page {
+    height: 260mm;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .iap-map-page img {
+    max-height: none;
+  }
+}

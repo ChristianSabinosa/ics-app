@@ -1,15 +1,35 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
+import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { generateRoleId, formatMilitaryTime } from '../lib/utils'
 import type { Incident, IncidentParticipant, CheckinManifest, CheckinPersonnel } from '../lib/types'
 import ConfirmModal from '../components/ConfirmModal'
+import IapCoverModal, { type IapStatus } from '../components/IapCoverModal'
 import './IncidentPage.css'
 
 // Only these fields are rendered on this page, so queries select just these columns
 type ManifestSummary = Pick<CheckinManifest, 'id' | 'checkin_id' | 'incident_id' | 'user_id' | 'agency_name' | 'total_personnel' | 'created_at'>
 type PersonnelSummary = Pick<CheckinPersonnel, 'manifest_id' | 'name' | 'role' | 'capabilities'>
+
+// One IAP row per operational period; approved rows are frozen read-only documents
+interface IapSummary {
+  id: string
+  status: string
+  operational_period: string
+  approved_at: string | null
+}
+
+// Prerequisites for generating the Incident Action Plan (IAP)
+const IAP_REQUIREMENTS = [
+  { num: '202', label: 'Incident Objectives' },
+  { num: '203', label: 'Organization Assignment List' },
+  { num: '204', label: 'Assignment List' },
+  { num: '205', label: 'Communications Plan' },
+  { num: '206', label: 'Medical Plan' },
+  { num: '208', label: 'Safety Message/Plan' },
+  { num: 'MAP', label: 'Incident Map' },
+]
 
 const ICS_FORMS = [
   { num: '201', name: 'Incident Briefing' },
@@ -51,6 +71,9 @@ export default function IncidentPage() {
   const [allPersonnel, setAllPersonnel] = useState<PersonnelSummary[]>([])
   const [formStatuses, setFormStatuses] = useState<Record<string, string>>({})
   const [formCounts, setFormCounts] = useState<Record<string, number>>({})
+  const [iapStatus, setIapStatus] = useState<IapStatus>('')
+  const [iapRows, setIapRows] = useState<IapSummary[]>([])
+  const [showIapModal, setShowIapModal] = useState(false)
   const [operationalPeriod, setOperationalPeriod] = useState('')
   const [incidentCommander, setIncidentCommander] = useState('')
   const [publicStatus, setPublicStatus] = useState<{ description: string; totalCases: string }[]>([])
@@ -75,6 +98,8 @@ export default function IncidentPage() {
     setOperationalPeriod('')
     setIncidentCommander('')
     setPublicStatus([])
+    setIapStatus('')
+    setIapRows([])
 
     // Wave 1: incident header + current participant (independent, run in parallel)
     const fetchParticipant = async (): Promise<IncidentParticipant | null> => {
@@ -120,7 +145,7 @@ export default function IncidentPage() {
       status211, status201, status203, status205, status206, status208,
       status213, status214, status215, status215a, status221,
       forms204Result,
-      mapResult, form202Result, form207Result, form209Result,
+      mapResult, form202Result, form207Result, form209Result, iapResult,
     ] = await Promise.all([
       supabase
         .from('checkin_manifests')
@@ -162,6 +187,13 @@ export default function IncidentPage() {
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle(),
+      // Incident Action Plan rows (silently ignored if the table has not been created yet)
+      supabase
+        .from('incident_iap')
+        .select('id, status, operational_period, approved_at')
+        .eq('incident_id', id)
+        .order('created_at', { ascending: false })
+        .limit(50),
     ])
     if (!isCurrent()) return
 
@@ -192,6 +224,9 @@ export default function IncidentPage() {
     }
     setFormStatuses(statuses)
     setFormCounts(forms204Rows.length > 0 ? { '204': forms204Rows.length } : {})
+    const iapList = (!iapResult.error && (iapResult.data as IapSummary[] | null)) || []
+    setIapRows(iapList)
+    setIapStatus(iapList.find((r) => r.status !== 'Approved')?.status as IapStatus ?? '')
 
     // Operational period from the latest ICS 202
     const form202Data = form202Result.data
@@ -346,6 +381,27 @@ export default function IncidentPage() {
     return formStatuses[formNum] || ''
   }
 
+  // An IAP requirement is met when the form is Submitted (or the Incident Map is Saved)
+  const isIapRequirementMet = (formNum: string): boolean => {
+    if (formNum === 'MAP') return formStatuses['MAP'] === 'Saved'
+    return formStatuses[formNum] === 'Submitted'
+  }
+
+  const iapRequirementsMet = detailsLoaded
+    ? IAP_REQUIREMENTS.filter((r) => isIapRequirementMet(r.num)).length
+    : 0
+  const iapReady = detailsLoaded && iapRequirementsMet === IAP_REQUIREMENTS.length
+
+  // One IAP per operational period: the working one (Draft/Submitted) plus every approved document
+  const workingIap = iapRows.find((r) => r.status !== 'Approved') ?? null
+  const approvedIaps = iapRows.filter((r) => r.status === 'Approved')
+  const iapHref = (iapId: string) => `/incident/${incident.incident_id}/iap/${iapId}`
+
+  const handleGenerateIap = () => {
+    if (!iapReady) return
+    setShowIapModal(true)
+  }
+
   return (
     <div className="incident-page">
       <header className="incident-header">
@@ -444,6 +500,111 @@ export default function IncidentPage() {
               )
             })()}
 
+            <div className={`iap-card ${iapReady ? 'ready' : ''}`}>
+              <div className="iap-card-header">
+                <div className="iap-card-title">
+                  <h3>
+                    Incident Action Plan
+                    {iapStatus && (
+                      <span className={`iap-status-badge ${iapStatus.toLowerCase()}`}>{iapStatus}</span>
+                    )}
+                  </h3>
+                  <p>
+                    {!detailsLoaded
+                      ? 'Checking required forms...'
+                      : !iapReady
+                        ? 'Complete all required forms below to enable generation.'
+                        : iapStatus === 'Submitted'
+                          ? 'All requirements are complete. Your IAP cover page is submitted.'
+                          : iapStatus === 'Draft'
+                            ? 'All requirements are complete. Your cover page draft is saved — submit when ready.'
+                            : 'All requirements are complete. The plan is ready to generate.'}
+                  </p>
+                </div>
+                <div className="iap-card-actions">
+                  {iapStatus === 'Submitted' && workingIap?.id && (
+                    <Link className="iap-open-btn" to={iapHref(workingIap.id)}>
+                      Review IAP
+                    </Link>
+                  )}
+                  <button
+                    className="iap-generate-btn"
+                    disabled={!iapReady}
+                    onClick={handleGenerateIap}
+                    title={iapReady ? 'Generate Incident Action Plan' : 'Required forms are not yet complete'}
+                  >
+                    {iapStatus ? 'Update Cover Page' : 'Generate IAP'}
+                  </button>
+                </div>
+              </div>
+              <ul className="iap-requirements">
+                {IAP_REQUIREMENTS.map((req) => {
+                  const met = detailsLoaded && isIapRequirementMet(req.num)
+                  return (
+                    <li key={req.num} className={`iap-req-item ${met ? 'met' : 'pending'}`}>
+                      <span className="iap-req-check">{met ? '✓' : '○'}</span>
+                      <span className="iap-req-num">{req.num}</span>
+                      <span className="iap-req-name">{req.label}</span>
+                      {!detailsLoaded ? (
+                        <span className="iap-req-state">Checking...</span>
+                      ) : (
+                        <span className={`iap-req-state ${met ? 'ok' : 'wait'}`}>
+                          {met ? 'Ready' : req.num === 'MAP' ? 'Not saved' : 'Not submitted'}
+                        </span>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+              <div className="iap-progress">
+                <div className="iap-progress-track">
+                  <div className="iap-progress-fill" style={{ width: `${(iapRequirementsMet / IAP_REQUIREMENTS.length) * 100}%` }} />
+                </div>
+                <span className="iap-progress-text">
+                  {detailsLoaded ? `${iapRequirementsMet} of ${IAP_REQUIREMENTS.length} requirements complete` : 'Loading requirements...'}
+                </span>
+              </div>
+            </div>
+
+            <div className="approved-iap-card">
+              <div className="approved-iap-header">
+                <h3>Approved Incident Action Plans</h3>
+                <span className="approved-iap-count">{approvedIaps.length}</span>
+              </div>
+              {approvedIaps.length === 0 ? (
+                <p className="no-resources-text">
+                  No approved IAPs yet. Once an Incident Action Plan is approved it is listed here with its operational period.
+                </p>
+              ) : (
+                <div className="resource-table-wrapper">
+                  <table className="resource-table">
+                    <thead>
+                      <tr>
+                        <th>Operational Period</th>
+                        <th>Approved</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {approvedIaps.map((iap) => (
+                        <tr key={iap.id}>
+                          <td className="iap-op-cell">{iap.operational_period || '—'}</td>
+                          <td className="date-cell">
+                            {iap.approved_at ? new Date(iap.approved_at).toLocaleDateString() : '—'}
+                          </td>
+                          <td className="actions-cell">
+                            <Link className="manifest-btn view" to={iapHref(iap.id)}>
+                              View
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
             <div className="resource-section">
               <h3>Checked-in Resources</h3>
               {!manifestsLoaded ? (
@@ -520,6 +681,19 @@ export default function IncidentPage() {
           </aside>
         </div>
       </main>
+
+      {showIapModal && (
+        <IapCoverModal
+          incidentId={incident.incident_id}
+          incidentName={incident.name}
+          onClose={() => setShowIapModal(false)}
+          onStatusChange={setIapStatus}
+          onProceed={(iapId) => {
+            setShowIapModal(false)
+            navigate(`/incident/${incident.incident_id}/iap/${iapId}`)
+          }}
+        />
+      )}
 
       {showLeaveModal && (
         <ConfirmModal title="Leave Incident" message={`Are you sure you want to leave incident ${incident.incident_id}? Enter your password to confirm.`} onConfirm={handleLeaveIncident} onCancel={() => setShowLeaveModal(false)} />

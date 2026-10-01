@@ -1,0 +1,399 @@
+/* ============================================================
+   Incident Action Plan — cover page modal (A4 portrait crop)
+   ============================================================ */
+
+.iap-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 1000;
+}
+
+.iap-modal {
+  background: white;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 860px;
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+/* ── Header ── */
+.iap-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px;
+  background: #950606;
+  color: white;
+}
+
+.iap-modal-heading h3 {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.iap-modal-heading p {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  opacity: 0.92;
+}
+
+.iap-modal-close {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: white;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+
+.iap-modal-close:hover { background: rgba(255, 255, 255, 0.3); }
+
+/* ── Body ── */
+.iap-modal-body {
+  padding: 20px 22px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.iap-modal-loading {
+  color: #888;
+  font-size: 0.9rem;
+  font-style: italic;
+  text-align: center;
+  padding: 30px 0;
+}
+
+.iap-error-message {
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 10px 14px;
+  border-radius: 4px;
+  margin-bottom: 14px;
+  font-size: 0.88rem;
+}
+
+.iap-success-message {
+  background: #d1fae5;
+  color: #065f46;
+  padding: 10px 14px;
+  border-radius: 4px;
+  margin-bottom: 14px;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.iap-warning-message {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 10px 14px;
+  border-radius: 4px;
+  margin-bottom: 14px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.iap-warning-message code {
+  background: rgba(0, 0, 0, 0.06);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── Upload zone ── */
+.iap-upload-zone {
+  border: 2px dashed #c9a0a0;
+  border-radius: 8px;
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  background: #fffafa;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.iap-upload-zone:hover {
+  background: #fff5f5;
+  border-color: #950606;
+}
+
+.iap-upload-icon { font-size: 2.4rem; }
+.iap-upload-text { font-weight: 700; font-size: 1rem; color: #333; }
+.iap-upload-sub { font-size: 0.83rem; color: #777; }
+
+.iap-reuse-btn {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 11px 16px;
+  background: white;
+  border: 2px dashed #950606;
+  border-radius: 8px;
+  color: #950606;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.iap-reuse-btn:hover:not(:disabled) { background: #fff5f5; }
+.iap-reuse-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Crop editor (A4 portrait) ── */
+.iap-crop-viewport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px;
+  overflow: hidden;
+}
+
+.iap-crop-stage {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  max-width: 100%;
+}
+
+.iap-crop-stage img {
+  display: block;
+  max-width: 100%;
+  max-height: 56vh;
+  pointer-events: none;
+}
+
+.iap-crop-rect {
+  position: absolute;
+  border: 2px dashed #fff;
+  box-sizing: border-box;
+  cursor: move;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+}
+
+.iap-crop-label {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: rgba(149, 6, 6, 0.9);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  line-height: 1.4;
+  pointer-events: none;
+}
+
+.iap-crop-handle {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border: 2px solid #950606;
+  border-radius: 3px;
+  box-sizing: border-box;
+  z-index: 2;
+}
+
+.iap-crop-handle.nw { top: 0; left: 0; transform: translate(-50%, -50%); cursor: nwse-resize; }
+.iap-crop-handle.ne { top: 0; right: 0; transform: translate(50%, -50%); cursor: nesw-resize; }
+.iap-crop-handle.sw { bottom: 0; left: 0; transform: translate(-50%, 50%); cursor: nesw-resize; }
+.iap-crop-handle.se { bottom: 0; right: 0; transform: translate(50%, 50%); cursor: nwse-resize; }
+
+/* ── Crop toolbar ── */
+.iap-crop-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.iap-crop-hint {
+  font-size: 0.82rem;
+  color: #666;
+}
+
+.iap-crop-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.iap-tool-btn {
+  padding: 6px 14px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background: #fff;
+  color: #374151;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.iap-tool-btn:hover:not(:disabled) { background: #f0f0f0; }
+.iap-tool-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Operational period step ── */
+.iap-op-step {
+  padding: 4px 0;
+}
+
+.iap-op-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.iap-op-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.iap-op-field span {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.iap-op-field input {
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.92rem;
+  color: #222;
+  background: white;
+}
+
+.iap-op-field input:focus {
+  outline: none;
+  border-color: #950606;
+  box-shadow: 0 0 0 3px rgba(149, 6, 6, 0.1);
+}
+
+.iap-op-field input:disabled {
+  background: #f5f5f5;
+  color: #999;
+}
+
+.iap-op-summary {
+  margin-top: 18px;
+  padding: 14px 16px;
+  background: #fff5f5;
+  border: 1px solid #f5c6c6;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  color: #444;
+}
+
+.iap-op-summary strong {
+  color: #950606;
+  font-weight: 700;
+}
+
+.iap-op-hint {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: #888;
+}
+
+/* ── Footer ── */
+.iap-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 22px;
+  border-top: 1px solid #eee;
+  background: #fafafa;
+}
+
+.iap-footer-hint {
+  font-size: 0.8rem;
+  color: #777;
+}
+
+.iap-footer-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.iap-footer-btn {
+  padding: 9px 20px;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  font-size: 0.88rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.iap-footer-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.iap-footer-btn.cancel {
+  background: white;
+  color: #666;
+  border-color: #ddd;
+}
+
+.iap-footer-btn.cancel:hover:not(:disabled) { background: #f0f0f0; }
+
+.iap-footer-btn.save {
+  background: white;
+  color: #950606;
+  border-color: #950606;
+}
+
+.iap-footer-btn.save:hover:not(:disabled) { background: #fff5f5; }
+
+.iap-footer-btn.submit {
+  background: #950606;
+  color: white;
+}
+
+.iap-footer-btn.submit:hover:not(:disabled) { background: #7a0505; }
+
+@media (max-width: 640px) {
+  .iap-modal-overlay { padding: 0; }
+  .iap-modal { max-height: 100vh; border-radius: 0; }
+  .iap-modal-footer { flex-direction: column; align-items: stretch; }
+  .iap-footer-actions { margin-left: 0; }
+  .iap-footer-btn { flex: 1; }
+}

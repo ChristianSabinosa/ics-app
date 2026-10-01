@@ -1,5 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider } from './context/AuthContext'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { AuthProvider, useAuth } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import LoginPage from './pages/LoginPage'
 import Dashboard from './pages/Dashboard'
@@ -7,6 +7,7 @@ import CreateIncident from './pages/CreateIncident'
 import JoinIncident from './pages/JoinIncident'
 import OngoingIncidents from './pages/OngoingIncidents'
 import IncidentPage from './pages/IncidentPage'
+import IapPreviewPage from './pages/IapPreviewPage'
 import CheckInForm from './pages/CheckInForm'
 import CheckInView from './pages/CheckInView'
 import Ics211Form from './pages/Ics211Form'
@@ -27,6 +28,70 @@ import Ics215Form from './pages/Ics215Form'
 import Ics215AForm from './pages/Ics215AForm'
 import Ics221Form from './pages/Ics221Form'
 
+/**
+ * Fallback for any URL that does not match a route.
+ * Signed-out users go to the login screen (remembering where they were headed);
+ * signed-in users get an explanatory page instead of being dumped on the sign-in
+ * screen — which previously made a stale/missing route look like a logout.
+ */
+function RouteFallback() {
+  const { user, loading } = useAuth()
+  const location = useLocation()
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: '#950606' }}>
+        Loading...
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: location.pathname + location.search }}
+      />
+    )
+  }
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '14px',
+      padding: '24px',
+      textAlign: 'center',
+      fontFamily: 'inherit',
+    }}>
+      <h1 style={{ color: '#950606', fontSize: '1.4rem', margin: 0 }}>Page not found</h1>
+      <p style={{ color: '#555', fontSize: '0.95rem', margin: 0 }}>
+        No route matches <code style={{ background: '#f3f3f3', padding: '2px 6px', borderRadius: '4px' }}>{location.pathname}</code>.
+        <br />
+        If you got here from the Incident Action Plan, reload the app (Ctrl+Shift+R) — an outdated bundle can miss new routes.
+      </p>
+      <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+        <button
+          onClick={() => window.history.back()}
+          style={{ padding: '10px 20px', borderRadius: '8px', border: '2px solid #ddd', background: 'white', color: '#555', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
+        >
+          Go back
+        </button>
+        <button
+          onClick={() => { window.location.href = '/dashboard' }}
+          style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#950606', color: 'white', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
+        >
+          Go to Dashboard
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function App() {
   return (
     <AuthProvider>
@@ -38,6 +103,7 @@ function App() {
           <Route path="/join-incident" element={<ProtectedRoute><JoinIncident /></ProtectedRoute>} />
           <Route path="/ongoing-incidents" element={<ProtectedRoute><OngoingIncidents /></ProtectedRoute>} />
           <Route path="/incident/:id" element={<ProtectedRoute><IncidentPage /></ProtectedRoute>} />
+          <Route path="/incident/:id/iap/:iapId" element={<ProtectedRoute><IapPreviewPage /></ProtectedRoute>} />
           <Route path="/incident/:id/checkin" element={<ProtectedRoute><CheckInForm /></ProtectedRoute>} />
           <Route path="/incident/:id/checkin/view" element={<ProtectedRoute><CheckInView /></ProtectedRoute>} />
           <Route path="/incident/:id/ics-211" element={<ProtectedRoute><Ics211Form /></ProtectedRoute>} />
@@ -57,7 +123,7 @@ function App() {
           <Route path="/incident/:id/ics-215" element={<ProtectedRoute><Ics215Form /></ProtectedRoute>} />
           <Route path="/incident/:id/ics-215a" element={<ProtectedRoute><Ics215AForm /></ProtectedRoute>} />
           <Route path="/incident/:id/ics-221" element={<ProtectedRoute><Ics221Form /></ProtectedRoute>} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<RouteFallback />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

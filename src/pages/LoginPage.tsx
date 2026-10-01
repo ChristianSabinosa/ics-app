@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import './LoginPage.css'
 
@@ -30,6 +30,7 @@ export default function LoginPage() {
 
   const { signIn, signUp, resetPassword } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const handleSignIn = async (e: FormEvent) => {
     e.preventDefault()
@@ -40,7 +41,9 @@ export default function LoginPage() {
     if (error) {
       setError(error.message)
     } else {
-      navigate('/dashboard')
+      // Return to the page the user was originally trying to open (if any)
+      const from = (location.state as { from?: string } | null)?.from
+      navigate(from && from.startsWith('/') && !from.startsWith('//') ? from : '/dashboard')
     }
     setLoading(false)
   }

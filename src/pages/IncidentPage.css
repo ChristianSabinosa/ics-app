@@ -285,6 +285,10 @@
   cursor: pointer;
   font-family: inherit;
   transition: background 0.2s ease;
+  display: inline-block;
+  text-decoration: none;
+  text-align: center;
+  box-sizing: border-box;
 }
 
 .manifest-btn.view { background: #1e40af; color: white; }
@@ -392,6 +396,246 @@
   color: #fff;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+/* ============================
+   INCIDENT ACTION PLAN (IAP) CARD
+   ============================ */
+
+.iap-card {
+  background: white;
+  border: 2px solid #950606;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(149, 6, 6, 0.08);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.iap-card.ready {
+  border-color: #7a0505;
+  box-shadow: 0 0 0 3px rgba(149, 6, 6, 0.12), 0 2px 8px rgba(149, 6, 6, 0.12);
+}
+
+.iap-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #f5c6c6;
+}
+
+.iap-card-title h3 {
+  color: #950606;
+  font-size: 1.1rem;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.iap-status-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.iap-status-badge.draft { background: #fef3c7; color: #92400e; }
+.iap-status-badge.submitted { background: #d1fae5; color: #065f46; }
+
+.iap-card-title p {
+  color: #888;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.iap-generate-btn {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  background: #950606;
+  color: white;
+  transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.iap-generate-btn:hover:not(:disabled) { background: #7a0505; }
+
+.iap-generate-btn:disabled {
+  background: #e5e7eb;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.iap-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.iap-open-btn {
+  padding: 9px 18px;
+  border-radius: 8px;
+  border: 2px solid #950606;
+  background: white;
+  color: #950606;
+  font-size: 0.88rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  display: inline-block;
+  text-decoration: none;
+  text-align: center;
+  box-sizing: border-box;
+  line-height: 1.35;
+}
+
+.iap-open-btn:hover { background: #fff5f5; }
+
+/* ── Approved IAPs ── */
+.approved-iap-card {
+  background: white;
+  border: 2px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.approved-iap-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #eee;
+}
+
+.approved-iap-header h3 {
+  color: #950606;
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.approved-iap-count {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 10px;
+  background: #950606;
+  color: white;
+}
+
+.resource-table .iap-op-cell {
+  font-family: monospace;
+  font-size: 0.78rem;
+  color: #950606;
+  font-weight: 600;
+}
+
+.iap-requirements {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 8px;
+}
+
+.iap-req-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid #eee;
+  border-radius: 6px;
+  background: #fafafa;
+}
+
+.iap-req-item.met {
+  background: #fff5f5;
+  border-color: #f5c6c6;
+}
+
+.iap-req-check {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.iap-req-item.met .iap-req-check { color: #950606; }
+
+.iap-req-num {
+  font-family: monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #555;
+  background: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.iap-req-item.met .iap-req-num { background: #950606; color: white; }
+
+.iap-req-name {
+  font-size: 0.78rem;
+  color: #444;
+  line-height: 1.3;
+  flex: 1;
+  min-width: 0;
+}
+
+.iap-req-state {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.iap-req-state.ok { background: #d1fae5; color: #065f46; }
+.iap-req-state.wait { background: #fef3c7; color: #92400e; }
+
+.iap-progress { display: flex; align-items: center; gap: 12px; }
+
+.iap-progress-track {
+  flex: 1;
+  height: 8px;
+  background: #eee;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.iap-progress-fill {
+  height: 100%;
+  background: #950606;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.iap-progress-text {
+  font-size: 0.75rem;
+  color: #888;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .iap-card-header { flex-direction: column; align-items: flex-start; }
+  .iap-generate-btn { width: 100%; }
 }
 
 /* ============================

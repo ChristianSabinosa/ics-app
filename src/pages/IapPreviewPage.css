@@ -1,0 +1,190 @@
+/* ============================================================
+   IAP preview / approved document view
+   ============================================================ */
+
+.iap-preview-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+
+.iap-preview-loading,
+.iap-preview-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.iap-preview-loading { color: #888; font-size: 1rem; }
+.iap-preview-error p { color: #c53030; font-size: 1rem; margin-bottom: 16px; }
+
+.iap-preview-hint {
+  max-width: 520px;
+  background: #fef3c7 !important;
+  color: #92400e !important;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 0.88rem !important;
+  line-height: 1.5;
+}
+
+.iap-preview-hint code {
+  background: rgba(0, 0, 0, 0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.iap-preview-error button {
+  padding: 10px 24px;
+  background: #950606;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* ── Brand header ── */
+.iap-preview-header {
+  background: #950606;
+  color: white;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+}
+
+.iap-preview-header .header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.iap-preview-header .header-logo { height: 36px; width: auto; }
+.iap-preview-header h1 { font-size: 1rem; font-weight: 700; margin: 0; }
+.iap-preview-header p { font-size: 0.75rem; opacity: 0.85; margin: 0; }
+
+/* ── Action bar ── */
+.iap-preview-bar {
+  background: white;
+  border-bottom: 2px solid #e8e8e8;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.iap-bar-left,
+.iap-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.iap-bar-op {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.iap-bar-op strong { color: #950606; }
+
+.iap-bar-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.iap-bar-badge.code {
+  font-family: monospace;
+  color: #950606;
+  background: rgba(149, 6, 6, 0.08);
+}
+
+.iap-bar-badge.doc {
+  background: #1e3a5f;
+  color: white;
+}
+
+.iap-bar-badge.status.draft { background: #fef3c7; color: #92400e; }
+.iap-bar-badge.status.submitted { background: #dbeafe; color: #1e40af; }
+.iap-bar-badge.status.approved { background: #d1fae5; color: #065f46; }
+
+.iap-bar-btn {
+  padding: 8px 16px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.iap-bar-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.iap-bar-btn.back { background: #f5f5f5; color: #555; border-color: #ddd; }
+.iap-bar-btn.back:hover { background: #e8e8e8; }
+
+.iap-bar-btn.print { background: white; color: #1e40af; border-color: #bfdbfe; }
+.iap-bar-btn.print:hover { background: #1e40af; color: white; }
+
+.iap-bar-btn.approve { background: #1a6b3c; color: white; }
+.iap-bar-btn.approve:hover:not(:disabled) { background: #145a30; }
+
+/* ── Messages ── */
+.iap-preview-main {
+  padding: 20px 24px 60px;
+}
+
+.iap-preview-notice,
+.iap-preview-approved {
+  max-width: 210mm;
+  margin: 0 auto 16px;
+  background: #d1fae5;
+  color: #065f46;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.iap-preview-alert {
+  max-width: 210mm;
+  margin: 0 auto 16px;
+  background: #fef3c7;
+  color: #92400e;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 0.88rem;
+}
+
+@media print {
+  .iap-preview-header,
+  .iap-preview-bar,
+  .iap-preview-notice,
+  .iap-preview-alert,
+  .iap-preview-approved {
+    display: none !important;
+  }
+
+  .iap-preview-main { padding: 0; }
+  .iap-preview-page { background: white; }
+}
+
+@media (max-width: 720px) {
+  .iap-preview-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
