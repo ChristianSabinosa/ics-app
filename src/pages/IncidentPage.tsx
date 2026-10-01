@@ -432,9 +432,13 @@ export default function IncidentPage() {
       <main className="incident-main">
         <div className="incident-layout">
           <div className="incident-content">
-            <div className="incident-info-bar">
-              <h2>{incident.name}</h2>
-              <p className="incident-location-text">{incident.location}</p>
+            <div className="incident-panel incident-info-bar">
+              <div className="panel-header">
+                <div>
+                  <h2>{incident.name}</h2>
+                  <p className="incident-location-text">{incident.location}</p>
+                </div>
+              </div>
               <div className="incident-meta-row">
                 <span>Type: {incident.type}</span>
                 <span>Created by {incident.created_by_name}</span>
@@ -465,7 +469,7 @@ export default function IncidentPage() {
                 { label: 'Needs Evacuation', value: getVal('Needs evacuation'), icon: '⛺', color: '#7c2d12', bg: '#ffedd5' },
               ]
               return (
-                <div className="public-status-card">
+                <div className="incident-panel public-status-card">
                   {items.map((item, idx) => (
                     <div key={idx} className="public-status-item">
                       <div className="public-status-icon" style={{ background: item.bg, color: item.color }}>{item.icon}</div>
@@ -483,7 +487,7 @@ export default function IncidentPage() {
               const myManifest = manifests.find((m) => m.user_id === user?.id)
               const isCheckedIn = !!myManifest
               return (
-                <div className="checkin-proceed-section">
+                <div className="incident-panel checkin-proceed-section">
                   {isCheckedIn ? (
                     <div className="checked-in-status">
                       <span className="checked-in-badge">Already Checked-in</span>
@@ -500,8 +504,8 @@ export default function IncidentPage() {
               )
             })()}
 
-            <div className={`iap-card ${iapReady ? 'ready' : ''}`}>
-              <div className="iap-card-header">
+            <div className={`incident-panel iap-card ${iapReady ? 'ready' : ''}`}>
+              <div className="panel-header">
                 <div className="iap-card-title">
                   <h3>
                     Incident Action Plan
@@ -564,48 +568,48 @@ export default function IncidentPage() {
                   {detailsLoaded ? `${iapRequirementsMet} of ${IAP_REQUIREMENTS.length} requirements complete` : 'Loading requirements...'}
                 </span>
               </div>
-            </div>
 
-            <div className="approved-iap-card">
-              <div className="approved-iap-header">
-                <h3>Approved Incident Action Plans</h3>
-                <span className="approved-iap-count">{approvedIaps.length}</span>
-              </div>
-              {approvedIaps.length === 0 ? (
-                <p className="no-resources-text">
-                  No approved IAPs yet. Once an Incident Action Plan is approved it is listed here with its operational period.
-                </p>
-              ) : (
-                <div className="resource-table-wrapper">
-                  <table className="resource-table">
-                    <thead>
-                      <tr>
-                        <th>Operational Period</th>
-                        <th>Approved</th>
-                        <th>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {approvedIaps.map((iap) => (
-                        <tr key={iap.id}>
-                          <td className="iap-op-cell">{iap.operational_period || '—'}</td>
-                          <td className="date-cell">
-                            {iap.approved_at ? new Date(iap.approved_at).toLocaleDateString() : '—'}
-                          </td>
-                          <td className="actions-cell">
-                            <Link className="manifest-btn view" to={iapHref(iap.id)}>
-                              View
-                            </Link>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              <div className="iap-approved-section">
+                <div className="iap-approved-header">
+                  <h4>Approved Incident Action Plans</h4>
+                  <span className="approved-iap-count">{approvedIaps.length}</span>
                 </div>
-              )}
+                {approvedIaps.length === 0 ? (
+                  <p className="no-resources-text">
+                    No approved IAPs yet. Once an Incident Action Plan is approved it is listed here with its operational period.
+                  </p>
+                ) : (
+                  <div className="resource-table-wrapper">
+                    <table className="resource-table">
+                      <thead>
+                        <tr>
+                          <th>Operational Period</th>
+                          <th>Approved</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {approvedIaps.map((iap) => (
+                          <tr key={iap.id}>
+                            <td className="iap-op-cell">{iap.operational_period || '—'}</td>
+                            <td className="date-cell">
+                              {iap.approved_at ? new Date(iap.approved_at).toLocaleDateString() : '—'}
+                            </td>
+                            <td className="actions-cell">
+                              <Link className="manifest-btn view" to={iapHref(iap.id)}>
+                                View
+                              </Link>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="resource-section">
+            <div className="incident-panel resource-section">
               <h3>Checked-in Resources</h3>
               {!manifestsLoaded ? (
                 <p className="no-resources-text">Loading check-ins...</p>

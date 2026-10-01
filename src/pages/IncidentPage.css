@@ -118,26 +118,14 @@
 
 .incident-content { min-width: 0; }
 
-.incident-info-bar {
-  background: white;
-  border: 2px solid #e8e8e8;
-  border-radius: 10px;
-  padding: 20px;
-  margin-bottom: 20px;
-}
-
-.incident-info-bar h2 { color: #222; font-size: 1.3rem; margin-bottom: 6px; }
+/* Box (border/padding/shadow) comes from the shared .incident-panel rule below. */
+.incident-info-bar h2 { color: #950606; font-size: 1.3rem; margin-bottom: 6px; }
 .incident-location-text { color: #777; font-size: 0.9rem; margin-bottom: 12px; }
 .incident-meta-row { display: flex; gap: 20px; font-size: 0.8rem; color: #999; flex-wrap: wrap; }
 
 .public-status-card {
   display: flex;
   gap: 12px;
-  background: white;
-  border: 2px solid #e8e8e8;
-  border-radius: 10px;
-  padding: 16px 20px;
-  margin-bottom: 20px;
   flex-wrap: wrap;
 }
 
@@ -179,7 +167,7 @@
   letter-spacing: 0.3px;
 }
 
-.checkin-proceed-section { margin-bottom: 24px; }
+/* margin comes from the shared .incident-panel rule */
 
 .checkin-proceed-btn {
   padding: 10px 24px;
@@ -226,14 +214,15 @@
 
 .manifest-btn.edit:hover { background: #1e40af; color: white; }
 
-.resource-section { margin-bottom: 24px; }
+/* .resource-section box/margin comes from the shared .incident-panel rule */
 
 .resource-section h3 {
-  color: #333;
+  color: #950606;
   font-size: 1.1rem;
+  font-weight: 700;
   margin-bottom: 16px;
-  padding-bottom: 8px;
-  border-bottom: 2px solid #eee;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #f5c6c6;
 }
 
 .no-resources-text { color: #999; font-style: italic; font-size: 0.9rem; }
@@ -399,10 +388,11 @@
 }
 
 /* ============================
-   INCIDENT ACTION PLAN (IAP) CARD
+   SHARED CARD (PANEL) BOX
+   Same box styling for every card in the main column
    ============================ */
 
-.iap-card {
+.incident-panel {
   background: white;
   border: 2px solid #950606;
   border-radius: 10px;
@@ -412,12 +402,17 @@
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
+/* ============================
+   INCIDENT ACTION PLAN (IAP) CARD
+   ============================ */
+
 .iap-card.ready {
   border-color: #7a0505;
   box-shadow: 0 0 0 3px rgba(149, 6, 6, 0.12), 0 2px 8px rgba(149, 6, 6, 0.12);
 }
 
-.iap-card-header {
+/* Shared header band: title (+ optional actions) with a light divider */
+.panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -427,6 +422,8 @@
   padding-bottom: 14px;
   border-bottom: 1px solid #f5c6c6;
 }
+
+.panel-header .incident-location-text { margin-bottom: 0; }
 
 .iap-card-title h3 {
   color: #950606;
@@ -504,27 +501,24 @@
 
 .iap-open-btn:hover { background: #fff5f5; }
 
-/* ── Approved IAPs ── */
-.approved-iap-card {
-  background: white;
-  border: 2px solid #e8e8e8;
-  border-radius: 10px;
-  padding: 20px;
-  margin-bottom: 24px;
+/* ── Approved IAPs (subsection inside the IAP card) ── */
+.iap-approved-section {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #f5c6c6;
 }
 
-.approved-iap-header {
+.iap-approved-header {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 14px;
-  padding-bottom: 10px;
-  border-bottom: 2px solid #eee;
+  margin-bottom: 12px;
 }
 
-.approved-iap-header h3 {
+.iap-approved-header h4 {
   color: #950606;
-  font-size: 1.05rem;
+  font-size: 0.95rem;
+  font-weight: 700;
   margin: 0;
 }
 
@@ -634,7 +628,7 @@
 }
 
 @media (max-width: 600px) {
-  .iap-card-header { flex-direction: column; align-items: flex-start; }
+  .panel-header { flex-direction: column; align-items: flex-start; }
   .iap-generate-btn { width: 100%; }
 }
 
