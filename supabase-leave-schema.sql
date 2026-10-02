@@ -99,14 +99,26 @@ begin
     where c.contype = 'f'
       and c.confrelid = 'incidents'::regclass
   loop
-    -- Children of that table first, so no foreign key is left dangling.
+    -- Tables that reference THIS one, cleared first so no foreign key is left
+    -- dangling (confrelid = what the constraint points at).
     for child_rec in
       select
         gc.conrelid::regclass::text as table_name,
         (select a.attname
            from pg_attribute a
           where a.attrelid = gc.conrelid
-            and a.attnum = gc.conkey[1]) as column_name
+            and a.attnum = gc.conkey[1]) as column_name,
+        -- The column on THIS table that the child's foreign key points at.
+        -- Without it the subquery selected the wrong column and paired
+        -- incompatible types, e.g.
+        --   delete from ics_211_resources
+        --   where form_id (uuid) in (select incident_id (text) from ics_211_forms ...)
+        -- which raises "operator does not exist: uuid = text". PostgREST maps
+        -- that SQLSTATE 42883 to HTTP 404, so it looked like a missing function.
+        (select a.attname
+           from pg_attribute a
+          where a.attrelid = gc.confrelid
+            and a.attnum = gc.confkey[1]) as parent_key
       from pg_constraint gc
       where gc.contype = 'f'
         and gc.confrelid = parent_rec.table_name::regclass
@@ -114,7 +126,7 @@ begin
       execute format(
         'delete from %I where %I in (select %I from %I where %I = %L)',
         child_rec.table_name, child_rec.column_name,
-        parent_rec.column_name, parent_rec.table_name,
+        child_rec.parent_key, parent_rec.table_name,
         parent_rec.column_name, p_incident_id
       );
     end loop;

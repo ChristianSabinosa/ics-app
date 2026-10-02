@@ -36,16 +36,18 @@ export async function deleteIncidentData(incidentId: string): Promise<string | n
   const { error } = await supabase.rpc('delete_incident', { p_incident_id: incidentId })
   if (!error) return null
 
-  if (/could not find the function|does not exist/i.test(error.message)) {
-    return 'Full deletion is not installed yet — run supabase-notifications-schema.sql first and then supabase-leave-schema.sql in the Supabase SQL Editor, then try again. Nothing was changed.'
+  // Always keep the server's own words: supabase-js throws away the response
+  // body in the console, so this is the only place PGRST202/PGRST205 survive.
+  const msg = error.message || String(error)
+
+  if (msg.includes('only the creator')) return 'Only the creator of this incident can delete it.'
+  if (msg.includes('incident not found')) return 'This incident no longer exists.'
+
+  if (/could not find the function|does not exist/i.test(msg)) {
+    return `Full deletion is not installed, or PostgREST has not reloaded its schema cache. Server said: "${msg}"`
   }
-  if (error.message.includes('only the creator')) {
-    return 'Only the creator of this incident can delete it.'
-  }
-  if (error.message.includes('incident not found')) {
-    return 'This incident no longer exists.'
-  }
-  return `The incident could not be deleted (${error.message}).`
+
+  return `The incident could not be deleted: ${msg}`
 }
 
 /**
