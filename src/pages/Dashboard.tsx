@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useNotifications } from '../lib/notifications'
+import ProfileNotifications from '../components/ProfileNotifications'
 import './Dashboard.css'
 
 export default function Dashboard() {
@@ -12,7 +14,17 @@ export default function Dashboard() {
     () => ((location.state as { notice?: string } | null)?.notice ?? ''),
   )
   const [showMenu, setShowMenu] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+
+  // Notification list for the profile dropdown — one instance, so there is
+  // only one realtime subscription for this page.
+  const notifications = useNotifications(user?.id)
+
+  const closeMenu = () => {
+    setShowMenu(false)
+    setShowNotifications(false)
+  }
 
   const handleSignOut = async () => {
     await signOut()
@@ -22,7 +34,7 @@ export default function Dashboard() {
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setShowMenu(false)
+        closeMenu()
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -58,17 +70,30 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <div className="dropdown-divider"></div>
-                <button className="dropdown-item" onClick={() => { setShowMenu(false) }}>
+                <button className="dropdown-item" onClick={closeMenu}>
                   <span className="dropdown-icon">&#128100;</span> Profile
                 </button>
-                <button className="dropdown-item" onClick={() => { setShowMenu(false) }}>
+                <button
+                  className={`dropdown-item ${showNotifications ? 'active' : ''}`}
+                  onClick={() => setShowNotifications((open) => !open)}
+                >
                   <span className="dropdown-icon">&#128276;</span> Notifications
+                  {notifications.count > 0 && (
+                    <span className="dropdown-badge">{notifications.count}</span>
+                  )}
+                  <span className={`dropdown-caret ${showNotifications ? 'open' : ''}`}>&#9662;</span>
                 </button>
-                <button className="dropdown-item" onClick={() => { setShowMenu(false) }}>
+                {showNotifications && (
+                  <ProfileNotifications
+                    state={notifications}
+                    onNavigate={closeMenu}
+                  />
+                )}
+                <button className="dropdown-item" onClick={closeMenu}>
                   <span className="dropdown-icon">&#128172;</span> Messages
                 </button>
                 <div className="dropdown-divider"></div>
-                <button className="dropdown-item signout" onClick={() => { setShowMenu(false); handleSignOut() }}>
+                <button className="dropdown-item signout" onClick={() => { closeMenu(); handleSignOut() }}>
                   <span className="dropdown-icon">&#10140;</span> Sign Out
                 </button>
               </div>

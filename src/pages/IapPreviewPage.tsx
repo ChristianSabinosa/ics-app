@@ -3,9 +3,11 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { loadIapData, formatOpPeriod } from '../lib/iap'
+import { notifyIncident } from '../lib/notifications'
 import type { IapData } from '../lib/iap'
 import IapDocument from '../components/IapDocument'
 import ConfirmModal from '../components/ConfirmModal'
+import { useFormAccess } from '../components/FormAccess'
 import './IapPreviewPage.css'
 
 interface IapRow {
@@ -30,6 +32,7 @@ export default function IapPreviewPage() {
   const { id, iapId } = useParams<{ id: string; iapId: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { canEdit } = useFormAccess()
 
   const [row, setRow] = useState<IapRow | null>(null)
   const [data, setData] = useState<IapData | null>(null)
@@ -95,7 +98,7 @@ export default function IapPreviewPage() {
   }, [load])
 
   const approve = async () => {
-    if (!row || !data) return
+    if (!row || !data || !canEdit) return
     setApproving(true)
     setError('')
 
@@ -121,6 +124,15 @@ export default function IapPreviewPage() {
 
     setRow({ ...row, status: 'Approved', approved_at: now, approved_by: user?.email ?? '', updated_at: now })
     setNotice('Incident Action Plan approved. It is now a read-only document for this incident.')
+
+    // The approved IAP matters to everyone in the incident (except the approver).
+    notifyIncident(row.incident_id, {
+      type: 'iap_approved',
+      title: 'Incident Action Plan approved',
+      body: `${incidentName || row.incident_id}${row.operational_period ? ` — ${row.operational_period}` : ''}`,
+      link: `/incident/${row.incident_id}/iap/${row.id}`,
+      excludeUserId: user?.id,
+    })
   }
 
   if (loading) {
@@ -181,7 +193,7 @@ export default function IapPreviewPage() {
             Operational Period: <strong>{opLabel || '—'}</strong>
           </span>
           <button className="iap-bar-btn print" onClick={() => window.print()}>Print</button>
-          {!isApproved && row.status === 'Submitted' && (
+          {canEdit && !isApproved && row.status === 'Submitted' && (
             <button className="iap-bar-btn approve" onClick={() => setShowConfirm(true)} disabled={approving}>
               {approving ? 'Approving...' : 'Approve IAP'}
             </button>

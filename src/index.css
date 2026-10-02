@@ -13,3 +13,17 @@ body {
 a {
   text-decoration: none;
 }
+
+/* Shown in a form's toolbar when the signed-in role may only read the form */
+.view-only-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 4px;
+  background: #f3f4f6;
+  border: 1px dashed #9ca3af;
+  color: #6b7280;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: default;
+}

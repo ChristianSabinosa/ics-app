@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { formatMilitaryTime } from '../lib/utils'
 import type { CheckinManifest, CheckinPersonnel, CheckinVehicle, CheckinEquipment } from '../lib/types'
 import CheckInPrint from './CheckInPrint'
+import { useFormAccess } from '../components/FormAccess'
 import './CheckInView.css'
 
 export default function CheckInView() {
@@ -12,6 +13,7 @@ export default function CheckInView() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { canEdit } = useFormAccess()
 
   const [manifest, setManifest] = useState<CheckinManifest | null>(null)
   const [personnel, setPersonnel] = useState<CheckinPersonnel[]>([])
@@ -109,7 +111,9 @@ export default function CheckInView() {
           <span className={`status-badge ${manifest.status.toLowerCase()}`}>{manifest.status}</span>
         </div>
         <div className="topbar-actions">
-          <button className="action-btn edit" onClick={() => navigate(`/incident/${incidentId}/checkin?manifest=${manifest.id}`)}>Edit</button>
+          {canEdit && (
+            <button className="action-btn edit" onClick={() => navigate(`/incident/${incidentId}/checkin?manifest=${manifest.id}`)}>Edit</button>
+          )}
           <button className="action-btn print" onClick={() => setShowPrint(true)}>Print</button>
         </div>
       </div>

@@ -325,6 +325,12 @@ table.data-table input {
   color: #991b1b;
 }
 
+/* Read-only / view mode: rows can no longer be added or removed */
+.add-row-btn:disabled,
+.remove-row-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.add-row-btn:disabled:hover { background: #e5e7eb; color: inherit; border-color: #ccc; }
+.remove-row-btn:disabled:hover { color: #dc2626; }
+
 .error-message {
   background: #fee2e2;
   color: #991b1b;

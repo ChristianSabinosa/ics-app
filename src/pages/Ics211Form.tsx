@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import type { Ics211Resource } from '../lib/types'
 import Ics211Print from './Ics211Print'
+import { useFormAccess } from '../components/FormAccess'
 import './Ics211Form.css'
 
 const emptyResource: Omit<Ics211Resource, 'id' | 'form_id'> = {
@@ -20,6 +21,7 @@ export default function Ics211Form() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { canEdit } = useFormAccess()
 
   // Set when the user arrived here from the "Leave Incident" flow (step 1 of 2)
   const isLeaveMode = searchParams.get('leave') === '1'
@@ -42,7 +44,7 @@ export default function Ics211Form() {
   const [showPrint, setShowPrint] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
 
-  const isReadonly = status === 'Submitted' && !isEditing
+  const isReadonly = (status === 'Submitted' && !isEditing) || !canEdit
 
   const loadFromManifests = useCallback(async () => {
     if (!incidentId) return
@@ -368,13 +370,14 @@ export default function Ics211Form() {
           <span className={`status-badge ${status.toLowerCase()}`}>{status}</span>
         </div>
         <div className="topbar-actions">
+          {!canEdit && <span className="view-only-badge">View only</span>}
           <button className="action-btn save" onClick={() => saveForm('Draft')} disabled={saving || isReadonly}>
             {saving ? 'Saving...' : 'Save Progress'}
           </button>
           <button className="action-btn submit" onClick={() => saveForm('Submitted')} disabled={saving || isReadonly}>
             {saving ? 'Submitting...' : isLeaveMode ? 'Submit & Continue' : 'Submit'}
           </button>
-          {status === 'Submitted' && !isEditing && (
+          {status === 'Submitted' && !isEditing && canEdit && (
             <button className="action-btn edit" onClick={() => setIsEditing(true)}>Edit</button>
           )}
           <button className="action-btn print" onClick={() => setShowPrint(true)} disabled={saving}>Print</button>

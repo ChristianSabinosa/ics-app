@@ -1,17 +1,16 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { loadIcs204List } from '../lib/ics204'
-import type { Ics204Summary } from '../lib/types'
+import type { Ics214Summary } from '../lib/types'
 import { useFormAccess } from '../components/FormAccess'
-import './Ics204List.css'
+import './Ics214List.css'
 
-export default function Ics204List() {
+export default function Ics214List() {
   const { id: incidentId } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { canEdit } = useFormAccess()
 
-  const [items, setItems] = useState<Ics204Summary[]>([])
+  const [items, setItems] = useState<Ics214Summary[]>([])
   const [incidentName, setIncidentName] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -20,12 +19,17 @@ export default function Ics204List() {
     if (!incidentId) return
     setLoading(true)
     setError('')
-    const [incidentRes, list] = await Promise.all([
+    const [incidentRes, listRes] = await Promise.all([
       supabase.from('incidents').select('name').eq('incident_id', incidentId).single(),
-      loadIcs204List(incidentId),
+      supabase
+        .from('ics_214_forms')
+        .select('id, name, ics_position, op_period_from_date, op_period_from_time, op_period_to_date, op_period_to_time, status, created_at, updated_at')
+        .eq('incident_id', incidentId)
+        .order('created_at', { ascending: false }),
     ])
     if (incidentRes.data) setIncidentName(incidentRes.data.name)
-    setItems(list)
+    if (listRes.error) setError(listRes.error.message)
+    setItems((listRes.data ?? []) as Ics214Summary[])
     setLoading(false)
   }, [incidentId])
 
@@ -33,32 +37,49 @@ export default function Ics204List() {
     loadList()
   }, [loadList])
 
-  const instanceLabel = (item: Ics204Summary) =>
-    item.division || item.group_name || item.branch || 'Untitled'
+  const formatOpPeriod = (item: Ics214Summary) => {
+    const fmt = (date?: string, time?: string) => {
+      const d = date ? new Date(`${date}T00:00:00`).toLocaleDateString() : ''
+      return [d, time || ''].filter(Boolean).join(' ')
+    }
+    const from = fmt(item.op_period_from_date, item.op_period_from_time)
+    const to = fmt(item.op_period_to_date, item.op_period_to_time)
+    if (!from && !to) return '—'
+    return `${from || '—'} to ${to || '—'}`
+  }
 
   const handleDelete = async (formId: string) => {
     if (!canEdit) return
-    if (!confirm('Are you sure you want to delete this assignment list?')) return
+    if (!confirm('Are you sure you want to delete this activity log?')) return
     setError('')
-    // children first so deletion works regardless of FK cascade
-    const { error: rowsError } = await supabase.from('ics_204_rows').delete().eq('form_id', formId)
-    if (rowsError) { setError(rowsError.message); return }
-    const { error: delError } = await supabase.from('ics_204_forms').delete().eq('id', formId)
+    const { error: delError } = await supabase.from('ics_214_forms').delete().eq('id', formId)
     if (delError) { setError(delError.message); return }
+
+    // A delete silently blocked by RLS reports no error — verify the row is gone.
+    const { data: stillThere } = await supabase
+      .from('ics_214_forms')
+      .select('id')
+      .eq('id', formId)
+      .maybeSingle()
+    if (stillThere) {
+      setError('This activity log could not be deleted — the database is not yet allowing deletes on ICS 214 forms (ics_214_forms). Ask your administrator to add a delete policy for that table in Supabase.')
+      return
+    }
+
     setItems((prev) => prev.filter((i) => i.id !== formId))
   }
 
   if (loading) {
     return (
-      <div className="ics204list-page">
-        <div className="ics204list-loading">Loading assignment lists...</div>
+      <div className="ics214list-page">
+        <div className="ics214list-loading">Loading activity logs...</div>
       </div>
     )
   }
 
   return (
-    <div className="ics204list-page">
-      <header className="ics204list-header no-print">
+    <div className="ics214list-page">
+      <header className="ics214list-header no-print">
         <div className="header-brand" onClick={() => navigate(`/incident/${incidentId}`)} style={{ cursor: 'pointer' }}>
           <img src="/alaminos-logo.png" alt="Logo" className="header-logo" />
           <div>
@@ -68,44 +89,43 @@ export default function Ics204List() {
         </div>
       </header>
 
-      <div className="ics204list-topbar no-print">
+      <div className="ics214list-topbar no-print">
         <div className="topbar-left">
           <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}`)}>&larr; Back</button>
-          <span className="form-badge">ICS 204</span>
-          <span className="list-title">Assignment Lists{incidentName ? ` — ${incidentName}` : ''}</span>
+          <span className="form-badge">ICS 214</span>
+          <span className="list-title">Activity Logs{incidentName ? ` — ${incidentName}` : ''}</span>
         </div>
         <div className="topbar-actions">
           {!canEdit && <span className="view-only-badge">View only</span>}
           {canEdit && (
-            <button className="action-btn submit" onClick={() => navigate(`/incident/${incidentId}/ics-204/edit?new=1`)}>
-              + New Assignment List
+            <button className="action-btn submit" onClick={() => navigate(`/incident/${incidentId}/ics-214/edit?new=1`)}>
+              + New Activity Log
             </button>
           )}
         </div>
       </div>
 
-      <main className="ics204list-main no-print">
-        <div className="ics204list-container">
+      <main className="ics214list-main no-print">
+        <div className="ics214list-container">
           {error && <div className="error-message">{error}</div>}
 
           {items.length === 0 ? (
             <div className="empty-state">
-              <p>No assignment lists yet.</p>
-              <p className="empty-hint">Create one ICS 204 for each Branch, Division, or Group assignment in this incident.</p>
+              <p>No activity logs yet.</p>
+              <p className="empty-hint">Create one ICS 214 for each operational period or team keeping its own activity log.</p>
               {canEdit && (
-                <button className="action-btn submit" onClick={() => navigate(`/incident/${incidentId}/ics-204/edit?new=1`)}>
-                  + New Assignment List
+                <button className="action-btn submit" onClick={() => navigate(`/incident/${incidentId}/ics-214/edit?new=1`)}>
+                  + New Activity Log
                 </button>
               )}
             </div>
           ) : (
-            <div className="ics204list-table-wrapper">
-              <table className="ics204list-table">
+            <div className="ics214list-table-wrapper">
+              <table className="ics214list-table">
                 <thead>
                   <tr>
-                    <th>Division / Group</th>
-                    <th>Branch</th>
-                    <th>Staging Area</th>
+                    <th>Prepared By</th>
+                    <th>Operational Period</th>
                     <th>Status</th>
                     <th>Updated</th>
                     <th>Actions</th>
@@ -114,9 +134,8 @@ export default function Ics204List() {
                 <tbody>
                   {items.map((item) => (
                     <tr key={item.id}>
-                      <td className="label-cell">{instanceLabel(item)}</td>
-                      <td>{item.branch || '—'}</td>
-                      <td>{item.staging_area || '—'}</td>
+                      <td className="label-cell">{item.name || 'Untitled activity log'}</td>
+                      <td className="date-cell">{formatOpPeriod(item)}</td>
                       <td>
                         <span className={`list-status-badge ${item.status.toLowerCase()}`}>{item.status}</span>
                       </td>
@@ -124,7 +143,7 @@ export default function Ics204List() {
                       <td className="actions-cell">
                         <button
                           className="list-btn view"
-                          onClick={() => navigate(`/incident/${incidentId}/ics-204/edit?form=${item.id}&view=1`)}
+                          onClick={() => navigate(`/incident/${incidentId}/ics-214/edit?form=${item.id}&view=1`)}
                         >
                           View
                         </button>
@@ -132,7 +151,7 @@ export default function Ics204List() {
                           <>
                             <button
                               className="list-btn edit"
-                              onClick={() => navigate(`/incident/${incidentId}/ics-204/edit?form=${item.id}`)}
+                              onClick={() => navigate(`/incident/${incidentId}/ics-214/edit?form=${item.id}`)}
                             >
                               Edit
                             </button>

@@ -34,6 +34,7 @@ const INCIDENT_SCOPED_TABLES = [
   'ics_221_forms',
   'checkin_manifests',
   'incident_participants',
+  'notifications',
 ]
 
 /**

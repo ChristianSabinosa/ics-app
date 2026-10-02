@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { formatOpPeriod } from '../lib/iap'
+import { notifyIncident } from '../lib/notifications'
+import { useAuth } from '../context/AuthContext'
 import type { IapOpPeriod } from '../lib/iap'
 import './IapCoverModal.css'
 
@@ -89,6 +91,7 @@ interface IapCoverModalProps {
 }
 
 export default function IapCoverModal({ incidentId, incidentName, onClose, onStatusChange, onProceed }: IapCoverModalProps) {
+  const { user } = useAuth()
   const [imgSrc, setImgSrc] = useState('')
   const [crop, setCrop] = useState<CropRect>(blankCrop())
   const [drag, setDrag] = useState<DragState | null>(null)
@@ -414,6 +417,19 @@ export default function IapCoverModal({ incidentId, incidentName, onClose, onSta
           ? 'Incident Action Plan submitted for review.'
           : 'Cover page saved as draft.',
       )
+
+      // A submitted IAP is the IMT's cue to review it (fire-and-forget).
+      if (nextStatus === 'Submitted') {
+        notifyIncident(incidentId, {
+          type: 'iap_submitted',
+          title: 'Incident Action Plan submitted for review',
+          body: `${incidentName || incidentId}${payload.operational_period ? ` — ${String(payload.operational_period)}` : ''}`,
+          link: `/incident/${incidentId}/iap/${savedId}`,
+          roles: ['IMT'],
+          excludeUserId: user?.id,
+        })
+      }
+
       return savedId
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to process the image.'

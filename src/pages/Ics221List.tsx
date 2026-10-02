@@ -2,11 +2,13 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import type { Ics221Summary } from '../lib/types'
+import { useFormAccess } from '../components/FormAccess'
 import './Ics221List.css'
 
 export default function Ics221List() {
   const { id: incidentId } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { canEdit } = useFormAccess()
 
   const [items, setItems] = useState<Ics221Summary[]>([])
   const [incidentName, setIncidentName] = useState('')
@@ -42,6 +44,7 @@ export default function Ics221List() {
   }
 
   const handleDelete = async (formId: string) => {
+    if (!canEdit) return
     if (!confirm('Are you sure you want to delete this demobilization check-out?')) return
     setError('')
     const { error: delError } = await supabase.from('ics_221_forms').delete().eq('id', formId)
@@ -88,9 +91,12 @@ export default function Ics221List() {
           <span className="list-title">Demobilization Check-outs{incidentName ? ` — ${incidentName}` : ''}</span>
         </div>
         <div className="topbar-actions">
-          <button className="action-btn submit" onClick={() => navigate(`/incident/${incidentId}/ics-221/edit?new=1`)}>
-            + New Demobilization Check-out
-          </button>
+          {!canEdit && <span className="view-only-badge">View only</span>}
+          {canEdit && (
+            <button className="action-btn submit" onClick={() => navigate(`/incident/${incidentId}/ics-221/edit?new=1`)}>
+              + New Demobilization Check-out
+            </button>
+          )}
         </div>
       </div>
 
@@ -102,9 +108,11 @@ export default function Ics221List() {
             <div className="empty-state">
               <p>No demobilization check-outs yet.</p>
               <p className="empty-hint">Create one ICS 221 for each resource or team being released from this incident.</p>
-              <button className="action-btn submit" onClick={() => navigate(`/incident/${incidentId}/ics-221/edit?new=1`)}>
-                + New Demobilization Check-out
-              </button>
+              {canEdit && (
+                <button className="action-btn submit" onClick={() => navigate(`/incident/${incidentId}/ics-221/edit?new=1`)}>
+                  + New Demobilization Check-out
+                </button>
+              )}
             </div>
           ) : (
             <div className="ics221list-table-wrapper">
@@ -129,14 +137,24 @@ export default function Ics221List() {
                       <td className="date-cell">{new Date(item.updated_at).toLocaleDateString()}</td>
                       <td className="actions-cell">
                         <button
-                          className="list-btn edit"
-                          onClick={() => navigate(`/incident/${incidentId}/ics-221/edit?form=${item.id}`)}
+                          className="list-btn view"
+                          onClick={() => navigate(`/incident/${incidentId}/ics-221/edit?form=${item.id}&view=1`)}
                         >
-                          Edit
+                          View
                         </button>
-                        <button className="list-btn delete" onClick={() => handleDelete(item.id)}>
-                          Delete
-                        </button>
+                        {canEdit && (
+                          <>
+                            <button
+                              className="list-btn edit"
+                              onClick={() => navigate(`/incident/${incidentId}/ics-221/edit?form=${item.id}`)}
+                            >
+                              Edit
+                            </button>
+                            <button className="list-btn delete" onClick={() => handleDelete(item.id)}>
+                              Delete
+                            </button>
+                          </>
+                        )}
                       </td>
                     </tr>
                   ))}

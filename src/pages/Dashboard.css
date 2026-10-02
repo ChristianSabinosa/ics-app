@@ -167,6 +167,44 @@
   background: #f3f4f6;
 }
 
+.dropdown-item.active {
+  background: #fef2f2;
+  color: #950606;
+  font-weight: 600;
+}
+
+/* Unread count next to the Notifications entry */
+.dropdown-badge {
+  margin-left: auto;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: #950606;
+  color: white;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 19px;
+  text-align: center;
+}
+
+.dropdown-caret {
+  margin-left: auto;
+  font-size: 0.65rem;
+  color: #9ca3af;
+  transition: transform 0.2s ease;
+}
+
+/* Only the first of the two should claim the free space, otherwise flex
+   splits it between them and the badge drifts to the middle. */
+.dropdown-badge + .dropdown-caret {
+  margin-left: 6px;
+}
+
+.dropdown-caret.open {
+  transform: rotate(180deg);
+}
+
 .dropdown-item.signout {
   color: #c53030;
 }

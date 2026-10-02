@@ -3,6 +3,7 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import Ics215Print from './Ics215Print'
+import { useFormAccess } from '../components/FormAccess'
 import './Ics215Form.css'
 
 let _nextId = 0
@@ -42,6 +43,7 @@ export default function Ics215Form() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { canEdit } = useFormAccess()
 
   const [formId, setFormId] = useState<string | null>(null)
   const [incidentName, setIncidentName] = useState('')
@@ -66,7 +68,7 @@ export default function Ics215Form() {
 
   const [overheadSuggestions, setOverheadSuggestions] = useState<string[]>([])
 
-  const isReadonly = status === 'Submitted' && !isEditing
+  const isReadonly = (status === 'Submitted' && !isEditing) || !canEdit
 
   const loadForm = useCallback(async () => {
     if (!incidentId) return
@@ -276,13 +278,14 @@ export default function Ics215Form() {
           <span className={`status-badge ${status.toLowerCase()}`}>{status}</span>
         </div>
         <div className="topbar-actions">
+          {!canEdit && <span className="view-only-badge">View only</span>}
           <button className="action-btn save" onClick={() => saveForm('Draft')} disabled={saving || isReadonly}>
             {saving ? 'Saving...' : 'Save Progress'}
           </button>
           <button className="action-btn submit" onClick={() => saveForm('Submitted')} disabled={saving || isReadonly}>
             {saving ? 'Submitting...' : 'Submit'}
           </button>
-          {status === 'Submitted' && !isEditing && (
+          {status === 'Submitted' && !isEditing && canEdit && (
             <button className="action-btn edit" onClick={() => setIsEditing(true)}>Edit</button>
           )}
           <button className="action-btn print" onClick={() => setShowPrint(true)} disabled={saving}>Print</button>

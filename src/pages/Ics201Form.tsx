@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import Ics201Print from './Ics201Print'
 import OrgChart from '../components/OrgChart'
 import type { OrgChartPosition } from '../components/OrgChart'
+import { useFormAccess } from '../components/FormAccess'
 import './Ics201Form.css'
 
 export interface Ics201ActionRow {
@@ -29,6 +30,7 @@ export default function Ics201Form() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { canEdit } = useFormAccess()
 
   const [formId, setFormId] = useState<string | null>(null)
   const [incidentName, setIncidentName] = useState('')
@@ -280,7 +282,7 @@ export default function Ics201Form() {
     )
   }
 
-  const isReadonly = status === 'Submitted' && !isEditing
+  const isReadonly = (status === 'Submitted' && !isEditing) || !canEdit
 
   const preparedFooter = (num: string, withDateTime: boolean) => (
     <div className={`sheet-footer ${withDateTime ? 'with-datetime' : ''}`}>
@@ -328,13 +330,14 @@ export default function Ics201Form() {
           <span className={`status-badge ${status.toLowerCase()}`}>{status}</span>
         </div>
         <div className="topbar-actions">
+          {!canEdit && <span className="view-only-badge">View only</span>}
           <button className="action-btn save" onClick={() => saveForm('Draft')} disabled={saving || isReadonly}>
             {saving ? 'Saving...' : 'Save Progress'}
           </button>
           <button className="action-btn submit" onClick={() => saveForm('Submitted')} disabled={saving || isReadonly}>
             {saving ? 'Submitting...' : 'Submit'}
           </button>
-          {status === 'Submitted' && !isEditing && (
+          {status === 'Submitted' && !isEditing && canEdit && (
             <button className="action-btn edit" onClick={() => setIsEditing(true)}>Edit</button>
           )}
           <button className="action-btn print" onClick={() => setShowPrint(true)} disabled={saving}>Print</button>

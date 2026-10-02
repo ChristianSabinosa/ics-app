@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { generateRoleId } from '../lib/utils'
+import { notifyIncident } from '../lib/notifications'
 import type { Incident, IncidentParticipant } from '../lib/types'
 import './JoinIncident.css'
 
@@ -101,6 +102,19 @@ export default function JoinIncident() {
       return
     }
 
+    // Notify the IMT that someone joined (and single out new IMT members).
+    // Fire-and-forget: a notification problem must not block the join itself.
+    const incident = incidents.find((i) => i.incident_id === incidentId)
+    const incidentLabel = incident ? `${incident.name} (${incidentId})` : incidentId
+    notifyIncident(incidentId, {
+      type: role === 'IMT' ? 'imt_join' : 'join',
+      title: role === 'IMT' ? `${userName} joined the IMT` : `${userName} joined the incident`,
+      body: `${role} — ${incidentLabel}`,
+      link: `/incident/${incidentId}`,
+      roles: ['IMT'],
+      excludeUserId: user.id,
+    })
+
     navigate(`/incident/${incidentId}?role=${encodeURIComponent(role)}`)
   }
 
@@ -196,7 +210,7 @@ export default function JoinIncident() {
                                 </button>
                               </div>
                               <div className="joined-actions">
-                                {isCheckedIn ? (
+                                {isCheckedIn || participant!.role === 'Observer' ? (
                                   <button
                                     className="action-btn proceed-view"
                                     onClick={() => navigate(`/incident/${incident.incident_id}`)}

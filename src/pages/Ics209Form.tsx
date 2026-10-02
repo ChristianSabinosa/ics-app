@@ -3,6 +3,7 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import Ics209Print from './Ics209Print'
+import { useFormAccess } from '../components/FormAccess'
 import './Ics209Form.css'
 
 interface ClusterRow {
@@ -82,6 +83,7 @@ export default function Ics209Form() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { canEdit } = useFormAccess()
 
   const [formId, setFormId] = useState<string | null>(null)
   const [incidentName, setIncidentName] = useState('')
@@ -406,7 +408,7 @@ export default function Ics209Form() {
     )
   }
 
-  const isReadonly = status === 'Submitted' && !isEditing
+  const isReadonly = (status === 'Submitted' && !isEditing) || !canEdit
 
   const updateCluster = (idx: number, field: keyof ClusterRow, value: string) => {
     setClusterAssessment(prev => prev.map((r, i) => i === idx ? { ...r, [field]: value } : r))
@@ -460,13 +462,14 @@ export default function Ics209Form() {
           <span className={`status-badge ${status.toLowerCase()}`}>{status}</span>
         </div>
         <div className="topbar-actions">
+          {!canEdit && <span className="view-only-badge">View only</span>}
           <button className="action-btn save" onClick={() => saveForm('Draft')} disabled={saving || isReadonly}>
             {saving ? 'Saving...' : 'Save Progress'}
           </button>
           <button className="action-btn submit" onClick={() => saveForm('Submitted')} disabled={saving || isReadonly}>
             {saving ? 'Submitting...' : 'Submit'}
           </button>
-          {status === 'Submitted' && !isEditing && (
+          {status === 'Submitted' && !isEditing && canEdit && (
             <button className="action-btn edit" onClick={() => setIsEditing(true)}>Edit</button>
           )}
           <button className="action-btn print" onClick={() => setShowPrint(true)} disabled={saving}>Print</button>

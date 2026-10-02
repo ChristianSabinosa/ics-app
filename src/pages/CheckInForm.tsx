@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { generateCheckinId } from '../lib/utils'
 import type { CheckinPersonnel, CheckinVehicle, CheckinEquipment } from '../lib/types'
+import { useFormAccess } from '../components/FormAccess'
 import './CheckInForm.css'
 
 const emptyLeader: Omit<CheckinPersonnel, 'id' | 'manifest_id'> = {
@@ -24,6 +25,7 @@ export default function CheckInForm() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { canEdit } = useFormAccess()
 
   const [checkinId, setCheckinId] = useState('')
   const [manifestId, setManifestId] = useState<string | null>(null)
@@ -34,7 +36,7 @@ export default function CheckInForm() {
   const [status, setStatus] = useState<'Draft' | 'Submitted'>('Draft')
   const [isEditing, setIsEditing] = useState(false)
 
-  const isReadonly = status === 'Submitted' && !isEditing
+  const isReadonly = (status === 'Submitted' && !isEditing) || !canEdit
 
   const [agencyName, setAgencyName] = useState('')
   const [others, setOthers] = useState('')
@@ -242,13 +244,14 @@ export default function CheckInForm() {
           <span className={`status-badge ${status.toLowerCase()}`}>{status}</span>
         </div>
         <div className="topbar-actions">
+          {!canEdit && <span className="view-only-badge">View only</span>}
           <button className="action-btn save" onClick={() => saveManifest('Draft')} disabled={saving || isReadonly}>
             {saving ? 'Saving...' : 'Save Progress'}
           </button>
           <button className="action-btn submit" onClick={() => saveManifest('Submitted')} disabled={saving || isReadonly}>
             {saving ? 'Submitting...' : 'Submit'}
           </button>
-          {status === 'Submitted' && !isEditing && (
+          {status === 'Submitted' && !isEditing && canEdit && (
             <button className="action-btn edit" onClick={() => setIsEditing(true)}>Edit</button>
           )}
         </div>

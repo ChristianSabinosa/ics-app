@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import { generateIncidentId } from '../lib/utils'
+import { notifySelfIncident } from '../lib/notifications'
 import './CreateIncident.css'
 
 export default function CreateIncident() {
@@ -41,6 +42,15 @@ export default function CreateIncident() {
     if (insertError) {
       setError(insertError.message)
     } else {
+      // Confirmation addressed to the creator: they are the initial IC and
+      // still need to complete the form and designate the IMT. Fire-and-forget
+      // (and deliberately linkless) so a notification problem never blocks the
+      // creation itself.
+      notifySelfIncident(incidentId, {
+        type: 'incident_created',
+        title: "You've successfully created an incident",
+        body: `${name} — you are the initial IC. Complete the form and designate the IMT.`,
+      })
       navigate('/ongoing-incidents')
     }
   }

@@ -103,6 +103,23 @@
 
 .ics207-main { padding: 24px; }
 
+/* Fieldset that freezes every input and button inside for a view-only role */
+.ics207-edit-gate {
+  border: none;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+.ics207-edit-gate input:disabled,
+.ics207-edit-gate select:disabled,
+.ics207-edit-gate textarea:disabled {
+  color: #1f2937;
+  -webkit-text-fill-color: #1f2937;
+  opacity: 1;
+  cursor: default;
+}
+
 .ics207-layout {
   display: grid;
   grid-template-columns: 1fr 320px;

@@ -3,6 +3,7 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import Ics214Print from './Ics214Print'
+import { useFormAccess } from '../components/FormAccess'
 import './Ics214Form.css'
 
 interface ResourceRow {
@@ -31,6 +32,7 @@ export default function Ics214Form() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { canEdit } = useFormAccess()
 
   const [formId, setFormId] = useState<string | null>(null)
   const [incidentName, setIncidentName] = useState('')
@@ -88,6 +90,8 @@ export default function Ics214Form() {
     const formParam = searchParams.get('form')
     let formToLoad = null
 
+    // Many 214s per incident (same as ICS 204/221): only ?form=<id> opens a
+    // saved activity log — every other visit starts a brand-new one.
     if (formParam) {
       const { data: form } = await supabase
         .from('ics_214_forms')
@@ -95,15 +99,6 @@ export default function Ics214Form() {
         .eq('id', formParam)
         .single()
       formToLoad = form
-    } else {
-      const { data: existingForm } = await supabase
-        .from('ics_214_forms')
-        .select('*')
-        .eq('incident_id', incidentId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
-      formToLoad = existingForm
     }
 
     if (formToLoad) {
@@ -214,7 +209,8 @@ export default function Ics214Form() {
     )
   }
 
-  const isReadonly = status === 'Submitted' && !isEditing
+  const isForcedView = searchParams.get('view') === '1'
+  const isReadonly = (status === 'Submitted' && !isEditing) || !canEdit || isForcedView
 
   return (
     <div className="ics214-page">
@@ -230,18 +226,19 @@ export default function Ics214Form() {
 
       <div className="ics214-topbar no-print">
         <div className="topbar-left">
-          <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}`)}>&larr; Back</button>
+          <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}/ics-214`)}>&larr; Back</button>
           <span className="form-badge">ICS 214</span>
           <span className={`status-badge ${status.toLowerCase()}`}>{status}</span>
         </div>
         <div className="topbar-actions">
+          {(!canEdit || isForcedView) && <span className="view-only-badge">View only</span>}
           <button className="action-btn save" onClick={() => saveForm('Draft')} disabled={saving || isReadonly}>
             {saving ? 'Saving...' : 'Save Progress'}
           </button>
           <button className="action-btn submit" onClick={() => saveForm('Submitted')} disabled={saving || isReadonly}>
             {saving ? 'Submitting...' : 'Submit'}
           </button>
-          {status === 'Submitted' && !isEditing && (
+          {status === 'Submitted' && !isEditing && canEdit && !isForcedView && (
             <button className="action-btn edit" onClick={() => setIsEditing(true)}>Edit</button>
           )}
           <button className="action-btn print" onClick={() => setShowPrint(true)} disabled={saving}>Print</button>
@@ -318,14 +315,14 @@ export default function Ics214Form() {
                     <td><input type="text" value={row.icsPosition} onChange={e => updateResource(idx, 'icsPosition', e.target.value)} disabled={isReadonly} /></td>
                     <td><input type="text" value={row.agencyOffice} onChange={e => updateResource(idx, 'agencyOffice', e.target.value)} disabled={isReadonly} /></td>
                     {!isReadonly && (
-                      <td><button className="remove-row-btn" onClick={() => removeResource(idx)}>&times;</button></td>
+                      <td><button className="remove-row-btn" onClick={() => removeResource(idx)} disabled={isReadonly}>&times;</button></td>
                     )}
                   </tr>
                 ))}
               </tbody>
             </table>
             {!isReadonly && (
-              <button className="add-row-btn" onClick={addResource}>+ Add Resource</button>
+              <button className="add-row-btn" onClick={addResource} disabled={isReadonly}>+ Add Resource</button>
             )}
           </div>
 
@@ -348,14 +345,14 @@ export default function Ics214Form() {
                     <td><input type="time" value={row.time} onChange={e => updateActivity(idx, 'time', e.target.value)} disabled={isReadonly} /></td>
                     <td><input type="text" value={row.notableActivities} onChange={e => updateActivity(idx, 'notableActivities', e.target.value)} disabled={isReadonly} /></td>
                     {!isReadonly && (
-                      <td><button className="remove-row-btn" onClick={() => removeActivity(idx)}>&times;</button></td>
+                      <td><button className="remove-row-btn" onClick={() => removeActivity(idx)} disabled={isReadonly}>&times;</button></td>
                     )}
                   </tr>
                 ))}
               </tbody>
             </table>
             {!isReadonly && (
-              <button className="add-row-btn" onClick={addActivity}>+ Add Activity</button>
+              <button className="add-row-btn" onClick={addActivity} disabled={isReadonly}>+ Add Activity</button>
             )}
           </div>
 

@@ -303,6 +303,8 @@
   border-radius: 4px;
 }
 .remove-row-btn:hover { background: #fee2e2; }
+.remove-row-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.remove-row-btn:disabled:hover { background: none; }
 
 .add-row-buttons { margin-top: 8px; }
 
@@ -317,6 +319,8 @@
   cursor: pointer;
 }
 .add-row-btn:hover { background: #16304f; }
+.add-row-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.add-row-btn:disabled:hover { background: #1e3a5f; }
 
 /* Sections 6 & 7 */
 .ics204-textarea {

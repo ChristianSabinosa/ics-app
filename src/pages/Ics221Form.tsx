@@ -3,7 +3,9 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { completeLeave } from '../lib/leaveIncident'
+import { notifyIncident, getIncidentCommanderName } from '../lib/notifications'
 import Ics221Print from './Ics221Print'
+import { useFormAccess } from '../components/FormAccess'
 import './Ics221Form.css'
 
 interface UnitSignoff {
@@ -86,6 +88,7 @@ export default function Ics221Form() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { canEdit } = useFormAccess()
 
   // Set when the user arrived here from the "Leave Incident" flow (step 2 of 2)
   const isLeaveMode = searchParams.get('leave') === '1'
@@ -348,6 +351,55 @@ export default function Ics221Form() {
     if (!leaveParticipantId) {
       notice = 'You are no longer an active participant of this incident.'
     } else {
+      // Notify BEFORE completeLeave(): send_notification() only accepts an active
+      // sender, and completeLeave() is what flips this participant to 'Left'.
+      const { data: me } = await supabase
+        .from('incident_participants')
+        .select('user_name, user_id')
+        .eq('id', leaveParticipantId)
+        .maybeSingle()
+
+      const leavingName = me?.user_name?.trim() || 'A participant'
+      const incidentLabel = incidentName || incidentId
+
+      // The incident survives only while another IMT member stays Active — if not,
+      // delete_incident() removes the incident and every notification with it,
+      // so there is nobody left to notify anyway.
+      const { data: others } = await supabase
+        .from('incident_participants')
+        .select('role')
+        .eq('incident_id', incidentId)
+        .eq('status', 'Active')
+        .neq('id', leaveParticipantId)
+      const imtRemains = (others ?? []).some((p) => p.role === 'IMT')
+
+      if (imtRemains) {
+        // Awaited on purpose: once completeLeave() runs, this user is 'Left'
+        // and send_notification() would refuse them as the sender.
+        await Promise.all([
+          notifyIncident(incidentId, {
+            type: 'leave',
+            title: `${leavingName} left the incident`,
+            body: incidentLabel,
+            link: `/incident/${incidentId}`,
+            roles: ['IMT'],
+            excludeUserId: me?.user_id,
+          }),
+          getIncidentCommanderName(incidentId).then((icName) => {
+            const isIc = !!icName && !!me &&
+              icName.trim().toLowerCase() === me.user_name.trim().toLowerCase()
+            if (!isIc) return
+            return notifyIncident(incidentId, {
+              type: 'ic_left',
+              title: 'The Incident Commander left the incident',
+              body: `${leavingName} was the Incident Commander — ${incidentLabel}`,
+              link: `/incident/${incidentId}`,
+              excludeUserId: me?.user_id,
+            })
+          }),
+        ])
+      }
+
       const result = await completeLeave(incidentId, leaveParticipantId)
       if (result.error) {
         notice = `You left ${incidentName || 'the incident'}, but a problem occurred: ${result.error}`
@@ -444,7 +496,8 @@ export default function Ics221Form() {
     )
   }
 
-  const isReadonly = status === 'Submitted' && !isEditing
+  const isForcedView = searchParams.get('view') === '1'
+  const isReadonly = (status === 'Submitted' && !isEditing) || !canEdit || isForcedView
 
   const renderClearanceSection = (
     title: string,
@@ -519,18 +572,19 @@ export default function Ics221Form() {
           <span className={`status-badge ${status.toLowerCase()}`}>{status}</span>
         </div>
         <div className="topbar-actions">
+          {(!canEdit || isForcedView) && <span className="view-only-badge">View only</span>}
           <button className="action-btn save" onClick={() => saveForm('Draft')} disabled={saving || isReadonly}>
             {saving ? 'Saving...' : 'Save Progress'}
           </button>
           <button className="action-btn submit" onClick={() => saveForm('Submitted')} disabled={saving || isReadonly}>
             {saving ? 'Submitting...' : isLeaveMode ? 'Submit & Finish Leaving' : 'Submit'}
           </button>
-          {status === 'Submitted' && (
+          {status === 'Submitted' && canEdit && !isForcedView && (
             <button className="action-btn edit" onClick={() => setIsEditing(true)} disabled={isEditing}>
               Edit
             </button>
           )}
-          {status === 'Submitted' && (
+          {(status === 'Submitted' || isForcedView) && (
             <button className="action-btn print" onClick={() => setShowPrint(true)}>
               Print
             </button>

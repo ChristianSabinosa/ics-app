@@ -14,6 +14,7 @@ import {
 import type { Ics204RowInput } from '../lib/ics204'
 import type { Ics204CommsRow, Ics204OpsPerson } from '../lib/types'
 import Ics204Print from './Ics204Print'
+import { useFormAccess } from '../components/FormAccess'
 import './Ics204Form.css'
 
 export default function Ics204Form() {
@@ -21,6 +22,7 @@ export default function Ics204Form() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { canEdit } = useFormAccess()
 
   const [formId, setFormId] = useState<string | null>(null)
   const [incidentName, setIncidentName] = useState('')
@@ -56,7 +58,8 @@ export default function Ics204Form() {
   const [showPrint, setShowPrint] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
 
-  const isReadonly = status === 'Submitted' && !isEditing
+  const isForcedView = searchParams.get('view') === '1'
+  const isReadonly = (status === 'Submitted' && !isEditing) || !canEdit || isForcedView
 
   const loadForm = useCallback(async () => {
     if (!incidentId) return
@@ -311,13 +314,14 @@ export default function Ics204Form() {
           <span className={`status-badge ${status.toLowerCase()}`}>{status}</span>
         </div>
         <div className="topbar-actions">
+          {(!canEdit || isForcedView) && <span className="view-only-badge">View only</span>}
           <button className="action-btn save" onClick={() => saveForm('Draft')} disabled={saving || isReadonly}>
             {saving ? 'Saving...' : 'Save Progress'}
           </button>
           <button className="action-btn submit" onClick={() => saveForm('Submitted')} disabled={saving || isReadonly}>
             {saving ? 'Submitting...' : 'Submit'}
           </button>
-          {status === 'Submitted' && !isEditing && (
+          {status === 'Submitted' && !isEditing && canEdit && !isForcedView && (
             <button className="action-btn edit" onClick={() => setIsEditing(true)}>Edit</button>
           )}
           <button className="action-btn print" onClick={() => setShowPrint(true)} disabled={saving}>Print</button>
@@ -466,7 +470,7 @@ export default function Ics204Form() {
                       </td>
                       {!isReadonly && (
                         <td className="actions-cell">
-                          <button className="remove-row-btn" onClick={() => removeResourceRow(i)}>&times;</button>
+                          <button className="remove-row-btn" onClick={() => removeResourceRow(i)} disabled={isReadonly}>&times;</button>
                         </td>
                       )}
                     </tr>
@@ -476,7 +480,7 @@ export default function Ics204Form() {
             </div>
             {!isReadonly && (
               <div className="add-row-buttons">
-                <button className="add-row-btn" onClick={addResourceRow}>+ Add Resource</button>
+                <button className="add-row-btn" onClick={addResourceRow} disabled={isReadonly}>+ Add Resource</button>
               </div>
             )}
           </div>
@@ -536,7 +540,7 @@ export default function Ics204Form() {
                       <td><input value={c.others} disabled={isReadonly} onChange={(e) => updateCommsRow(i, 'others', e.target.value)} /></td>
                       {!isReadonly && (
                         <td className="actions-cell">
-                          <button className="remove-row-btn" onClick={() => removeCommsRow(i)}>&times;</button>
+                          <button className="remove-row-btn" onClick={() => removeCommsRow(i)} disabled={isReadonly}>&times;</button>
                         </td>
                       )}
                     </tr>
@@ -546,7 +550,7 @@ export default function Ics204Form() {
             </div>
             {!isReadonly && (
               <div className="add-row-buttons">
-                <button className="add-row-btn" onClick={addCommsRow}>+ Add Channel</button>
+                <button className="add-row-btn" onClick={addCommsRow} disabled={isReadonly}>+ Add Channel</button>
               </div>
             )}
           </div>

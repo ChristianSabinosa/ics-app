@@ -1,9 +1,11 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { notifyIncident } from '../lib/notifications'
 import Ics207Print from './Ics207Print'
 import Ics207ExpandedExport from './Ics207ExpandedExport'
+import { useFormAccess } from '../components/FormAccess'
 import './Ics207Form.css'
 
 interface PersonnelWithAgency {
@@ -14,6 +16,8 @@ interface PersonnelWithAgency {
   agency: string
   capabilities: string
   participant_role: string
+  /** Account that checked this person in — used to notify them on assignment. */
+  user_id: string
 }
 
 interface Position {
@@ -162,6 +166,11 @@ export default function Ics207Form() {
   const [success, setSuccess] = useState('')
   const [showPrint, setShowPrint] = useState(false)
 
+  // Role without edit rights: the chart stays readable and printable, but every
+  // control inside <fieldset disabled> below stops accepting changes.
+  const { canEdit } = useFormAccess()
+  const isReadonly = !canEdit
+
   const [allPersonnel, setAllPersonnel] = useState<PersonnelWithAgency[]>([])
   const [selectedPosition, setSelectedPosition] = useState<string | null>(null)
   const [personnelFilter, setPersonnelFilter] = useState('All')
@@ -199,6 +208,10 @@ export default function Ics207Form() {
   const [childType, setChildType] = useState<HierarchyChildType>('division')
   const [addChildName, setAddChildName] = useState('')
   const [addChildAbbr, setAddChildAbbr] = useState('')
+
+  // person_name per position as it was when the form was loaded — used to tell
+  // newly assigned personnel apart from the assignments already on file.
+  const baselineAssignments = useRef<Map<string, string>>(new Map())
 
   const restoreCounters = (loadedPositions: Position[]) => {
     const newSupportCount: Record<string, number> = {}
@@ -293,15 +306,18 @@ export default function Ics207Form() {
         .order('sort_order')
 
       if (posData && posData.length > 0) {
-        setPositions(posData.map(({ position_key, position_title, abbreviation, section, person_name, agency, parent_key }) => ({
+        const loadedPositions = posData.map(({ position_key, position_title, abbreviation, section, person_name, agency, parent_key }) => ({
           position_key, position_title, abbreviation, section, person_name, agency, parent_key: parent_key || ''
-        })))
-        restoreCounters(posData.map(({ position_key, position_title, abbreviation, section, person_name, agency, parent_key }) => ({
-          position_key, position_title, abbreviation, section, person_name, agency, parent_key: parent_key || ''
-        })))
+        }))
+        setPositions(loadedPositions)
+        restoreCounters(loadedPositions)
+        baselineAssignments.current = new Map(loadedPositions.map((p) => [p.position_key, p.person_name || '']))
+      } else {
+        baselineAssignments.current = new Map()
       }
     } else {
       setPositions(DEFAULT_POSITIONS)
+      baselineAssignments.current = new Map()
     }
 
     setLoading(false)
@@ -346,6 +362,7 @@ export default function Ics207Form() {
           agency: manifest?.agency_name || '',
           capabilities: p.capabilities,
           participant_role: participantMap.get(manifest?.user_id) || '',
+          user_id: manifest?.user_id || '',
         }
       }))
     }
@@ -666,7 +683,9 @@ export default function Ics207Form() {
         'Switch to Expanded 207? Your current Standard 207 positions will be carried over.'
       )
       if (!confirmed) return
-      await saveForm(status)
+      // A view-only role may switch between the two layouts to read them, but
+      // never persists the carried-over positions.
+      if (canEdit) await saveForm(status)
       setFormType('expanded')
     } else if (newType === 'standard' && formType === 'expanded') {
       const confirmed = window.confirm(
@@ -682,7 +701,7 @@ export default function Ics207Form() {
   }
 
   const saveForm = async (formStatus: 'Draft' | 'Submitted') => {
-    if (!incidentId || !user) return
+    if (!incidentId || !user || isReadonly) return
     setSaving(true)
     setError('')
     setSuccess('')
@@ -730,6 +749,63 @@ export default function Ics207Form() {
     }))
     const { error: posError } = await supabase.from('ics_207_positions').insert(posRows)
     if (posError) { setError(posError.message); setSaving(false); return }
+
+    // Notify people who were just put on the org chart (and everyone, when the
+    // Incident Commander seat changes hands). Fire-and-forget by design.
+    const previousAssignments = baselineAssignments.current
+    const newlyAssigned = positions.filter((p) => {
+      const name = (p.person_name || '').trim()
+      if (!name) return false
+      return (previousAssignments.get(p.position_key) || '').trim() !== name
+    })
+
+    if (newlyAssigned.length > 0 && user) {
+      const nameToUserIds = new Map<string, Set<string>>()
+      for (const person of allPersonnel) {
+        const key = person.name.trim().toLowerCase()
+        if (!key || !person.user_id) continue
+        if (!nameToUserIds.has(key)) nameToUserIds.set(key, new Set())
+        nameToUserIds.get(key)!.add(person.user_id)
+      }
+
+      const incidentLink = `/incident/${incidentId}/ics-207`
+
+      for (const pos of newlyAssigned) {
+        const name = pos.person_name.trim()
+        const isIc = pos.position_key === 'ic'
+        const recipients = [...(nameToUserIds.get(name.toLowerCase()) ?? [])]
+          .filter((id) => id !== user.id)
+
+        if (recipients.length > 0) {
+          notifyIncident(incidentId, {
+            type: isIc ? 'ic_assigned' : 'assigned',
+            title: isIc
+              ? 'You were assigned Incident Commander on ICS 207'
+              : `You were assigned ${pos.position_title} on ICS 207`,
+            body: `${name} — ${incidentName || incidentId}`,
+            link: incidentLink,
+            userIds: recipients,
+          })
+        }
+
+        if (isIc) {
+          // A new IC is command-team news for the whole incident
+          // (the assignee already got the "you were assigned" notice above).
+          notifyIncident(incidentId, {
+            type: 'ic_assigned',
+            title: `${name} is now the Incident Commander`,
+            body: incidentName || incidentId,
+            link: incidentLink,
+            excludeUserId: recipients[0],
+          })
+        }
+      }
+    }
+
+    // Everything on file now matches what was just saved.
+    baselineAssignments.current = new Map(
+      positions.map((p) => [p.position_key, p.person_name || '']),
+    )
 
     setSaving(false)
     setStatus(formStatus)
@@ -779,7 +855,7 @@ export default function Ics207Form() {
       <div
         key={pos.position_key}
         className={`position-card ${accentClass} ${isSelected ? 'selected' : ''} ${pos.person_name ? 'filled' : ''}`}
-        onClick={() => setSelectedPosition(isSelected ? null : pos.position_key)}
+        onClick={() => { if (isReadonly) return; setSelectedPosition(isSelected ? null : pos.position_key) }}
       >
         <div className="card-top">
           <span className="card-abbr">{pos.abbreviation}</span>
@@ -1010,12 +1086,18 @@ export default function Ics207Form() {
           <span className={`status-badge ${status.toLowerCase()}`}>{status}</span>
         </div>
         <div className="topbar-actions">
-          <button className="action-btn save" onClick={() => saveForm('Draft')} disabled={saving}>
-            {saving ? 'Saving...' : 'Save Progress'}
-          </button>
-          <button className="action-btn submit" onClick={() => saveForm('Submitted')} disabled={saving}>
-            {saving ? 'Submitting...' : 'Submit'}
-          </button>
+          {canEdit ? (
+            <>
+              <button className="action-btn save" onClick={() => saveForm('Draft')} disabled={saving}>
+                {saving ? 'Saving...' : 'Save Progress'}
+              </button>
+              <button className="action-btn submit" onClick={() => saveForm('Submitted')} disabled={saving}>
+                {saving ? 'Submitting...' : 'Submit'}
+              </button>
+            </>
+          ) : (
+            <span className="view-only-badge">View only</span>
+          )}
           {formType === 'expanded' ? (
             <button className="action-btn export" onClick={() => setShowExpandedExport(true)} disabled={saving}>Export</button>
           ) : (
@@ -1025,7 +1107,8 @@ export default function Ics207Form() {
       </div>
 
       <main className="ics207-main no-print">
-        <div className="ics207-layout">
+        <fieldset className="ics207-edit-gate" disabled={!canEdit}>
+          <div className="ics207-layout">
           <div className="ics207-content">
             {error && <div className="error-message">{error}</div>}
             {success && <div className="success-message">{success}</div>}
@@ -1416,6 +1499,7 @@ export default function Ics207Form() {
                     key={person.id}
                     className={`personnel-item ${isAssigned ? 'assigned' : ''} ${isSelected && !isAssigned ? 'selectable' : ''}`}
                     onClick={() => {
+                      if (isReadonly) return
                       if (selectedPosition && !isAssigned) {
                         assignPersonToPosition(selectedPosition, person.name, person.agency || '')
                       }
@@ -1440,7 +1524,8 @@ export default function Ics207Form() {
               )}
             </div>
           </div>
-        </div>
+          </div>
+        </fieldset>
       </main>
 
       {showPrint && formType === 'standard' && (

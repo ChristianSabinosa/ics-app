@@ -325,6 +325,20 @@ export interface Ics204Summary {
   updated_at: string
 }
 
+// ICS 214 — Activity Log (multiple instances per incident)
+export interface Ics214Summary {
+  id: string
+  name: string
+  ics_position: string
+  op_period_from_date: string
+  op_period_from_time: string
+  op_period_to_date: string
+  op_period_to_time: string
+  status: 'Draft' | 'Submitted'
+  created_at: string
+  updated_at: string
+}
+
 // ICS 221 — Demobilization Check-out (multiple instances per incident)
 export interface Ics221Summary {
   id: string
@@ -334,4 +348,30 @@ export interface Ics221Summary {
   status: 'Draft' | 'Submitted'
   created_at: string
   updated_at: string
+}
+
+// In-app notification (supabase-notifications-schema.sql)
+export type NotificationType =
+  | 'join'
+  | 'imt_join'
+  | 'leave'
+  | 'ic_left'
+  | 'assigned'
+  | 'ic_assigned'
+  | 'role_change'
+  | 'incident_created'
+  | 'iap_approved'
+  | 'iap_submitted'
+
+export interface AppNotification {
+  id: string
+  incident_id: string
+  recipient_user_id: string
+  sender_user_id: string | null
+  type: NotificationType
+  title: string
+  body: string
+  link: string
+  read_at: string | null
+  created_at: string
 }

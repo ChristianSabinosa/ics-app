@@ -388,6 +388,60 @@
 }
 
 /* ============================
+   ROLE AUTHORITIES
+   Forms the current role is not allowed to open stay visible but locked
+   ============================ */
+
+.ics-sidebar-item.locked {
+  cursor: not-allowed;
+  background: #fafafa;
+  opacity: 0.72;
+}
+
+.ics-sidebar-item.locked:hover { background: #f3f4f6; }
+
+.ics-sidebar-item.locked .sidebar-form-num {
+  background: #e5e7eb;
+  color: #9ca3af;
+}
+
+.ics-sidebar-item.locked .sidebar-form-name { color: #9ca3af; }
+
+.sidebar-lock-badge {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  filter: grayscale(1);
+  opacity: 0.85;
+}
+
+.access-denied-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  border-color: #b45309;
+  background: #fffbeb;
+}
+
+.access-denied-icon {
+  font-size: 1.2rem;
+  line-height: 1.2;
+}
+
+.access-denied-notice strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #92400e;
+}
+
+.access-denied-notice p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #78350f;
+}
+
+.denied-role-badge { font-weight: 700; }
+
+/* ============================
    SHARED CARD (PANEL) BOX
    Same box styling for every card in the main column
    ============================ */

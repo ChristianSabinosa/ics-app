@@ -4,6 +4,8 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { generateRoleId, formatMilitaryTime } from '../lib/utils'
 import type { Incident, IncidentParticipant, CheckinManifest, CheckinPersonnel } from '../lib/types'
+import { getFormAccess, type FormKey } from '../lib/permissions'
+import { notifyIncident } from '../lib/notifications'
 import ConfirmModal from '../components/ConfirmModal'
 import IapCoverModal, { type IapStatus } from '../components/IapCoverModal'
 import './IncidentPage.css'
@@ -143,8 +145,8 @@ export default function IncidentPage() {
     const [
       manifestsResult,
       status211, status201, status203, status205, status206, status208,
-      status213, status214, status215, status215a,
-      forms204Result, forms221Result,
+      status213, status215, status215a,
+      forms204Result, forms214Result, forms221Result,
       mapResult, form202Result, form207Result, form209Result, iapResult,
     ] = await Promise.all([
       supabase
@@ -159,11 +161,11 @@ export default function IncidentPage() {
       fetchFormStatus('ics_206_forms'),
       fetchFormStatus('ics_208_forms'),
       fetchFormStatus('ics_213_forms'),
-      fetchFormStatus('ics_214_forms'),
       fetchFormStatus('ics_215_forms'),
       fetchFormStatus('ics_215a_forms'),
-      // ICS 204 / ICS 221: many instances per incident — fetch all statuses for count + aggregate badge
+      // ICS 204 / 214 / 221: many instances per incident — fetch all statuses for count + aggregate badge
       supabase.from('ics_204_forms').select('id, status').eq('incident_id', id).limit(100),
+      supabase.from('ics_214_forms').select('id, status').eq('incident_id', id).limit(100),
       supabase.from('ics_221_forms').select('id, status').eq('incident_id', id).limit(100),
       supabase.from('incident_maps').select('id, map_image').eq('incident_id', id).maybeSingle(),
       supabase
@@ -209,18 +211,21 @@ export default function IncidentPage() {
     if (status206) statuses['206'] = status206
     if (status208) statuses['208'] = status208
     if (status213) statuses['213'] = status213
-    if (status214) statuses['214'] = status214
     if (status215) statuses['215'] = status215
     if (status215a) statuses['215-A'] = status215a
     if (mapResult.data?.map_image) statuses['MAP'] = 'Saved'
     if (form207Result.data?.status) statuses['207'] = form207Result.data.status
     if (form202Result.data?.status) statuses['202'] = form202Result.data.status
     if (form209Result.data?.status) statuses['209'] = form209Result.data.status
-    // ICS 204 / ICS 221: aggregate status (Draft if any instance is a draft) + instance
+    // ICS 204 / 214 / 221: aggregate status (Draft if any instance is a draft) + instance
     // count for the sidebar ×N badge
     const forms204Rows: { status?: string }[] = forms204Result.data ?? []
     if (forms204Rows.length > 0) {
       statuses['204'] = forms204Rows.some((r) => r.status === 'Draft') ? 'Draft' : 'Submitted'
+    }
+    const forms214Rows: { status?: string }[] = forms214Result.data ?? []
+    if (forms214Rows.length > 0) {
+      statuses['214'] = forms214Rows.some((r) => r.status === 'Draft') ? 'Draft' : 'Submitted'
     }
     const forms221Rows: { status?: string }[] = forms221Result.data ?? []
     if (forms221Rows.length > 0) {
@@ -229,6 +234,7 @@ export default function IncidentPage() {
     setFormStatuses(statuses)
     const counts: Record<string, number> = {}
     if (forms204Rows.length > 0) counts['204'] = forms204Rows.length
+    if (forms214Rows.length > 0) counts['214'] = forms214Rows.length
     if (forms221Rows.length > 0) counts['221'] = forms221Rows.length
     setFormCounts(counts)
     const iapList = (!iapResult.error && (iapResult.data as IapSummary[] | null)) || []
@@ -329,13 +335,31 @@ export default function IncidentPage() {
       .eq('id', participant.id)
     if (updateError) { setError(updateError.message); setProcessing(false); setShowConfirmChange(false); return }
     const newRoleId = generateRoleId(pendingNewRole)
-    const { error: insertError } = await supabase
+    const { data: insertedRole, error: insertError } = await supabase
       .from('incident_participants')
       .insert({ incident_id: participant.incident_id, user_id: user.id, user_name: participant.user_name, user_email: participant.user_email, role: pendingNewRole, role_id: newRoleId, status: 'Active' })
+      .select()
+      .single()
     setProcessing(false)
     setShowConfirmChange(false)
     setPendingNewRole(null)
     if (insertError) { setError(insertError.message); return }
+    // Switch the local participant immediately so the sidebar locks/unlocks
+    // for the new role without a full reload
+    if (insertedRole) setParticipant(insertedRole as IncidentParticipant)
+
+    // Notify the IMT of the role change. Must happen AFTER the insert above:
+    // send_notification() only accepts an Active sender, and until that new
+    // row exists this user's only row is the one just marked 'Left'.
+    notifyIncident(participant.incident_id, {
+      type: 'role_change',
+      title: `${participant.user_name} changed role`,
+      body: `${participant.role} → ${pendingNewRole} — ${incident?.name || participant.incident_id}`,
+      link: `/incident/${participant.incident_id}`,
+      roles: ['IMT'],
+      excludeUserId: user.id,
+    })
+
     navigate(`/incident/${participant.incident_id}?role=${encodeURIComponent(pendingNewRole)}`)
   }
 
@@ -357,6 +381,14 @@ export default function IncidentPage() {
   const role = participant?.role || searchParams.get('role') || 'Observer'
   const roleId = participant?.role_id || ''
   const isIMTOrTactical = role === 'IMT' || role === 'Tactical Resources'
+
+  // Role authorities (src/lib/permissions.ts): the sidebar locks every form the
+  // current role may not open, and ?denied=<form> explains a blocked deep link.
+  const deniedKey = searchParams.get('denied') as FormKey | null
+  const deniedForm = deniedKey === 'IAP'
+    ? { num: 'IAP', name: 'Incident Action Plan' }
+    : ICS_FORMS.find((f) => f.num === deniedKey) ?? null
+  const iapCanEdit = getFormAccess(role, 'IAP') === 'edit'
 
   const handleFormClick = (formNum: string) => {
     if (formNum === '211') {
@@ -449,6 +481,18 @@ export default function IncidentPage() {
       <main className="incident-main">
         <div className="incident-layout">
           <div className="incident-content">
+            {deniedForm && (
+              <div className="incident-panel access-denied-notice" role="status">
+                <span className="access-denied-icon" aria-hidden="true">🔒</span>
+                <div>
+                  <strong>Access restricted</strong>
+                  <p>
+                    Your role (<span className="denied-role-badge">{role}</span>) cannot open
+                    ICS {deniedForm.num} &mdash; {deniedForm.name}.
+                  </p>
+                </div>
+              </div>
+            )}
             <div className="incident-panel incident-info-bar">
               <div className="panel-header">
                 <div>
@@ -533,13 +577,15 @@ export default function IncidentPage() {
                   <p>
                     {!detailsLoaded
                       ? 'Checking required forms...'
-                      : !iapReady
-                        ? 'Complete all required forms below to enable generation.'
-                        : iapStatus === 'Submitted'
-                          ? 'All requirements are complete. Your IAP cover page is submitted.'
-                          : iapStatus === 'Draft'
-                            ? 'All requirements are complete. Your cover page draft is saved — submit when ready.'
-                            : 'All requirements are complete. The plan is ready to generate.'}
+                      : !iapCanEdit
+                        ? 'Your role can review the Incident Action Plan and its approved copies below.'
+                        : !iapReady
+                          ? 'Complete all required forms below to enable generation.'
+                          : iapStatus === 'Submitted'
+                            ? 'All requirements are complete. Your IAP cover page is submitted.'
+                            : iapStatus === 'Draft'
+                              ? 'All requirements are complete. Your cover page draft is saved — submit when ready.'
+                              : 'All requirements are complete. The plan is ready to generate.'}
                   </p>
                 </div>
                 <div className="iap-card-actions">
@@ -548,14 +594,16 @@ export default function IncidentPage() {
                       Review IAP
                     </Link>
                   )}
-                  <button
-                    className="iap-generate-btn"
-                    disabled={!iapReady}
-                    onClick={handleGenerateIap}
-                    title={iapReady ? 'Generate Incident Action Plan' : 'Required forms are not yet complete'}
-                  >
-                    {iapStatus ? 'Update Cover Page' : 'Generate IAP'}
-                  </button>
+                  {iapCanEdit && (
+                    <button
+                      className="iap-generate-btn"
+                      disabled={!iapReady}
+                      onClick={handleGenerateIap}
+                      title={iapReady ? 'Generate Incident Action Plan' : 'Required forms are not yet complete'}
+                    >
+                      {iapStatus ? 'Update Cover Page' : 'Generate IAP'}
+                    </button>
+                  )}
                 </div>
               </div>
               <ul className="iap-requirements">
@@ -679,21 +727,35 @@ export default function IncidentPage() {
             </div>
             <div className="ics-sidebar-list">
               {ICS_FORMS.map((form) => {
-                const status = getFormStatus(form.num)
-                const isActive = form.num === '211'
+                const access = getFormAccess(role, form.num as FormKey)
+                const locked = access === 'none'
+                const status = locked ? '' : getFormStatus(form.num)
+                const isActive = form.num === '211' && !locked
+                const hint = locked
+                  ? `Restricted — your role (${role}) cannot open this form`
+                  : access === 'view'
+                    ? 'View only — your role cannot change this form'
+                    : undefined
                 return (
                   <div
                     key={form.num}
-                    className={`ics-sidebar-item ${isActive ? 'active' : ''} ${status ? 'has-status' : ''}`}
-                    onClick={() => handleFormClick(form.num)}
+                    className={`ics-sidebar-item ${isActive ? 'active' : ''} ${status ? 'has-status' : ''} ${locked ? 'locked' : ''}`}
+                    onClick={locked ? undefined : () => handleFormClick(form.num)}
+                    title={hint}
                   >
                     <span className="sidebar-form-num">{form.num}</span>
                     <span className="sidebar-form-name">{form.name}</span>
-                    {(formCounts[form.num] || 0) > 0 && (
-                      <span className="sidebar-count-badge">&times;{formCounts[form.num]}</span>
-                    )}
-                    {status && (
-                      <span className={`sidebar-status-badge ${status.toLowerCase()}`}>{status}</span>
+                    {locked ? (
+                      <span className="sidebar-lock-badge" aria-label="Restricted">&#128274;</span>
+                    ) : (
+                      <>
+                        {(formCounts[form.num] || 0) > 0 && (
+                          <span className="sidebar-count-badge">&times;{formCounts[form.num]}</span>
+                        )}
+                        {status && (
+                          <span className={`sidebar-status-badge ${status.toLowerCase()}`}>{status}</span>
+                        )}
+                      </>
                     )}
                   </div>
                 )

@@ -164,6 +164,8 @@
 
 .list-btn.edit { background: #1e3a5f; color: white; }
 .list-btn.edit:hover { background: #16304f; }
+.list-btn.view { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+.list-btn.view:hover { background: #dbeafe; }
 .list-btn.delete { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
 .list-btn.delete:hover { background: #fecaca; }
 

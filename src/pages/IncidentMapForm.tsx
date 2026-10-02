@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useFormAccess } from '../components/FormAccess'
 import './IncidentMapForm.css'
 
 interface CropRect { x: number; y: number; w: number; h: number } // percentages of the displayed image
@@ -65,6 +66,7 @@ const cropToDataUrl = (src: string, crop: CropRect): Promise<string> =>
 export default function IncidentMapForm() {
   const { id: incidentId } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { canEdit } = useFormAccess()
 
   const [imgSrc, setImgSrc] = useState('')
   const [crop, setCrop] = useState<CropRect>(FULL_CROP)
@@ -161,7 +163,7 @@ export default function IncidentMapForm() {
   const startDrag = (dir: HandleDir) => (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    if (!stageRef.current || saving) return
+    if (!stageRef.current || saving || !canEdit) return
     const rect = stageRef.current.getBoundingClientRect()
     setDrag({
       dir,
@@ -179,7 +181,7 @@ export default function IncidentMapForm() {
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     e.target.value = ''
-    if (!file) return
+    if (!file || !canEdit) return
 
     if (!isAcceptedImage(file)) {
       setError('Invalid file. Only JPG and PNG images are allowed.')
@@ -201,7 +203,7 @@ export default function IncidentMapForm() {
 
   // ── Crop + save ──
   const saveMap = async () => {
-    if (!incidentId) return
+    if (!incidentId || !canEdit) return
     if (!imgSrc) {
       setError('Upload a JPG or PNG image first.')
       return
@@ -268,12 +270,18 @@ export default function IncidentMapForm() {
           <span className={`map-state ${saved ? 'saved' : 'empty'}`}>{saved ? 'Saved' : 'No map'}</span>
         </div>
         <div className="topbar-actions">
-          <button className="action-btn upload" onClick={() => fileRef.current?.click()} disabled={saving}>
-            {imgSrc ? 'Replace Image' : 'Upload Image'}
-          </button>
-          <button className="action-btn submit" onClick={saveMap} disabled={saving || !imgSrc}>
-            {saving ? 'Saving...' : 'Save Map'}
-          </button>
+          {canEdit ? (
+            <>
+              <button className="action-btn upload" onClick={() => fileRef.current?.click()} disabled={saving}>
+                {imgSrc ? 'Replace Image' : 'Upload Image'}
+              </button>
+              <button className="action-btn submit" onClick={saveMap} disabled={saving || !imgSrc}>
+                {saving ? 'Saving...' : 'Save Map'}
+              </button>
+            </>
+          ) : (
+            <span className="view-only-badge">View only</span>
+          )}
         </div>
       </div>
 
@@ -314,18 +322,24 @@ export default function IncidentMapForm() {
                 </div>
 
                 <div className="crop-toolbar">
-                  <span className="crop-hint">Drag the box to move it &bull; drag the corners/edges to crop</span>
-                  <div className="crop-actions">
-                    <button className="map-tool-btn" onClick={() => setCrop(FULL_CROP)} disabled={saving}>Reset Crop</button>
-                    <button className="map-tool-btn" onClick={() => fileRef.current?.click()} disabled={saving}>Replace Image</button>
-                  </div>
+                  <span className="crop-hint">
+                    {canEdit
+                      ? 'Drag the box to move it • drag the corners/edges to crop'
+                      : 'View only — your role cannot change the incident map'}
+                  </span>
+                  {canEdit && (
+                    <div className="crop-actions">
+                      <button className="map-tool-btn" onClick={() => setCrop(FULL_CROP)} disabled={saving}>Reset Crop</button>
+                      <button className="map-tool-btn" onClick={() => fileRef.current?.click()} disabled={saving}>Replace Image</button>
+                    </div>
+                  )}
                 </div>
               </>
             ) : (
-              <div className="map-empty" onClick={() => fileRef.current?.click()}>
+              <div className="map-empty" onClick={() => { if (canEdit) fileRef.current?.click() }}>
                 <div className="map-empty-icon">&#128247;</div>
                 <div className="map-empty-text">No map uploaded yet</div>
-                <div className="map-empty-sub">Click here or use Upload Image &mdash; JPG or PNG only</div>
+                {canEdit && <div className="map-empty-sub">Click here or use Upload Image &mdash; JPG or PNG only</div>}
               </div>
             )}
           </div>
