@@ -278,11 +278,16 @@
   border-color: #950606;
 }
 
-.add-row-btn {
+/* Scoped under .checkin-main on purpose: .add-row-btn is a shared class name
+   defined by a dozen form stylesheets, all bundled together, so the winner is
+   decided by source order — and CheckInForm is imported near the top of
+   App.tsx, which means this file always lost the tie. The extra selector makes
+   these three buttons win on specificity instead. */
+.checkin-main .add-row-btn {
   padding: 8px 16px;
-  background: white;
-  color: #1a6b3c;
-  border: 2px dashed #1a6b3c;
+  background: #fee2e2;
+  color: #950606;
+  border: 2px dashed #eaa3a3;
   border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 600;
@@ -292,8 +297,12 @@
   margin-top: 8px;
 }
 
-.add-row-btn:hover {
-  background: #1a6b3c;
+/* :not(:disabled) is not decoration — Ics201Form.css defines
+   `.add-row-btn:hover:not(:disabled)`, which ties with a plain hover selector
+   and therefore wins on source order. Matching the shape keeps this ahead. */
+.checkin-main .add-row-btn:hover:not(:disabled) {
+  background: #950606;
+  border-color: #950606;
   color: white;
 }
 
