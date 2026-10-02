@@ -306,6 +306,31 @@ export default function IncidentPage() {
       setShowLeaveModal(false) // already left — never strand the password dialog
       return
     }
+
+    // The incident's creator never leaves. They are demoted to Observer in place,
+    // which keeps them attached as the one person allowed to delete the incident —
+    // getting rid of it is done by deleting it, not by walking away.
+    if (incident?.created_by === user?.id) {
+      const observerRoleId = generateRoleId('Observer')
+      const { error: roleError } = await supabase
+        .from('incident_participants')
+        .update({ role: 'Observer', role_id: observerRoleId })
+        .eq('id', participant.id)
+      setShowLeaveModal(false)
+      if (!roleError) {
+        setParticipant({ ...participant, role: 'Observer', role_id: observerRoleId })
+      }
+      navigate('/dashboard', {
+        state: {
+          notice: roleError
+            ? `You could not be switched to Observer: ${roleError.message}`
+            : `As the creator of ${incident?.name || 'this incident'} you cannot leave it — your role is now Observer. To get rid of the incident, delete it from Ongoing Incidents.`,
+        },
+        replace: true,
+      })
+      return
+    }
+
     const base = `/incident/${participant.incident_id}`
     const { data: form211 } = await supabase
       .from('ics_211_forms')
@@ -319,8 +344,9 @@ export default function IncidentPage() {
     navigate(form211 ? `${base}/ics-221/edit?new=1&leave=1` : `${base}/ics-211?leave=1`)
   }
 
-  const handlePickRole = (newRole: 'IMT' | 'Tactical Resources' | 'Observer') => {
+  const handlePickRole = async (newRole: 'IMT' | 'Tactical Resources' | 'Observer') => {
     if (newRole === role) return
+
     setPendingNewRole(newRole)
     setShowRolePicker(false)
     setShowConfirmChange(true)
@@ -329,6 +355,7 @@ export default function IncidentPage() {
   const handleChangeRoleConfirm = async () => {
     if (!participant || !user || !pendingNewRole) return
     setProcessing(true)
+
     const { error: updateError } = await supabase
       .from('incident_participants')
       .update({ status: 'Left', left_at: new Date().toISOString() })
@@ -474,7 +501,9 @@ export default function IncidentPage() {
         </div>
         <div className="topbar-actions">
           <button className="topbar-btn change-role" disabled={processing} onClick={() => setShowRolePicker(true)}>Change Role</button>
-          <button className="topbar-btn leave" disabled={processing} onClick={() => setShowLeaveModal(true)}>Leave Incident</button>
+          <button className="topbar-btn leave" disabled={processing} onClick={() => setShowLeaveModal(true)}>
+            {incident.created_by === user?.id ? 'Switch to Observer' : 'Leave Incident'}
+          </button>
         </div>
       </div>
 
@@ -779,7 +808,16 @@ export default function IncidentPage() {
       )}
 
       {showLeaveModal && (
-        <ConfirmModal title="Leave Incident" message={`Are you sure you want to leave incident ${incident.incident_id}? Enter your password to confirm.`} onConfirm={handleLeaveIncident} onCancel={() => setShowLeaveModal(false)} />
+        <ConfirmModal
+          title={incident.created_by === user?.id ? 'Leave Incident (as Observer)' : 'Leave Incident'}
+          message={
+            incident.created_by === user?.id
+              ? `You created ${incident.incident_id}, so you cannot leave it — you will be switched to Observer instead, and to get rid of the incident you delete it from Ongoing Incidents. Enter your password to confirm.`
+              : `Are you sure you want to leave incident ${incident.incident_id}? Enter your password to confirm.`
+          }
+          onConfirm={handleLeaveIncident}
+          onCancel={() => setShowLeaveModal(false)}
+        />
       )}
 
       {showRolePicker && (
@@ -802,7 +840,12 @@ export default function IncidentPage() {
       )}
 
       {showConfirmChange && pendingNewRole && (
-        <ConfirmModal title="Confirm Role Change" message={`Enter your password to confirm changing from ${role} to ${pendingNewRole}.`} onConfirm={handleChangeRoleConfirm} onCancel={() => { setShowConfirmChange(false); setPendingNewRole(null) }} />
+        <ConfirmModal
+          title="Confirm Role Change"
+          message={`Enter your password to confirm changing from ${role} to ${pendingNewRole}.`}
+          onConfirm={handleChangeRoleConfirm}
+          onCancel={() => { setShowConfirmChange(false); setPendingNewRole(null) }}
+        />
       )}
     </div>
   )

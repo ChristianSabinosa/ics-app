@@ -1,96 +1,92 @@
 import { supabase } from './supabase'
 
 export interface LeaveResult {
-  /** true when the incident (and all of its data) was removed */
-  deleted: boolean
   /** non-null when something went wrong; the leave itself may still have been recorded */
   error: string | null
 }
 
 /**
- * Incident-scoped tables — used only by the client-side fallback path, when the
- * delete_incident() SQL function (supabase-leave-schema.sql) has not been installed yet.
- * Tables whose rows belong to a form are handled by their `on delete cascade` FKs
- * (ics_204_rows, ics_211_resources, ics_207_positions, ...), so listing the parents is enough.
- * Best effort: rows blocked by an RLS delete policy are silently skipped.
+ * Incident-scoped tables — REMOVED on purpose.
+ *
+ * The old client-side fallback looped a list of tables deleting
+ * `incident_id = ...` before touching the incidents row. It could never finish
+ * the job (incident_participants has no RLS delete policy, so those rows were
+ * silently skipped and the final delete hit a foreign key), but it DID delete
+ * whatever tables happened to have a permissive delete policy first — ics_211_
+ * and ics_221_forms among them. In other words it destroyed part of an incident
+ * and then failed, leaving the rest behind.
+ *
+ * There is no fallback now: delete_incident() is the only path, and when it is
+ * missing we say so without touching a single row.
  */
-const INCIDENT_SCOPED_TABLES = [
-  'incident_iap',
-  'incident_maps',
-  'ics_204_forms',
-  'ics_211_forms',
-  'ics_207_forms',
-  'ics_201_forms',
-  'ics_202_forms',
-  'ics_203_forms',
-  'ics_205_forms',
-  'ics_206_forms',
-  'ics_208_forms',
-  'ics_209_forms',
-  'ics_213_forms',
-  'ics_214_forms',
-  'ics_215_forms',
-  'ics_215a_forms',
-  'ics_221_forms',
-  'checkin_manifests',
-  'incident_participants',
-  'notifications',
-]
 
 /**
  * Hard-deletes an incident and everything attached to it.
- * Returns null on success, or an error message (with a fix hint) on failure.
+ * Returns null on success, or an error message on failure.
+ *
+ * Entirely delegated to the delete_incident() SQL function: it is SECURITY
+ * DEFINER, so it can reach the tables that have no delete policy at all and it
+ * walks the foreign key catalog for us. Every branch below leaves the incident
+ * untouched when it does not succeed.
+ *
+ * Only the incident's creator gets through — the check lives inside the
+ * function itself, because SECURITY DEFINER bypasses RLS.
  */
 export async function deleteIncidentData(incidentId: string): Promise<string | null> {
-  // Preferred path: the SECURITY DEFINER SQL function sweeps every foreign key server-side.
-  const { error: rpcError } = await supabase.rpc('delete_incident', { p_incident_id: incidentId })
-  if (!rpcError) return null
+  const { error } = await supabase.rpc('delete_incident', { p_incident_id: incidentId })
+  if (!error) return null
 
-  // Fallback: best-effort client sweep, then the incident row itself.
-  for (const table of INCIDENT_SCOPED_TABLES) {
-    await supabase.from(table).delete().eq('incident_id', incidentId)
+  if (/could not find the function|does not exist/i.test(error.message)) {
+    return 'Full deletion is not installed yet — run supabase-notifications-schema.sql first and then supabase-leave-schema.sql in the Supabase SQL Editor, then try again. Nothing was changed.'
   }
-
-  const { error } = await supabase.from('incidents').delete().eq('incident_id', incidentId)
-  if (error) {
-    return `The incident could not be deleted (${error.message}). Run supabase-leave-schema.sql in the Supabase SQL Editor to install full deletion, then try again.`
+  if (error.message.includes('only the creator')) {
+    return 'Only the creator of this incident can delete it.'
   }
-  return null
+  if (error.message.includes('incident not found')) {
+    return 'This incident no longer exists.'
+  }
+  return `The incident could not be deleted (${error.message}).`
 }
 
 /**
- * Finishes a leave.
- *  - If at least one IMT member stays Active, only this participant is marked Left.
- *  - When no IMT member remains (Tactical Resources / Observers only, or nobody left),
- *    the incident and all of its data are hard-deleted.
+ * How many Active IMT members exist besides `excludeParticipantId`.
+ *
+ * Returns null when the roster could not be read, so callers can fail safe —
+ * null means "unknown", never "nobody left".
+ *
+ * Drives the demob gate on Ongoing Incidents: the creator cannot wipe an
+ * incident while other IMTs are still working in it, so those members are
+ * notified to finish their check-out first.
  */
-export async function completeLeave(incidentId: string, participantId: string): Promise<LeaveResult> {
-  const { data: others, error: readError } = await supabase
+export async function countOtherActiveImts(
+  incidentId: string,
+  excludeParticipantId?: string | null,
+): Promise<number | null> {
+  let query = supabase
     .from('incident_participants')
-    .select('id, role')
+    .select('id')
     .eq('incident_id', incidentId)
     .eq('status', 'Active')
-    .neq('id', participantId)
+    .eq('role', 'IMT')
+  if (excludeParticipantId) query = query.neq('id', excludeParticipantId)
 
-  if (readError) return { deleted: false, error: readError.message }
+  const { data, error } = await query
+  if (error) return null
+  return (data ?? []).length
+}
 
-  const imtRemains = (others ?? []).some((p) => p.role === 'IMT')
-
-  if (imtRemains) {
-    const { error } = await supabase
-      .from('incident_participants')
-      .update({ status: 'Left', left_at: new Date().toISOString() })
-      .eq('id', participantId)
-    return { deleted: false, error: error?.message ?? null }
-  }
-
-  const deleteError = await deleteIncidentData(incidentId)
-  if (!deleteError) return { deleted: true, error: null }
-
-  // Deletion failed — still record the leave so the user is not stuck in the incident.
-  await supabase
+/**
+ * Finishes a leave: this participant is marked Left.
+ *
+ * The incident itself is never removed here. Deletion belongs exclusively to
+ * the incident's creator (Ongoing Incidents -> deleteIncidentData), so losing
+ * the last IMT member just leaves an incident that still has an owner to
+ * dispose of it.
+ */
+export async function completeLeave(participantId: string): Promise<LeaveResult> {
+  const { error } = await supabase
     .from('incident_participants')
     .update({ status: 'Left', left_at: new Date().toISOString() })
     .eq('id', participantId)
-  return { deleted: false, error: deleteError }
+  return { error: error?.message ?? null }
 }

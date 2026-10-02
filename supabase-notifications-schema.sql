@@ -1,16 +1,20 @@
 -- ============================================================================
 -- In-app notifications
--- Run this once, in the Supabase SQL Editor (after supabase-schema.sql).
+-- Run this once, in the Supabase SQL Editor (after supabase-schema.sql),
+-- and BEFORE supabase-leave-schema.sql.
 -- ============================================================================
 
--- 1. Table. incident_id is a plain FK (no cascade needed): delete_incident()
---    walks the foreign-key catalog, so it sweeps these rows with everything else.
+-- 1. Table. incident_id is an informational label, not a live reference: the
+--    FK to incidents is dropped below so that hard-deleting an incident cannot
+--    take the notification history with it, and so delete_incident() can write
+--    its final "this incident was permanently deleted" notice after the
+--    incidents row is already gone.
 create table if not exists notifications (
   id uuid primary key default gen_random_uuid(),
   incident_id text not null references incidents(incident_id),
   recipient_user_id uuid not null references auth.users(id),
   sender_user_id uuid references auth.users(id),
-  -- join | imt_join | leave | ic_left | assigned | ic_assigned | role_change | incident_created | iap_approved | iap_submitted
+  -- join | imt_join | leave | ic_left | assigned | ic_assigned | role_change | incident_created | incident_deleted | demob_requested | iap_approved | iap_submitted
   type text not null,
   title text not null,
   body text not null default '',
@@ -18,6 +22,13 @@ create table if not exists notifications (
   read_at timestamp with time zone,
   created_at timestamp with time zone not null default now()
 );
+
+-- delete_incident() sweeps every table that has a foreign key to incidents, and
+-- that must not take the notification history with it — least of all the final
+-- "this incident was permanently deleted" notice, which can only be written
+-- after the incident row is gone. incident_id is therefore an informational
+-- label rather than a live reference, so the catalog walk skips this table.
+alter table notifications drop constraint if exists notifications_incident_id_fkey;
 
 alter table notifications enable row level security;
 
@@ -52,10 +63,15 @@ create index if not exists notifications_unread_idx
 -- 3. send_notification(): the only way to create notifications.
 --
 --    SECURITY DEFINER so it is not limited by the absence of an insert policy.
---    It verifies that the CALLER is an active participant of the incident and
---    that every recipient is an active participant of the same incident — a
---    signed-in user can therefore never notify someone outside an incident
---    they belong to.
+--    It verifies that the CALLER is an active participant of the incident or
+--    its creator, and that every recipient is an active participant of the same
+--    incident — a signed-in user can therefore never notify anyone outside an
+--    incident they belong to.
+--
+--    The creator branch matters: they own the incident even when they never
+--    joined it or have stepped back to Observer, and they are the only person
+--    allowed to delete it. Without it the demob gate could block them and then
+--    fail to notify the remaining IMTs, which is the whole point of the gate.
 --
 --    Returns the number of notification rows actually created.
 create or replace function public.send_notification(
@@ -85,16 +101,23 @@ begin
     raise exception 'incident_id, type and title are required';
   end if;
 
-  -- Sender must be an active participant of this incident.
-  select exists (
-    select 1 from incident_participants
-    where incident_id = p_incident_id
-      and user_id = v_sender
-      and status = 'Active'
-  ) into v_is_participant;
+  -- Sender must be an active participant of this incident, or its creator.
+  select
+    exists (
+      select 1 from incident_participants
+      where incident_id = p_incident_id
+        and user_id = v_sender
+        and status = 'Active'
+    )
+    or exists (
+      select 1 from incidents i
+      where i.incident_id = p_incident_id
+        and i.created_by = v_sender
+    )
+    into v_is_participant;
 
   if not v_is_participant then
-    raise exception 'only active participants of this incident can send notifications';
+    raise exception 'only active participants of this incident, or its creator, can send notifications';
   end if;
 
   -- Recipients are restricted to the active participants of this incident.

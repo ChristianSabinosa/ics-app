@@ -362,49 +362,36 @@ export default function Ics221Form() {
       const leavingName = me?.user_name?.trim() || 'A participant'
       const incidentLabel = incidentName || incidentId
 
-      // The incident survives only while another IMT member stays Active — if not,
-      // delete_incident() removes the incident and every notification with it,
-      // so there is nobody left to notify anyway.
-      const { data: others } = await supabase
-        .from('incident_participants')
-        .select('role')
-        .eq('incident_id', incidentId)
-        .eq('status', 'Active')
-        .neq('id', leaveParticipantId)
-      const imtRemains = (others ?? []).some((p) => p.role === 'IMT')
-
-      if (imtRemains) {
-        // Awaited on purpose: once completeLeave() runs, this user is 'Left'
-        // and send_notification() would refuse them as the sender.
-        await Promise.all([
-          notifyIncident(incidentId, {
-            type: 'leave',
-            title: `${leavingName} left the incident`,
-            body: incidentLabel,
+      // The incident always survives a leave now — it is removed only by its
+      // creator — so there is always somebody left to tell.
+      // Awaited on purpose: once completeLeave() runs, this user is 'Left'
+      // and send_notification() would refuse them as the sender.
+      await Promise.all([
+        notifyIncident(incidentId, {
+          type: 'leave',
+          title: `${leavingName} left the incident`,
+          body: incidentLabel,
+          link: `/incident/${incidentId}`,
+          roles: ['IMT'],
+          excludeUserId: me?.user_id,
+        }),
+        getIncidentCommanderName(incidentId).then((icName) => {
+          const isIc = !!icName && !!me &&
+            icName.trim().toLowerCase() === me.user_name.trim().toLowerCase()
+          if (!isIc) return
+          return notifyIncident(incidentId, {
+            type: 'ic_left',
+            title: 'The Incident Commander left the incident',
+            body: `${leavingName} was the Incident Commander — ${incidentLabel}`,
             link: `/incident/${incidentId}`,
-            roles: ['IMT'],
             excludeUserId: me?.user_id,
-          }),
-          getIncidentCommanderName(incidentId).then((icName) => {
-            const isIc = !!icName && !!me &&
-              icName.trim().toLowerCase() === me.user_name.trim().toLowerCase()
-            if (!isIc) return
-            return notifyIncident(incidentId, {
-              type: 'ic_left',
-              title: 'The Incident Commander left the incident',
-              body: `${leavingName} was the Incident Commander — ${incidentLabel}`,
-              link: `/incident/${incidentId}`,
-              excludeUserId: me?.user_id,
-            })
-          }),
-        ])
-      }
+          })
+        }),
+      ])
 
-      const result = await completeLeave(incidentId, leaveParticipantId)
+      const result = await completeLeave(leaveParticipantId)
       if (result.error) {
         notice = `You left ${incidentName || 'the incident'}, but a problem occurred: ${result.error}`
-      } else if (result.deleted) {
-        notice = `You left ${incidentName || 'the incident'}. No IMT members remained, so the incident and all of its data were deleted.`
       } else {
         notice = `You have left ${incidentName || 'the incident'}.`
       }
@@ -416,6 +403,7 @@ export default function Ics221Form() {
 
   const saveForm = async (formStatus: 'Draft' | 'Submitted') => {
     if (!incidentId || !user) return
+
     setSaving(true)
     setError('')
     setSuccess('')

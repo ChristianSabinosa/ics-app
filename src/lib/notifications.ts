@@ -15,6 +15,8 @@ export const NOTIFICATION_ICONS: Record<NotificationType, string> = {
   ic_assigned: '⭐',
   role_change: '🔁',
   incident_created: '🚨',
+  incident_deleted: '🗑️',
+  demob_requested: '🧳',
   iap_approved: '✅',
   iap_submitted: '📤',
 }

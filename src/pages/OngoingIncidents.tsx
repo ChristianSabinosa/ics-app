@@ -2,6 +2,9 @@ import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
+import { deleteIncidentData, countOtherActiveImts } from '../lib/leaveIncident'
+import { notifyIncident } from '../lib/notifications'
+import ConfirmModal from '../components/ConfirmModal'
 import type { Incident, IncidentParticipant } from '../lib/types'
 import './OngoingIncidents.css'
 
@@ -11,6 +14,8 @@ export default function OngoingIncidents() {
   const [incidents, setIncidents] = useState<Incident[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  // Incident waiting for the credential-confirmed destructive delete.
+  const [deleting, setDeleting] = useState<Incident | null>(null)
   const [userParticipants, setUserParticipants] = useState<Map<string, IncidentParticipant>>(new Map())
 
   const [editing, setEditing] = useState<Incident | null>(null)
@@ -93,20 +98,62 @@ export default function OngoingIncidents() {
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this incident?')) return
-
+  const handleDelete = async (incident: Incident) => {
     setError('')
-    const { error: deleteError } = await supabase
-      .from('incidents')
-      .delete()
-      .eq('id', id)
+    setDeleting(null)
 
-    if (deleteError) {
-      setError(deleteError.message)
-    } else {
-      fetchIncidents()
+    // Deletion is creator-only and never automatic: everyone else simply leaves
+    // through their ICS 221 check-out. The incident is held back while other IMT
+    // members are still working in it — they are told to finish that check-out,
+    // and the creator deletes again once they have gone.
+    const { data: mine } = await supabase
+      .from('incident_participants')
+      .select('id')
+      .eq('incident_id', incident.incident_id)
+      .eq('user_id', user?.id ?? 'no-such-user')
+      .eq('status', 'Active')
+      .maybeSingle()
+
+    // Counted for everyone, not just IMT creators: forcing yourself to Observer
+    // via the Leave button must not become a way around this gate.
+    const others = await countOtherActiveImts(incident.incident_id, mine?.id ?? null)
+
+    if (others === null) {
+      setError('The incident roster could not be read, so nothing was deleted. Please try again.')
+      return
     }
+
+    if (others > 0) {
+      const notified = await notifyIncident(incident.incident_id, {
+        type: 'demob_requested',
+        title: `${incident.name} is pending deletion`,
+        body: `Complete your ICS 221 check-out so this incident can be deleted — ${incident.incident_id}`,
+        link: `/incident/${incident.incident_id}/ics-221`,
+        roles: ['IMT'],
+        excludeUserId: user?.id,
+      })
+      const hint = notified
+        ? 'They have been notified to complete their ICS 221 check-out'
+        : 'They could not be notified — see the "[notifications] send failed" line in the browser console for why'
+      setError(
+        `Deletion held: ${others} other IMT ${others === 1 ? 'member is' : 'members are'} still enrolled. ` +
+          `${hint}; try deleting again once they have all demobilized.`,
+      )
+      return
+    }
+
+    setDeleting(incident)
+  }
+
+  const confirmDelete = async () => {
+    if (!deleting) return
+    const incident = deleting
+    setDeleting(null)
+    // deleteIncidentData() sweeps the child rows too — a bare delete of the
+    // incidents row violates the FKs held by participants, manifests and 211.
+    const deleteError = await deleteIncidentData(incident.incident_id)
+    if (deleteError) setError(deleteError)
+    else fetchIncidents()
   }
 
   const isOwner = (incident: Incident) => incident.created_by === user?.id
@@ -209,7 +256,7 @@ export default function OngoingIncidents() {
                           {isOwner(incident) && (
                             <>
                               <button className="btn-edit" onClick={() => openEdit(incident)}>Edit</button>
-                              <button className="btn-delete" onClick={() => handleDelete(incident.id)}>Delete</button>
+                              <button className="btn-delete" onClick={() => handleDelete(incident)}>Delete</button>
                             </>
                           )}
                         </td>
@@ -284,6 +331,15 @@ export default function OngoingIncidents() {
             </div>
           </div>
         </div>
+      )}
+
+      {deleting && (
+        <ConfirmModal
+          title="Delete incident"
+          message={`This will permanently delete ${deleting.name} (${deleting.incident_id}) and all of its data — forms, check-in manifests and participant records. Everyone still in it will be notified that it is gone. This cannot be undone. Enter your email and password to confirm the deletion.`}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleting(null)}
+        />
       )}
     </div>
   )

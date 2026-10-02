@@ -360,6 +360,8 @@ export type NotificationType =
   | 'ic_assigned'
   | 'role_change'
   | 'incident_created'
+  | 'incident_deleted'
+  | 'demob_requested'
   | 'iap_approved'
   | 'iap_submitted'
 
