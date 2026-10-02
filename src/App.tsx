@@ -30,6 +30,8 @@ import Ics215Form from './pages/Ics215Form'
 import Ics215AForm from './pages/Ics215AForm'
 import Ics221Form from './pages/Ics221Form'
 import Ics221List from './pages/Ics221List'
+import MessagesPage from './pages/MessagesPage'
+import MessageForm from './pages/MessageForm'
 import NotificationToast from './components/NotificationToast'
 
 /**
@@ -106,6 +108,11 @@ function App() {
           <Route path="/create-incident" element={<ProtectedRoute><CreateIncident /></ProtectedRoute>} />
           <Route path="/join-incident" element={<ProtectedRoute><JoinIncident /></ProtectedRoute>} />
           <Route path="/ongoing-incidents" element={<ProtectedRoute><OngoingIncidents /></ProtectedRoute>} />
+          {/* Mailbox is global rather than incident-scoped, so it gets
+              ProtectedRoute only — FormAccess needs a :id in the URL to work
+              out a role, and there is none here. */}
+          <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
+          <Route path="/messages/compose" element={<ProtectedRoute><MessageForm /></ProtectedRoute>} />
           <Route path="/incident/:id" element={<ProtectedRoute><IncidentPage /></ProtectedRoute>} />
           <Route path="/incident/:id/iap/:iapId" element={<ProtectedRoute><FormAccess form="IAP"><IapPreviewPage /></FormAccess></ProtectedRoute>} />
           <Route path="/incident/:id/checkin" element={<ProtectedRoute><FormAccess form="CHECKIN"><CheckInForm /></FormAccess></ProtectedRoute>} />

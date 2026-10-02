@@ -364,6 +364,74 @@ export type NotificationType =
   | 'demob_requested'
   | 'iap_approved'
   | 'iap_submitted'
+  | 'message'
+
+// ============================================================================
+// Messaging — ICS 213 General Message used as the mailbox (supabase-messages-schema.sql)
+// ============================================================================
+
+/** A folder the signed-in user created. System views (Inbox/Sent/...) are computed, not rows. */
+export interface MessageFolder {
+  id: string
+  user_id: string
+  name: string
+  created_at: string
+}
+
+/** Which system view a message belongs to for one side of the conversation. */
+export type MessageBox = 'inbox' | 'sent' | 'archived' | 'trashed'
+
+/**
+ * One row is the whole conversation for a single addressee: it carries the ICS
+ * 213 field set plus a mailbox state for the sender and for the recipient.
+ * The two `*_box` / `*_folder_id` pairs are independent — archiving your copy
+ * never moves theirs.
+ */
+export interface AppMessage {
+  id: string
+  incident_id: string
+  incident_name: string
+  parent_id: string | null
+
+  sender_user_id: string
+  sender_name: string
+  sender_position: string
+  recipient_user_id: string
+  to_name: string
+  to_position: string
+
+  msg_date: string
+  msg_time: string
+  subject: string
+  message: string
+  reply: string
+
+  approved_by_name: string
+  approved_by_position: string
+  approved_by_sig: string
+  approved_date: string
+  approved_time: string
+
+  received_by_name: string
+  received_by_position: string
+  received_by_sig: string
+
+  status: 'Draft' | 'Sent'
+  read_at: string | null
+  sender_box: 'sent' | 'archived' | 'trashed'
+  recipient_box: 'inbox' | 'archived' | 'trashed'
+  sender_folder_id: string | null
+  recipient_folder_id: string | null
+
+  created_at: string
+  updated_at: string
+}
+
+/** The user's own incidents, for the required incident picker in Compose. */
+export interface MessageIncident {
+  incident_id: string
+  name: string
+}
 
 export interface AppNotification {
   id: string

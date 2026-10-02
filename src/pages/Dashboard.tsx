@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useNotifications } from '../lib/notifications'
+import { useUnreadMessageCount } from '../lib/messages'
 import ProfileNotifications from '../components/ProfileNotifications'
 import './Dashboard.css'
 
@@ -20,6 +21,10 @@ export default function Dashboard() {
   // Notification list for the profile dropdown — one instance, so there is
   // only one realtime subscription for this page.
   const notifications = useNotifications(user?.id)
+  // Unread mail count on the Messages entry below. Its own subscription: the
+  // badge has to work on every page, and fetching the whole mailbox just to
+  // render a number would be wasteful.
+  const unreadMessages = useUnreadMessageCount(user?.id)
 
   const closeMenu = () => {
     setShowMenu(false)
@@ -89,8 +94,14 @@ export default function Dashboard() {
                     onNavigate={closeMenu}
                   />
                 )}
-                <button className="dropdown-item" onClick={closeMenu}>
+                <button
+                  className="dropdown-item"
+                  onClick={() => { closeMenu(); navigate('/messages') }}
+                >
                   <span className="dropdown-icon">&#128172;</span> Messages
+                  {unreadMessages > 0 && (
+                    <span className="dropdown-badge">{unreadMessages}</span>
+                  )}
                 </button>
                 <div className="dropdown-divider"></div>
                 <button className="dropdown-item signout" onClick={() => { closeMenu(); handleSignOut() }}>
