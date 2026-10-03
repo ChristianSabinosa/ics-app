@@ -32,6 +32,7 @@ import Ics221Form from './pages/Ics221Form'
 import Ics221List from './pages/Ics221List'
 import MessagesPage from './pages/MessagesPage'
 import MessageForm from './pages/MessageForm'
+import ProfilePage from './pages/ProfilePage'
 import NotificationToast from './components/NotificationToast'
 
 /**
@@ -113,6 +114,7 @@ function App() {
               out a role, and there is none here. */}
           <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
           <Route path="/messages/compose" element={<ProtectedRoute><MessageForm /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route path="/incident/:id" element={<ProtectedRoute><IncidentPage /></ProtectedRoute>} />
           <Route path="/incident/:id/iap/:iapId" element={<ProtectedRoute><FormAccess form="IAP"><IapPreviewPage /></FormAccess></ProtectedRoute>} />
           <Route path="/incident/:id/checkin" element={<ProtectedRoute><FormAccess form="CHECKIN"><CheckInForm /></FormAccess></ProtectedRoute>} />

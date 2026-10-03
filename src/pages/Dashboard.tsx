@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useNotifications } from '../lib/notifications'
 import { useUnreadMessageCount } from '../lib/messages'
 import ProfileNotifications from '../components/ProfileNotifications'
+import { useProfile } from '../lib/profile'
 import './Dashboard.css'
 
 export default function Dashboard() {
@@ -25,6 +26,7 @@ export default function Dashboard() {
   // badge has to work on every page, and fetching the whole mailbox just to
   // render a number would be wasteful.
   const unreadMessages = useUnreadMessageCount(user?.id)
+  const { profile } = useProfile(user?.id)
 
   const closeMenu = () => {
     setShowMenu(false)
@@ -61,21 +63,21 @@ export default function Dashboard() {
         <div className="header-right">
           <div className="user-menu-container" ref={menuRef}>
             <button className="user-menu-trigger" onClick={() => setShowMenu(!showMenu)}>
-              <span className="user-avatar">{userDisplayName.charAt(0).toUpperCase()}</span>
+              <span className="user-avatar">{profile?.avatar_url ? <img src={profile.avatar_url} alt="" /> : userDisplayName.charAt(0).toUpperCase()}</span>
               <span className="user-name">{userDisplayName}</span>
               <span className={`user-menu-arrow ${showMenu ? 'open' : ''}`}>&#9662;</span>
             </button>
             {showMenu && (
               <div className="user-dropdown">
                 <div className="dropdown-header">
-                  <span className="dropdown-avatar">{userDisplayName.charAt(0).toUpperCase()}</span>
+                  <span className="dropdown-avatar">{profile?.avatar_url ? <img src={profile.avatar_url} alt="" /> : userDisplayName.charAt(0).toUpperCase()}</span>
                   <div className="dropdown-user-info">
                     <span className="dropdown-name">{userDisplayName}</span>
                     <span className="dropdown-email">{user?.email}</span>
                   </div>
                 </div>
                 <div className="dropdown-divider"></div>
-                <button className="dropdown-item" onClick={closeMenu}>
+                <button className="dropdown-item" onClick={() => { closeMenu(); navigate('/profile') }}>
                   <span className="dropdown-icon">&#128100;</span> Profile
                 </button>
                 <button

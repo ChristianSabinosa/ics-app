@@ -235,6 +235,20 @@
   text-transform: uppercase;
 }
 
+/* That negative top margin is the panel's own top padding — it only belongs to
+   a heading that opens the panel. The check-in manifest's "Leader" and "Members"
+   sit below a paragraph and below the previous table, and pulled up by the full
+   24px they landed on top of "Total Number of Personnel: 1" instead of below it.
+   Everywhere else in the app the heading is the first child, so nothing else
+   reads this rule. */
+.form-section > label:not(:first-child),
+.form-section > h3:not(:first-child),
+.form-section > h4:not(:first-child),
+.view-section > h3:not(:first-child),
+.view-section > h4:not(:first-child) {
+  margin-top: 16px;
+}
+
 /* The fill and its text are declared separately, at one specificity higher
    than the geometry above, because a single-class selector here can be tied:
    a page file writing `.form-section h4 { color: … }` also matches `>` and is
