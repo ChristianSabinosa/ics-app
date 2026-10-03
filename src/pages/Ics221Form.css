@@ -13,8 +13,8 @@
 }
 
 .ics221-header {
-  background: #950606;
-  color: white;
+  background: var(--brand);
+  color: var(--text-on-brand);
   padding: 12px 24px;
   display: flex;
   align-items: center;
@@ -309,9 +309,10 @@
   font-weight: 700;
   font-size: 0.8rem;
   text-transform: uppercase;
-  background: #f9fafb;
-  border: 1px solid #ddd;
-  border-bottom: 2px solid #999;
+  background: var(--brand);
+  color: var(--text-on-brand);
+  border: 1px solid var(--brand-strong);
+  border-bottom: 2px solid var(--brand-strong);
   padding: 6px 0;
 }
 

@@ -32,8 +32,8 @@
   justify-content: space-between;
   gap: 16px;
   padding: 18px 22px;
-  background: #950606;
-  color: white;
+  background: var(--brand);
+  color: var(--text-on-brand);
 }
 
 .iap-modal-heading h3 {

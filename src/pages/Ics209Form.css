@@ -13,8 +13,8 @@
 }
 
 .ics209-header {
-  background: #950606;
-  color: white;
+  background: var(--brand);
+  color: var(--text-on-brand);
   padding: 12px 24px;
   display: flex;
   align-items: center;
@@ -179,7 +179,8 @@
   padding: 12px 16px;
 }
 
-.form-section > label,
+/* The numbered section heading itself comes from the shared sheet (forms.css),
+   where it is a solid brand bar. Only .section-title is declared here. */
 .section-title {
   display: block;
   font-weight: 700;
@@ -355,10 +356,12 @@ table.data-table td {
 }
 
 table.data-table th {
-  background: #f3f4f6;
   font-weight: 600;
   font-size: 0.8rem;
   text-transform: uppercase;
+  /* The shared table-header bar paints the fill; this keeps the cell grid on
+     top of it as a darker shade, as the old grey-on-grey pairing did. */
+  border-color: var(--brand-strong);
 }
 
 table.data-table input,
@@ -377,22 +380,7 @@ table.data-table textarea {
   min-height: 28px;
 }
 
-.add-row-btn {
-  margin-top: 8px;
-  padding: 6px 12px;
-  background: #e5e7eb;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-
-.add-row-btn:hover {
-  background: #dc2626;
-  color: white;
-  border-color: #dc2626;
-}
+/* .add-row-btn comes from src/styles/forms.css; the grey copy is gone. */
 
 .remove-row-btn {
   background: none;

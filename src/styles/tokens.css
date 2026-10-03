@@ -1,0 +1,95 @@
+/* ────────────────────────────────────────────────────────────────────────────
+   Design tokens for the ICS application.
+
+   Every colour, radius, sticky layer and control size used by the shared form
+   layer (forms.css) resolves to a variable defined here. The point is not
+   cosmetics: before this file existed the stylesheets contained 115 distinct
+   hex literals scattered across 1,840 occurrences, eight different
+   border-radius values, and no `:root` block at all — so the same visual
+   decision was re-made, slightly differently, in every form.
+
+   Values are deliberately identical to the literals they replace, so adopting
+   a token is a rename rather than a repaint. Unification happens where two
+   former near-duplicates are pointed at one token on purpose.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* ── Brand ───────────────────────────────────────────────────────────────
+     #950606 is the theme red used across the application: headers, focus
+     rings, the add-row button, and now the numbered section bars. */
+  --brand: #950606;
+  --brand-strong: #7a0505; /* gradient end / pressed */
+  --brand-tint: #fee2e2; /* soft fill for additive actions */
+  --brand-line: #eaa3a3; /* dashed edge on additive actions */
+  --brand-ink: #991b1b; /* text that sits on --brand-tint */
+  --brand-ink-strong: #c53030;
+
+  /* ── Actions ─────────────────────────────────────────────────────────────
+     Each has exactly one meaning, used the same way on every form. */
+  --navy: #1e3a5f; /* Submit / primary */
+  --navy-hover: #16304f;
+  --green: #059669; /* Print / confirm */
+  --green-deep: #1a6b3c; /* secondary green */
+  --green-hover: #145a30;
+  --green-ink: #065f46; /* text on --green-tint */
+  --green-tint: #d1fae5;
+  --amber: #f59e0b; /* Edit / caution */
+  --amber-ink: #92400e;
+  --amber-tint: #fef3c7;
+  --amber-line: #fbbf24;
+  --blue: #1e40af; /* informational / manifest */
+  --blue-hover: #1e3a8a;
+  --blue-tint: #dbeafe;
+  --blue-line: #bfdbfe;
+  --blue-ink: #1e40af;
+  --neutral-btn: #e5e7eb; /* Save / secondary */
+  --neutral-btn-ink: #374151;
+
+  /* ── Neutrals ──────────────────────────────────────────────────────────── */
+  --page-bg: #f5f5f5;
+  --surface: #ffffff;
+  --surface-alt: #f9f9f9; /* table header, disabled field */
+  --surface-sunken: #f3f4f6; /* grouped header, zebra-free band */
+  --surface-hover: #f0f0f0;
+  --border-soft: #e8e8e8;
+  --border: #ddd;
+  --border-strong: #ccc;
+  --border-grid: #d1d5db;
+  --text: #333;
+  --text-muted: #555;
+  --text-faint: #888;
+  --text-on-brand: #ffffff;
+
+  /* ── Radii: exactly three, replacing the eight previously in use ───────── */
+  --r-sm: 4px; /* inputs, badges, small buttons */
+  --r-md: 6px; /* cards, containers */
+  --r-lg: 10px; /* panels, section wrappers */
+
+  /* ── Sticky stack ────────────────────────────────────────────────────────
+     One scale so a stacking decision is never made by accident. Every sticky
+     element declares one of these instead of an unexplained integer. */
+  --z-sticky-head: 20; /* sticky table header */
+  --z-topbar: 100; /* page toolbar */
+  --z-modal: 500;
+  --z-toast: 600;
+
+  /* ── Controls ──────────────────────────────────────────────────────────── */
+  --field-pad-y: 8px;
+  --field-pad-x: 10px;
+  --control-sm: 16px; /* default checkbox / radio */
+  /* ICS 215-A opts out of --control-sm and uses this larger size, because
+     its hazard matrix is scanned quickly and the small box was too easy to
+     miss. It is an intentional exception, not an oversight. */
+  --control-lg: 22px;
+
+  /* ── Section panel geometry ──────────────────────────────────────────────
+     Declared here so that var(--sec-*) always resolves. forms.css repeats
+     them on .form-section for readability; a panel that is shaped differently
+     (215-A is flush, the signature block has no border) overrides them on its
+     own rule instead of re-declaring the whole component. */
+  --sec-bleed-top: 12px;
+  --sec-bleed-x: 16px;
+  --sec-label-pad-y: 10px;
+  --sec-label-pad-x: 16px;
+  --sec-radius: 4px;
+}

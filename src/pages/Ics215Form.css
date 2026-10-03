@@ -14,8 +14,8 @@
 
 /* ── Header ── */
 .ics215-header {
-  background: #950606;
-  color: white;
+  background: var(--brand);
+  color: var(--text-on-brand);
   padding: 12px 24px;
   display: flex;
   align-items: center;
@@ -186,8 +186,11 @@
    WORK ASSIGNMENT TABLE
    ══════════════════════════════════════ */
 
-.table-section { padding: 12px; }
-.table-section > label { padding: 0 4px; }
+.table-section {
+  /* Matches the shared section bar's horizontal bleed below. */
+  --sec-bleed-x: 12px;
+  padding: 12px;
+}
 
 .table-wrapper {
   overflow-x: auto;
@@ -213,21 +216,19 @@
 .wa-main-table thead th {
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: var(--z-sticky-head);
 }
 
 .wa-main-table th {
-  background: #f3f4f6;
-  color: #1f2937;
   padding: 8px 6px;
   font-weight: 600;
   font-size: 0.7rem;
   text-transform: uppercase;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--brand-strong);
   text-align: center;
 }
 
-.wa-main-table th:last-child { border-right: 1px solid #d1d5db; }
+.wa-main-table th:last-child { border-right: 1px solid var(--brand-strong); }
 
 .res-th-top {
   display: flex;
@@ -239,8 +240,8 @@
 .res-th-input {
   background: transparent;
   border: none;
-  border-bottom: 1px solid #9ca3af;
-  color: #1f2937;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.55);
+  color: var(--text-on-brand);
   font-size: 0.65rem;
   font-weight: 600;
   padding: 1px 2px;
@@ -249,21 +250,21 @@
   text-transform: uppercase;
 }
 
-.res-th-input:focus { outline: none; border-bottom-color: #3b82f6; }
-.res-th-input:disabled { color: #999; }
-.res-th-input::placeholder { color: #9ca3af; }
+.res-th-input:focus { outline: none; border-bottom-color: #fff; }
+.res-th-input:disabled { color: rgba(255, 255, 255, 0.7); }
+.res-th-input::placeholder { color: rgba(255, 255, 255, 0.6); }
 
 .res-th-remove {
   background: none;
   border: none;
-  color: #dc2626;
+  color: #fff;
   font-size: 0.7rem;
   cursor: pointer;
   padding: 0;
   line-height: 1;
 }
 
-.res-th-remove:hover { color: #991b1b; }
+.res-th-remove:hover { color: var(--brand-tint); }
 
 .col-add-res {
   padding: 4px 6px !important;
@@ -401,12 +402,10 @@
 }
 
 .totals-table th {
-  background: #f3f4f6;
-  color: #1f2937;
   font-weight: 600;
   font-size: 0.7rem;
   text-transform: uppercase;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--brand-strong);
 }
 
 .totals-table td:first-child {

@@ -1,0 +1,524 @@
+/* ────────────────────────────────────────────────────────────────────────────
+   Shared ICS form layer.
+
+   Imported once, before any page stylesheet, from main.tsx. Everything in here
+   was previously copy-pasted into each form's own CSS — `.action-btn` alone
+   appeared in 21 files, `.error-message` in 15, the topbar container in 23 —
+   and because all stylesheets land in one bundle the winner of an identical
+   declaration was decided purely by import order.
+
+   Importing this first means:
+     • one definition wins everywhere, and
+     • a page that still declares its own copy keeps the last word.
+
+   Page files keep only what is genuinely theirs. Where a page needs to differ
+   it overrides through the --sec-* custom properties rather than by re-declaring
+   a whole component, so the shape stays shared and the exception stays visible.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+/* ── Page chrome ────────────────────────────────────────────────────────────
+   Each form names its own toolbar (`.ics204-topbar`, `.checkin-topbar`, …) but
+   they were byte-identical in 23 files, so they are grouped here instead of
+   being declared 23 times. IncidentPage's is grouped in too — it was the only
+   one that was not sticky. */
+.ics201-topbar,
+.ics202-topbar,
+.ics203-topbar,
+.ics204-topbar,
+.ics204list-topbar,
+.ics205-topbar,
+.ics206-topbar,
+.ics207-topbar,
+.ics208-topbar,
+.ics209-topbar,
+.ics211-topbar,
+.ics213-topbar,
+.ics214-topbar,
+.ics214list-topbar,
+.ics215-topbar,
+.ics215a-topbar,
+.ics221-topbar,
+.ics221list-topbar,
+.checkin-topbar,
+.incident-topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: var(--z-topbar);
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.topbar-btn.back {
+  background: none;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+
+.topbar-btn.back:hover {
+  background: var(--surface-hover);
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-brand h1 {
+  font-size: 1.1rem;
+  margin: 0;
+  font-weight: 600;
+}
+
+.header-brand p {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.header-logo {
+  height: 40px;
+}
+
+.form-badge {
+  background: var(--navy);
+  color: var(--text-on-brand);
+  padding: 4px 10px;
+  border-radius: var(--r-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: var(--r-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.status-badge.draft {
+  background: var(--amber-line);
+  color: var(--amber-ink);
+}
+
+.status-badge.submitted {
+  background: #34d399;
+  color: var(--green-ink);
+}
+
+/* ── Buttons ────────────────────────────────────────────────────────────────
+   One colour per intent: navy = submit, amber = edit, green = print, grey =
+   save. Unchanged from every existing form — these were already identical. */
+.action-btn {
+  padding: 6px 14px;
+  border-radius: var(--r-sm);
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-family: inherit;
+  font-weight: 500;
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.action-btn.save {
+  background: var(--neutral-btn);
+  color: var(--neutral-btn-ink);
+}
+
+.action-btn.submit {
+  background: var(--navy);
+  color: var(--text-on-brand);
+}
+
+.action-btn.edit {
+  background: var(--amber);
+  color: var(--text-on-brand);
+}
+
+.action-btn.print {
+  background: var(--green);
+  color: var(--text-on-brand);
+}
+
+/* ── Add-a-row ──────────────────────────────────────────────────────────────
+   Was five different designs at once — navy in 201/204, green in 205/206/211,
+   grey in 209/214, tinted-red in check-in. Additive actions are now solid
+   brand red with white text, so a "+ Add" reads as part of the same red family
+   as the header and section bars. It sits below Submit in weight rather than
+   beside it only because it is the smaller of the two. The :not(:disabled)
+   shape is deliberate: Ics201Form declared the same modifier, and an equal
+   specificity tie is resolved by bundle order. */
+.add-row-btn {
+  padding: 8px 16px;
+  background: var(--brand);
+  color: var(--text-on-brand);
+  border: 2px solid var(--brand-strong);
+  border-radius: var(--r-lg);
+  font-size: 0.85rem;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 8px;
+}
+
+.add-row-btn:hover:not(:disabled) {
+  background: var(--brand-strong);
+  border-color: var(--brand-strong);
+}
+
+.add-row-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Form structure ─────────────────────────────────────────────────────────
+   --sec-* lets a panel describe its own geometry once; the numbered section
+   bar below derives its bleed from those numbers instead of re-measuring the
+   panel it sits in. */
+.form-section {
+  --sec-bleed-top: 12px;
+  --sec-bleed-x: 16px;
+  --sec-label-pad-y: 10px;
+  --sec-label-pad-x: 16px;
+  --sec-radius: 4px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--sec-radius);
+  padding: var(--sec-bleed-top) var(--sec-bleed-x);
+}
+
+/* Numbered section heading, e.g. "3. DIVISION / GROUP / HAZARD ANALYSIS".
+   A solid brand bar across the width of its panel — no icon. Every direct
+   <label> child of .form-section in the codebase is one of these headings;
+   ICS 205 and 206 spell theirs as an <h4>, the check-in manifest as an <h3>,
+   and its sub-headings ("Leader", "Members") as an <h4>, so all three are
+   named here, as is .view-section, the read-only twin of .form-section.
+   Field labels live under .form-field label and are unaffected. */
+.form-section > label,
+.form-section > h3,
+.form-section > h4,
+.view-section > h3,
+.view-section > h4 {
+  display: block;
+  margin: calc(-1 * var(--sec-bleed-top)) calc(-1 * var(--sec-bleed-x)) 10px;
+  padding: var(--sec-label-pad-y) var(--sec-label-pad-x);
+  border-radius: calc(var(--sec-radius) - 1px) calc(var(--sec-radius) - 1px) 0 0;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* The fill and its text are declared separately, at one specificity higher
+   than the geometry above, because a single-class selector here can be tied:
+   a page file writing `.form-section h4 { color: … }` also matches `>` and is
+   bundled later, so it wins the tie. CheckInForm.css did exactly that with
+   #444 — grey text on the red bar in ICS 205, ICS 206 and the check-in
+   manifest. The doubled class beats any single-class descendant rule no
+   matter what order the bundle lands in. */
+.form-section.form-section > label,
+.form-section.form-section > h3,
+.form-section.form-section > h4,
+.view-section.view-section > h3,
+.view-section.view-section > h4 {
+  background: var(--brand);
+  color: var(--text-on-brand);
+}
+
+.form-header-section {
+  text-align: center;
+  margin-bottom: 20px;
+  border-bottom: 2px solid var(--text);
+  padding-bottom: 12px;
+}
+
+.form-header-section h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.form-header-section h3 {
+  margin: 4px 0 0;
+  font-size: 1.1rem;
+  color: var(--text-muted);
+}
+
+.form-row.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-field label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+
+.form-field input,
+.form-field textarea,
+.form-field select,
+.form-section textarea {
+  width: 100%;
+  padding: var(--field-pad-y) var(--field-pad-x);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  font-size: 0.9rem;
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.form-field input:focus,
+.form-field textarea:focus,
+.form-field select:focus,
+.form-section textarea:focus {
+  outline: none;
+  border-color: var(--brand);
+}
+
+.form-field input.readonly {
+  background: var(--surface-alt);
+  color: var(--text-muted);
+}
+
+.form-field input:disabled,
+.form-field textarea:disabled,
+.form-field select:disabled,
+.form-section textarea:disabled {
+  background: var(--surface-alt);
+  color: var(--text-muted);
+}
+
+/* ── Signature block ────────────────────────────────────────────────────────
+   padding/border are removed by the panel itself, so the section bar has
+   nothing to bleed across and the bleed collapses to zero. */
+.signature-section {
+  --sec-bleed-top: 0px;
+  --sec-bleed-x: 0px;
+  --sec-label-pad-x: 12px;
+  --sec-radius: 1px;
+  padding: 0;
+  border: none;
+}
+
+.sig-row {
+  display: grid;
+  grid-template-columns: 160px 1fr 1fr 1fr;
+  gap: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  margin-bottom: 8px;
+}
+
+.sig-field {
+  padding: 8px 10px;
+  border-right: 1px solid var(--border-strong);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sig-field:last-child {
+  border-right: none;
+}
+
+.sig-field.num {
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+}
+
+.sig-field label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.sig-field input {
+  border: none;
+  border-bottom: 1px solid var(--border-strong);
+  padding: 4px 2px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  background: transparent;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ── Feedback ─────────────────────────────────────────────────────────────── */
+.error-message {
+  background: var(--brand-tint);
+  color: var(--brand-ink);
+  padding: 10px 14px;
+  border-radius: var(--r-sm);
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+}
+
+.success-message {
+  background: var(--green-tint);
+  color: var(--green-ink);
+  padding: 10px 14px;
+  border-radius: var(--r-sm);
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+}
+
+/* ── Checkbox and radio ─────────────────────────────────────────────────────
+   Previously only 7 of the 57 stylesheets styled these, each through a
+   different class, so most forms showed the raw browser control. accent-color
+   picks up the brand without a custom control; the size default is
+   --control-sm.
+
+   ICS 215-A deliberately opts out via .cell-check / .checkbox-lg — its hazard
+   matrix is scanned quickly and a 16px box was too easy to miss. Those
+   selectors are more specific than this one, so they keep winning. */
+input[type="checkbox"],
+input[type="radio"] {
+  width: var(--control-sm);
+  height: var(--control-sm);
+  accent-color: var(--brand);
+  cursor: pointer;
+}
+
+input[type="checkbox"]:disabled,
+input[type="radio"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Table headers ──────────────────────────────────────────────────────────
+   Every data table on screen heads its columns with the same #950606 that
+   opens a numbered section, so a table reads as part of the section it sits in
+   rather than as a grey object bolted beside it.
+
+   The tables are named one at a time rather than as a bare `th`, because the
+   print previews for ICS 201, 204, 205, 206, 209, 211 and 214 render their own
+   tables on screen while you review them and are meant to stay paper-white.
+
+   ICS 209 and ICS 214 are scoped to their page root for a second reason: both
+   call their table `data-table`, which is the same class CheckInPrint uses.
+   Matching it bare would leave CheckInPrint's headers with this rule's white
+   text over their own grey fill. */
+.view-table th,
+.entry-table th,
+.ics204-resources-table th,
+.ics204-comms-table th,
+.ics204list-table th,
+.channels-table th,
+.ics209-page table.data-table th,
+.ics214-page table.data-table th,
+.ics214list-table th,
+.ics221list-table th,
+.wa-main-table th,
+.totals-table th,
+.hz-main-table th,
+.resource-table th,
+.incidents-table th {
+  background: var(--brand);
+  color: var(--text-on-brand);
+}
+
+/* ── Empty states, shared by the three assignment lists ───────────────────── */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+}
+
+.empty-state p {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.list-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.list-btn {
+  padding: 5px 12px;
+  border-radius: var(--r-sm);
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-family: inherit;
+  font-weight: 500;
+  margin-right: 6px;
+}
+
+.list-btn.edit {
+  background: var(--navy);
+  color: var(--text-on-brand);
+}
+
+.list-btn.edit:hover {
+  background: var(--navy-hover);
+}
+
+.list-btn.view {
+  background: #eff6ff;
+  color: var(--blue);
+  border: 1px solid var(--blue-line);
+}
+
+.list-btn.view:hover {
+  background: var(--blue-tint);
+}
+
+.list-btn.delete {
+  background: var(--brand-tint);
+  color: var(--brand-ink);
+  border: 1px solid #fecaca;
+}
+
+.list-btn.delete:hover {
+  background: #fecaca;
+}
+
+/* ── Print ──────────────────────────────────────────────────────────────────
+   Repeated verbatim in 20+ files. Screen-only chrome disappears on paper. */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}

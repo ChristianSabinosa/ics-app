@@ -14,8 +14,8 @@
 
 /* ── Header ── */
 .ics215a-header {
-  background: #950606;
-  color: white;
+  background: var(--brand);
+  color: var(--text-on-brand);
   padding: 12px 24px;
   display: flex;
   align-items: center;
@@ -86,35 +86,27 @@
 .form-header-section h3 { margin: 4px 0 0; font-size: 1.1rem; color: #555; }
 
 /* ── Form Sections ── */
+/* 215-A's panel is flush: no inner padding, a large radius, a soft shadow.
+   The shared sheet derives the numbered section bar's bleed and corner from
+   these four values, so the bar sits edge-to-edge here without this file
+   re-declaring the whole component. */
 .form-section {
+  --sec-bleed-top: 0px;
+  --sec-bleed-x: 0px;
+  --sec-label-pad-y: 16px;
+  --sec-label-pad-x: 20px;
+  --sec-radius: 12px;
   margin-bottom: 16px;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border-radius: var(--sec-radius);
   padding: 0;
   overflow: hidden;
   background: #fff;
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
-.form-section > label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: 700;
-  font-size: 1rem;
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  padding: 16px 20px;
-  background: linear-gradient(135deg, #950606 0%, #7a0505 100%);
-  color: #fff;
-}
-
-.form-section > label::before {
-  content: '\26A0';
-  font-size: 1.3rem;
-  flex-shrink: 0;
-}
+/* The warning triangle that used to sit before each section heading is gone —
+   the bar itself is the marker now. */
 
 .table-hint {
   font-size: 0.8rem;
@@ -211,7 +203,6 @@
    ══════════════════════════════════════ */
 
 .table-section { padding: 0; }
-.table-section > label { padding: 16px 20px; }
 
 .table-wrapper {
   overflow-x: auto;
@@ -238,21 +229,19 @@
 .wa-main-table thead th {
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: var(--z-sticky-head);
 }
 
 .wa-main-table th {
-  background: #f3f4f6;
-  color: #1f2937;
   padding: 8px 6px;
   font-weight: 600;
   font-size: 0.7rem;
   text-transform: uppercase;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--brand-strong);
   text-align: center;
 }
 
-.wa-main-table th:last-child { border-right: 1px solid #d1d5db; }
+.wa-main-table th:last-child { border-right: 1px solid var(--brand-strong); }
 
 .res-th-top {
   display: flex;
@@ -264,8 +253,8 @@
 .res-th-input {
   background: transparent;
   border: none;
-  border-bottom: 1px solid #9ca3af;
-  color: #1f2937;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.55);
+  color: var(--text-on-brand);
   font-size: 0.65rem;
   font-weight: 600;
   padding: 1px 2px;
@@ -274,21 +263,21 @@
   text-transform: uppercase;
 }
 
-.res-th-input:focus { outline: none; border-bottom-color: #3b82f6; }
-.res-th-input:disabled { color: #999; }
-.res-th-input::placeholder { color: #9ca3af; }
+.res-th-input:focus { outline: none; border-bottom-color: #fff; }
+.res-th-input:disabled { color: rgba(255, 255, 255, 0.7); }
+.res-th-input::placeholder { color: rgba(255, 255, 255, 0.6); }
 
 .res-th-remove {
   background: none;
   border: none;
-  color: #dc2626;
+  color: #fff;
   font-size: 0.7rem;
   cursor: pointer;
   padding: 0;
   line-height: 1;
 }
 
-.res-th-remove:hover { color: #991b1b; }
+.res-th-remove:hover { color: var(--brand-tint); }
 
 .col-add-res {
   padding: 4px 6px !important;
@@ -434,12 +423,10 @@
 }
 
 .totals-table th {
-  background: #f3f4f6;
-  color: #1f2937;
   font-weight: 600;
   font-size: 0.7rem;
   text-transform: uppercase;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--brand-strong);
 }
 
 .totals-table td:first-child {
@@ -511,19 +498,17 @@
 .hz-main-table thead th {
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: var(--z-sticky-head);
 }
 
 .hz-main-table th {
-  background: #fafbfc;
-  color: #950606;
   padding: 12px 8px;
   font-weight: 700;
   font-size: 0.8rem;
   text-transform: capitalize;
   letter-spacing: 0.01em;
   border: none;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 2px solid var(--brand-strong);
   text-align: center;
   height: 48px;
   vertical-align: middle;
@@ -818,10 +803,10 @@
 }
 
 .hz-th-remove:hover {
-  color: #fff;
-  background: #dc2626;
-  border-color: #dc2626;
-  box-shadow: 0 2px 4px rgba(220,38,38,0.25);
+  color: var(--brand);
+  background: #fff;
+  border-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
 }
 
 .div-remove-btn {

@@ -9,12 +9,12 @@
   justify-content: center;
   min-height: 100vh;
   font-size: 1.1rem;
-  color: #555;
+  color: #000;
 }
 
 .ics205-header {
-  background: #950606;
-  color: white;
+  background: var(--brand);
+  color: var(--text-on-brand);
   padding: 12px 24px;
   display: flex;
   align-items: center;
@@ -247,13 +247,10 @@
   padding: 12px 16px;
 }
 
-.form-section > h4 {
-  font-size: 0.9rem;
-  font-weight: 700;
-  margin: 0 0 12px;
-  text-transform: uppercase;
-  color: #333;
-}
+/* The section heading itself comes from the shared sheet (forms.css), where
+   `.form-section > h4` is the same brand-red bar the other twelve forms get
+   from `.form-section > label`. This file's old black-text rule is gone so it
+   can no longer win the tie. */
 
 .channels-table-wrapper {
   overflow-x: auto;
@@ -268,12 +265,10 @@
 }
 
 .channels-table th {
-  background: #1f2937;
-  color: white;
   font-weight: 600;
   text-align: center;
   padding: 10px 6px;
-  border: 1px solid #374151;
+  border: 1px solid var(--brand-strong);
   font-size: 0.75rem;
   white-space: normal;
   line-height: 1.4;
@@ -350,21 +345,7 @@
   margin-top: 10px;
 }
 
-.add-row-btn {
-  padding: 8px 16px;
-  background: #1a6b3c;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-}
-
-.add-row-btn:hover {
-  background: #145a30;
-}
+/* .add-row-btn comes from src/styles/forms.css; the green copy is gone. */
 
 .coordinating-textarea {
   width: 100%;

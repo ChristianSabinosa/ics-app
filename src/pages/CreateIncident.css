@@ -4,8 +4,8 @@
 }
 
 .page-header {
-  background: #950606;
-  color: white;
+  background: var(--brand);
+  color: var(--text-on-brand);
   padding: 16px 30px;
   display: flex;
   justify-content: space-between;

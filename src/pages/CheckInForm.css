@@ -13,8 +13,8 @@
 }
 
 .checkin-header {
-  background: #950606;
-  color: white;
+  background: var(--brand);
+  color: var(--text-on-brand);
   padding: 12px 24px;
   display: flex;
   align-items: center;
@@ -151,23 +151,21 @@
   background: white;
   border: 2px solid #e8e8e8;
   border-radius: 10px;
+  /* Shared sheet reads these to bleed the section bar to the panel edge and to
+     round its top corners to the panel's inner radius (10px outer - 2px border
+     - 1px off the calc = 8px). */
+  --sec-bleed-top: 24px;
+  --sec-bleed-x: 24px;
+  --sec-radius: 9px;
   padding: 24px;
   margin-bottom: 20px;
 }
 
-.form-section h3 {
-  color: #950606;
-  font-size: 1.1rem;
-  margin-bottom: 16px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #eee;
-}
-
-.form-section h4 {
-  color: #444;
-  font-size: 0.95rem;
-  margin: 16px 0 10px;
-}
+/* Section headings (Agency Information, Personnel, …) and sub-headings (Leader,
+   Members) are brand-red bars with white text from the shared sheet. The
+   `color: #444` rule that used to sit here was scoped `.form-section h4`, which
+   matches `>` too — so being bundled after forms.css it recoloured those bars
+   grey, and reached ICS 205 and 206, whose sections are also spelled <h4>. */
 
 .form-group {
   margin-bottom: 14px;
@@ -278,33 +276,10 @@
   border-color: #950606;
 }
 
-/* Scoped under .checkin-main on purpose: .add-row-btn is a shared class name
-   defined by a dozen form stylesheets, all bundled together, so the winner is
-   decided by source order — and CheckInForm is imported near the top of
-   App.tsx, which means this file always lost the tie. The extra selector makes
-   these three buttons win on specificity instead. */
-.checkin-main .add-row-btn {
-  padding: 8px 16px;
-  background: #fee2e2;
-  color: #950606;
-  border: 2px dashed #eaa3a3;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.2s ease;
-  margin-top: 8px;
-}
-
-/* :not(:disabled) is not decoration — Ics201Form.css defines
-   `.add-row-btn:hover:not(:disabled)`, which ties with a plain hover selector
-   and therefore wins on source order. Matching the shape keeps this ahead. */
-.checkin-main .add-row-btn:hover:not(:disabled) {
-  background: #950606;
-  border-color: #950606;
-  color: white;
-}
+/* .add-row-btn now lives in src/styles/forms.css. The scoped copies that used
+   to be here (they existed only to beat a dozen competing .add-row-btn rules on
+   source order) are gone along with every other copy — there is one definition
+   now, and it applies here as everywhere else. */
 
 .remove-row-btn {
   width: 32px;

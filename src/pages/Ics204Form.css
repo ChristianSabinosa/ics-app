@@ -13,8 +13,8 @@
 }
 
 .ics204-header {
-  background: #950606;
-  color: white;
+  background: var(--brand);
+  color: var(--text-on-brand);
   padding: 12px 24px;
   display: flex;
   align-items: center;
@@ -240,16 +240,15 @@
 
 .ics204-resources-table th,
 .ics204-comms-table th {
-  background: #f3f4f6;
-  border-bottom: 1px solid #d1d5db;
-  border-right: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--brand-strong);
+  border-right: 1px solid var(--brand-strong);
   padding: 8px 6px;
   text-align: left;
   font-weight: 600;
-  color: #374151;
   white-space: nowrap;
   position: sticky;
   top: 0;
+  z-index: var(--z-sticky-head);
 }
 
 .ics204-resources-table td,
@@ -308,19 +307,7 @@
 
 .add-row-buttons { margin-top: 8px; }
 
-.add-row-btn {
-  background: #1e3a5f;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 6px 14px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  cursor: pointer;
-}
-.add-row-btn:hover { background: #16304f; }
-.add-row-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.add-row-btn:disabled:hover { background: #1e3a5f; }
+/* .add-row-btn comes from src/styles/forms.css; the navy copy is gone. */
 
 /* Sections 6 & 7 */
 .ics204-textarea {

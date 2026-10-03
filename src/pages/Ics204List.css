@@ -13,8 +13,8 @@
 }
 
 .ics204list-header {
-  background: #950606;
-  color: white;
+  background: var(--brand);
+  color: var(--text-on-brand);
   padding: 12px 24px;
   display: flex;
   align-items: center;
@@ -121,8 +121,7 @@
   text-align: left;
   font-size: 0.75rem;
   text-transform: uppercase;
-  color: #555;
-  border-bottom: 2px solid #ddd;
+  border-bottom: 2px solid var(--brand-strong);
   padding: 8px 10px;
   white-space: nowrap;
 }

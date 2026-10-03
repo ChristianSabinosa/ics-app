@@ -30,8 +30,8 @@
 }
 
 .incident-header {
-  background: #950606;
-  color: white;
+  background: var(--brand);
+  color: var(--text-on-brand);
   padding: 14px 24px;
   display: flex;
   align-items: center;
@@ -240,12 +240,10 @@
 }
 
 .resource-table th {
-  background: #f8f9fa;
-  color: #555;
   font-weight: 600;
   text-align: left;
   padding: 10px 12px;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 2px solid var(--brand-strong);
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -298,7 +296,7 @@
 }
 
 .ics-sidebar-header {
-  background: #950606;
+  background: var(--brand);
   padding: 14px 18px;
 }
 

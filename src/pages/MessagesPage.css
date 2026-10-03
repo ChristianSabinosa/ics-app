@@ -12,7 +12,7 @@
 /* --- Header + topbar ---------------------------------------------------- */
 
 .msg-header {
-  background: #950606;
+  background: var(--brand);
   color: #fff;
   padding: 12px 24px;
   display: flex;

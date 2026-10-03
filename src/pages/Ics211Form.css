@@ -4,8 +4,8 @@
 }
 
 .ics211-header {
-  background: #950606;
-  color: white;
+  background: var(--brand);
+  color: var(--text-on-brand);
   padding: 12px 24px;
   display: flex;
   align-items: center;
@@ -278,8 +278,8 @@
   align-items: center;
   gap: 12px;
   padding: 10px 16px;
-  background: #950606;
-  color: white;
+  background: var(--brand);
+  color: var(--text-on-brand);
 }
 
 .card-number {
@@ -440,29 +440,8 @@
   margin-top: 10px;
 }
 
-.add-row-btn {
-  padding: 8px 16px;
-  background: #1a6b3c;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-}
-
-.add-row-btn:hover {
-  background: #145a30;
-}
-
-.add-row-btn.manifest {
-  background: #1e40af;
-}
-
-.add-row-btn.manifest:hover {
-  background: #1e3a8a;
-}
+/* .add-row-btn (and its .manifest variant) comes from src/styles/forms.css;
+   the green and blue copies are gone. */
 
 .form-footer-section {
   display: grid;

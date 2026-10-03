@@ -148,23 +148,19 @@
   background: white;
   border: 2px solid #e8e8e8;
   border-radius: 10px;
+  /* See CheckInForm.css: makes the shared section bar bleed to this panel's
+     edge and follow its corner radius. */
+  --sec-bleed-top: 24px;
+  --sec-bleed-x: 24px;
+  --sec-radius: 9px;
   padding: 24px;
   margin-bottom: 20px;
 }
 
-.view-section h3 {
-  color: #950606;
-  font-size: 1.1rem;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #eee;
-}
-
-.view-section h4 {
-  color: #444;
-  font-size: 0.95rem;
-  margin: 16px 0 10px;
-}
+/* Section and sub-section headings are brand-red bars with white text from the
+   shared sheet. Their old `color: #444` here had to go for the same reason
+   CheckInForm.css dropped its copy: it matched a direct child as well as a
+   nested one and, bundled later, turned white text grey. */
 
 .view-section p {
   font-size: 0.9rem;
@@ -181,12 +177,10 @@
 }
 
 .view-table th {
-  background: #f9f9f9;
-  color: #555;
   font-weight: 600;
   padding: 8px 12px;
   text-align: left;
-  border-bottom: 2px solid #e8e8e8;
+  border-bottom: 2px solid var(--brand-strong);
 }
 
 .view-table td {
@@ -221,7 +215,7 @@
     break-inside: avoid;
   }
 
-  .view-table th { background: #eee; }
+  .view-table th { background: #eee; color: var(--text-muted); }
 }
 
 @media (max-width: 768px) {

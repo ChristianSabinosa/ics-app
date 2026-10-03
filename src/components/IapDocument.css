@@ -61,8 +61,8 @@
 .iap-cover-header {
   flex: 0 0 auto;
   padding: 12px 16px 14px;
-  background: #950606;
-  color: white;
+  background: var(--brand);
+  color: var(--text-on-brand);
   text-align: center;
   display: flex;
   flex-direction: column;
