@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { useAdmin } from '../context/AdminContext'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useNotifications } from '../lib/notifications'
 import { useUnreadMessageCount } from '../lib/messages'
@@ -9,6 +10,7 @@ import './Dashboard.css'
 
 export default function Dashboard() {
   const { user, signOut } = useAuth()
+  const { isAdmin } = useAdmin()
   const navigate = useNavigate()
   const location = useLocation()
   // Message carried over from a completed action (e.g. leaving an incident / deleting it)
@@ -105,6 +107,14 @@ export default function Dashboard() {
                     <span className="dropdown-badge">{unreadMessages}</span>
                   )}
                 </button>
+                {isAdmin && (
+                  <button
+                    className="dropdown-item"
+                    onClick={() => { closeMenu(); navigate('/admin') }}
+                  >
+                    <span className="dropdown-icon">&#9881;</span> System Administration
+                  </button>
+                )}
                 <div className="dropdown-divider"></div>
                 <button className="dropdown-item signout" onClick={() => { closeMenu(); handleSignOut() }}>
                   <span className="dropdown-icon">&#10140;</span> Sign Out

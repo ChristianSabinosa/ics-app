@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { supabase } from '../lib/supabase'
 import './LoginPage.css'
 
 type TabType = 'signin' | 'signup'
@@ -28,9 +29,17 @@ export default function LoginPage() {
   const [forgotSuccess, setForgotSuccess] = useState(false)
   const [forgotError, setForgotError] = useState('')
 
-  const { signIn, signUp, resetPassword } = useAuth()
+  const { signIn, signUp, resetPassword, signOut } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+
+  // Carried here by AdminProvider when it found the account suspended: the
+  // database refuses a suspended account every table, so signing in again
+  // would only ever produce a blank screen.
+  const suspendedNotice =
+    new URLSearchParams(location.search).get('notice') === 'suspended'
+      ? 'This account has been suspended by a system administrator. Contact the administrator to have it restored.'
+      : ''
 
   const handleSignIn = async (e: FormEvent) => {
     e.preventDefault()
@@ -41,6 +50,13 @@ export default function LoginPage() {
     if (error) {
       setError(error.message)
     } else {
+      const { data: status } = await supabase.rpc('account_status')
+      if (status === 'suspended') {
+        await signOut()
+        setError('This account has been suspended by a system administrator. Contact the administrator to have it restored.')
+        setLoading(false)
+        return
+      }
       // Return to the page the user was originally trying to open (if any)
       const from = (location.state as { from?: string } | null)?.from
       navigate(from && from.startsWith('/') && !from.startsWith('//') ? from : '/dashboard')
@@ -142,6 +158,7 @@ export default function LoginPage() {
             </button>
           </div>
 
+          {suspendedNotice && <div className="error-message">{suspendedNotice}</div>}
           {error && <div className="error-message">{error}</div>}
 
           {/* Sign In Form */}

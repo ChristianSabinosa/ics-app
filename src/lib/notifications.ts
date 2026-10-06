@@ -20,6 +20,7 @@ export const NOTIFICATION_ICONS: Record<NotificationType, string> = {
   iap_approved: '✅',
   iap_submitted: '📤',
   message: '✉️',
+  broadcast: '📣',
 }
 
 export function notificationRelativeTime(iso: string, nowMs: number): string {

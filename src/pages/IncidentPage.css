@@ -754,3 +754,16 @@
   .topbar-btn { flex: 1; text-align: center; }
   .incident-meta-row { flex-direction: column; gap: 4px; }
 }
+
+/* System admin oversight (authority E): shown instead of an editable role when
+   an admin opens an incident they neither created nor joined. */
+.admin-readonly-badge {
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+  background: var(--blue-tint, #dbeafe);
+  color: var(--blue-ink, #1e40af);
+  border: 1px solid var(--blue-line, #bfdbfe);
+  cursor: help;
+}

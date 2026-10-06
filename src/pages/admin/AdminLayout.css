@@ -1,0 +1,506 @@
+/* ────────────────────────────────────────────────────────────────────────────
+   System Administration (/admin) — one stylesheet for the shell and for every
+   tab under it, so the section reads as a single screen rather than six pages.
+
+   Colours come from src/styles/tokens.css (--brand is the theme red, --navy the
+   primary action, and so on), with literal fallbacks so the file still renders
+   sensibly if it is ever opened on its own.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.admin-page {
+  min-height: 100vh;
+  background: var(--page-bg, #f5f5f5);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Brand bar ─────────────────────────────────────────────────────────────── */
+
+.admin-header {
+  background: var(--brand, #950606);
+  color: var(--text-on-brand, #fff);
+  padding: 14px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.admin-header .header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-header .header-logo {
+  height: 42px;
+}
+
+.admin-header .header-brand h1 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.admin-header .header-brand p {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.admin-main {
+  flex: 1;
+  padding: 24px;
+}
+
+.admin-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.admin-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.admin-title-row h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--text, #333);
+}
+
+.admin-subtitle {
+  margin: 4px 0 0;
+  color: var(--text-muted, #555);
+  font-size: 0.92rem;
+}
+
+/* ── Tabs ──────────────────────────────────────────────────────────────────── */
+
+.admin-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  border-bottom: 2px solid var(--border, #ddd);
+  margin-bottom: 20px;
+}
+
+.admin-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-muted, #555);
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+}
+
+.admin-tab:hover {
+  color: var(--brand, #950606);
+  background: rgba(149, 6, 6, 0.05);
+}
+
+.admin-tab.active {
+  color: var(--brand, #950606);
+  border-bottom-color: var(--brand, #950606);
+}
+
+.admin-tab-badge {
+  background: var(--brand, #950606);
+  color: #fff;
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* ── Panels, states ────────────────────────────────────────────────────────── */
+
+.admin-card {
+  background: var(--surface, #fff);
+  border: 1px solid var(--border-soft, #e8e8e8);
+  border-radius: var(--r-lg, 10px);
+  padding: 20px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.admin-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.admin-toolbar h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--text, #333);
+}
+
+.admin-loading {
+  padding: 32px;
+  text-align: center;
+  color: var(--text-muted, #555);
+}
+
+.admin-empty {
+  padding: 32px;
+  text-align: center;
+  color: var(--text-muted, #555);
+}
+
+.admin-error {
+  background: var(--brand-tint, #fee2e2);
+  border: 1px solid var(--brand-line, #eaa3a3);
+  color: var(--brand-ink-strong, #c53030);
+  padding: 10px 14px;
+  border-radius: var(--r-md, 6px);
+  margin-bottom: 14px;
+  font-size: 0.9rem;
+}
+
+.admin-success {
+  background: var(--green-tint, #d1fae5);
+  border: 1px solid #a7f3d0;
+  color: var(--green-ink, #065f46);
+  padding: 10px 14px;
+  border-radius: var(--r-md, 6px);
+  margin-bottom: 14px;
+  font-size: 0.9rem;
+}
+
+.admin-warning {
+  background: var(--amber-tint, #fef3c7);
+  border: 1px solid var(--amber-line, #fbbf24);
+  color: var(--amber-ink, #92400e);
+  padding: 10px 14px;
+  border-radius: var(--r-md, 6px);
+  margin-bottom: 14px;
+  font-size: 0.9rem;
+}
+
+/* ── Table ─────────────────────────────────────────────────────────────────── */
+
+.admin-table-wrapper {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.admin-table th {
+  text-align: left;
+  padding: 10px 12px;
+  background: var(--surface-alt, #f9f9f9);
+  border-bottom: 2px solid var(--border-grid, #d1d5db);
+  color: var(--text-muted, #555);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.admin-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-soft, #e8e8e8);
+  vertical-align: middle;
+}
+
+.admin-table tbody tr:hover {
+  background: var(--surface-hover, #f0f0f0);
+}
+
+.admin-cell-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 220px;
+}
+
+.admin-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--brand, #950606);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.admin-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-cell-user strong {
+  display: block;
+  color: var(--text, #333);
+}
+
+.admin-cell-user span {
+  display: block;
+  color: var(--text-faint, #888);
+  font-size: 0.82rem;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* ── Badges ────────────────────────────────────────────────────────────────── */
+
+.admin-badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 11px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  margin: 0 4px 4px 0;
+}
+
+.admin-badge.admin { background: var(--amber-tint, #fef3c7); color: var(--amber-ink, #92400e); border: 1px solid var(--amber-line, #fbbf24); }
+.admin-badge.suspended { background: var(--brand-tint, #fee2e2); color: var(--brand-ink-strong, #c53030); border: 1px solid var(--brand-line, #eaa3a3); }
+.admin-badge.request { background: var(--amber-tint, #fef3c7); color: var(--amber-ink, #92400e); border: 1px solid var(--amber-line, #fbbf24); }
+.admin-badge.ok { background: var(--green-tint, #d1fae5); color: var(--green-ink, #065f46); border: 1px solid #a7f3d0; }
+.admin-badge.info { background: var(--blue-tint, #dbeafe); color: var(--blue-ink, #1e40af); border: 1px solid var(--blue-line, #bfdbfe); }
+.admin-badge.muted { background: var(--surface-sunken, #f3f4f6); color: var(--text-muted, #555); border: 1px solid var(--border-soft, #e8e8e8); }
+
+/* ── Buttons ───────────────────────────────────────────────────────────────── */
+
+.admin-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: var(--r-sm, 4px);
+  border: 1px solid var(--border-strong, #ccc);
+  background: var(--neutral-btn, #e5e7eb);
+  color: var(--neutral-btn-ink, #374151);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.admin-btn:hover:not(:disabled) { filter: brightness(0.97); }
+.admin-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.admin-btn.primary {
+  background: var(--navy, #1e3a5f);
+  border-color: var(--navy, #1e3a5f);
+  color: #fff;
+}
+
+.admin-btn.primary:hover:not(:disabled) { background: var(--navy-hover, #16304f); }
+
+.admin-btn.danger {
+  background: var(--brand, #950606);
+  border-color: var(--brand, #950606);
+  color: #fff;
+}
+
+.admin-btn.danger:hover:not(:disabled) { background: var(--brand-strong, #7a0505); }
+
+.admin-btn.success {
+  background: var(--green, #059669);
+  border-color: var(--green, #059669);
+  color: #fff;
+}
+
+.admin-btn.ghost {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.7);
+  color: #fff;
+}
+
+.admin-btn.ghost:hover:not(:disabled) { background: rgba(255, 255, 255, 0.15); }
+
+.admin-btn.sm { padding: 5px 10px; font-size: 0.8rem; }
+
+/* ── Forms ─────────────────────────────────────────────────────────────────── */
+
+.admin-field { margin-bottom: 14px; }
+
+.admin-field label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text, #333);
+  margin-bottom: 5px;
+}
+
+.admin-field input,
+.admin-field textarea,
+.admin-field select {
+  width: 100%;
+  padding: var(--field-pad-y, 8px) var(--field-pad-x, 10px);
+  border: 1px solid var(--border, #ddd);
+  border-radius: var(--r-sm, 4px);
+  font-family: inherit;
+  font-size: 0.92rem;
+  background: var(--surface, #fff);
+  color: var(--text, #333);
+}
+
+.admin-field input:focus,
+.admin-field textarea:focus,
+.admin-field select:focus {
+  outline: none;
+  border-color: var(--brand, #950606);
+  box-shadow: 0 0 0 2px rgba(149, 6, 6, 0.15);
+}
+
+.admin-field textarea { min-height: 96px; resize: vertical; }
+
+.admin-field .hint {
+  font-size: 0.8rem;
+  color: var(--text-faint, #888);
+  margin-top: 4px;
+}
+
+.admin-search {
+  min-width: 240px;
+  padding: var(--field-pad-y, 8px) var(--field-pad-x, 10px);
+  border: 1px solid var(--border, #ddd);
+  border-radius: var(--r-sm, 4px);
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+/* ── Modal (suspend reason, roster panel) ──────────────────────────────────── */
+
+.admin-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal, 500);
+  padding: 20px;
+}
+
+.admin-modal {
+  background: var(--surface, #fff);
+  border-radius: var(--r-lg, 10px);
+  padding: 22px;
+  width: 100%;
+  max-width: 460px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.admin-modal h3 { margin: 0 0 6px; font-size: 1.1rem; color: var(--text, #333); }
+.admin-modal p.admin-modal-text { margin: 0 0 14px; color: var(--text-muted, #555); font-size: 0.9rem; }
+
+.admin-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* ── Roster panel ──────────────────────────────────────────────────────────── */
+
+.admin-roster {
+  background: var(--surface-alt, #f9f9f9);
+  border-top: 1px solid var(--border-soft, #e8e8e8);
+  padding: 16px;
+}
+
+.admin-roster h4 {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  color: var(--text, #333);
+}
+
+.admin-roster-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--border-soft, #e8e8e8);
+  font-size: 0.88rem;
+}
+
+.admin-roster-row:last-of-type { border-bottom: none; }
+
+.admin-roster-row .who strong { display: block; }
+.admin-roster-row .who span { color: var(--text-faint, #888); font-size: 0.8rem; }
+
+.admin-roster-row select,
+.admin-roster-row input {
+  padding: 6px 8px;
+  border: 1px solid var(--border, #ddd);
+  border-radius: var(--r-sm, 4px);
+  font-family: inherit;
+  font-size: 0.85rem;
+  background: var(--surface, #fff);
+}
+
+.admin-add-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-soft, #e8e8e8);
+}
+
+.admin-add-row select,
+.admin-add-row input {
+  padding: 7px 9px;
+  border: 1px solid var(--border, #ddd);
+  border-radius: var(--r-sm, 4px);
+  font-family: inherit;
+  font-size: 0.86rem;
+  background: var(--surface, #fff);
+}
+
+.admin-add-row select { min-width: 160px; }
+.admin-add-row input { flex: 1; min-width: 180px; }
+
+/* ── Audit detail ──────────────────────────────────────────────────────────── */
+
+.admin-detail {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+  color: var(--text-muted, #555);
+  max-width: 360px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.admin-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 720px) {
+  .admin-main { padding: 14px; }
+  .admin-title-row { flex-direction: column; }
+  .admin-header { padding: 12px 16px; }
+}

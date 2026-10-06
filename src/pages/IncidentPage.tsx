@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { useAdmin } from '../context/AdminContext'
 import { generateRoleId, formatMilitaryTime } from '../lib/utils'
 import type { Incident, IncidentParticipant, CheckinManifest, CheckinPersonnel } from '../lib/types'
 import { getFormAccess, type FormKey } from '../lib/permissions'
@@ -57,6 +58,7 @@ export default function IncidentPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { isAdmin } = useAdmin()
 
   const [incident, setIncident] = useState<Incident | null>(null)
   const [participant, setParticipant] = useState<IncidentParticipant | null>(null)
@@ -409,13 +411,20 @@ export default function IncidentPage() {
   const roleId = participant?.role_id || ''
   const isIMTOrTactical = role === 'IMT' || role === 'Tactical Resources'
 
+  // System admin oversight (authority E). Outside the incidents they created or
+  // joined, an admin reads every form and changes none of them — the sidebar
+  // says so, every form renders read-only, and the restrictive policies in
+  // supabase-admin-guardrails.sql refuse the write even if the screen were
+  // talked into offering one.
+  const adminReadOnly = isAdmin && !participant && incident.created_by !== user?.id
+
   // Role authorities (src/lib/permissions.ts): the sidebar locks every form the
   // current role may not open, and ?denied=<form> explains a blocked deep link.
   const deniedKey = searchParams.get('denied') as FormKey | null
   const deniedForm = deniedKey === 'IAP'
     ? { num: 'IAP', name: 'Incident Action Plan' }
     : ICS_FORMS.find((f) => f.num === deniedKey) ?? null
-  const iapCanEdit = getFormAccess(role, 'IAP') === 'edit'
+  const iapCanEdit = getFormAccess(role, 'IAP', { restrictToView: adminReadOnly }) === 'edit'
 
   const handleFormClick = (formNum: string) => {
     if (formNum === '211') {
@@ -497,6 +506,11 @@ export default function IncidentPage() {
             <span className="incident-code-badge">{incident.incident_id}</span>
             <span className={`role-badge ${role.toLowerCase().replace(/\s/g, '-')}`}>{role}</span>
             {roleId && <span className="role-id-badge">{roleId}</span>}
+            {adminReadOnly && (
+              <span className="admin-readonly-badge" title="System admin oversight: you can read every form in this incident, but only its own members may change them">
+                System admin · read-only
+              </span>
+            )}
           </div>
         </div>
         <div className="topbar-actions">
@@ -756,14 +770,16 @@ export default function IncidentPage() {
             </div>
             <div className="ics-sidebar-list">
               {ICS_FORMS.map((form) => {
-                const access = getFormAccess(role, form.num as FormKey)
+                const access = getFormAccess(role, form.num as FormKey, { restrictToView: adminReadOnly })
                 const locked = access === 'none'
                 const status = locked ? '' : getFormStatus(form.num)
                 const isActive = form.num === '211' && !locked
                 const hint = locked
                   ? `Restricted — your role (${role}) cannot open this form`
                   : access === 'view'
-                    ? 'View only — your role cannot change this form'
+                    ? adminReadOnly
+                      ? 'System admin oversight — readable, but only the incident\'s own members may change it'
+                      : `View only — your role (${role}) cannot change this form`
                     : undefined
                 return (
                   <div

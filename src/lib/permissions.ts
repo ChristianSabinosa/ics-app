@@ -13,6 +13,13 @@
  * Observer            — view-only everywhere: forms can be opened and printed, but
  *                       never edited or submitted.
  *
+ * System admin        — a third, orthogonal axis: in the incidents they created
+ *                       or joined they follow the role rules above like anyone
+ *                       else, and in every other incident they may READ every
+ *                       form but change none of it (authority E). The rule is
+ *                       expressed as FormAccessOptions.restrictToView and is
+ *                       enforced again by the database.
+ *
  * The rules are enforced in two places: <FormAccess> blocks the routes themselves,
  * and each form page folds `canEdit` into its own read-only state so a view-only
  * user can still read and print a document.
@@ -57,6 +64,17 @@ export interface FormAccessOptions {
    * view-only member can still leave.
    */
   leaving?: boolean
+  /**
+   * True when a SYSTEM ADMIN is looking at an incident they neither created
+   * nor joined. Their oversight outside their own incidents is read-only, so
+   * every form collapses to 'view' — including the ones an absent role would
+   * otherwise leave editable.
+   *
+   * The database enforces the same rule independently: see the restrictive
+   * policies in supabase-admin-guardrails.sql. This flag only decides what the
+   * screen offers; a write attempted anyway is refused with 42501.
+   */
+  restrictToView?: boolean
 }
 
 /**
@@ -65,12 +83,17 @@ export interface FormAccessOptions {
  * A missing role (the user is not an active participant of the incident — for
  * example its creator) keeps full access, matching the behaviour the app had
  * before authorities were introduced.
+ *
+ * The one exception is a system admin outside their own incidents, which is
+ * read-only through and through: see FormAccessOptions.restrictToView.
  */
 export function getFormAccess(
   role: string | null | undefined,
   form: FormKey,
   options: FormAccessOptions = {},
 ): FormAccess {
+  if (options.restrictToView) return 'view'
+
   if (options.leaving && (form === '211' || form === '221')) return 'edit'
 
   if (!role || role === 'IMT') return 'edit'

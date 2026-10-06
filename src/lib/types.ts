@@ -365,6 +365,7 @@ export type NotificationType =
   | 'iap_approved'
   | 'iap_submitted'
   | 'message'
+  | 'broadcast'
 
 // ============================================================================
 // Messaging — ICS 213 General Message used as the mailbox (supabase-messages-schema.sql)

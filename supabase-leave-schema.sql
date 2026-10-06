@@ -59,6 +59,7 @@ as $$
 declare
   v_caller     uuid := auth.uid();
   v_creator    uuid;
+  v_is_admin   boolean := false;
   v_recipients uuid[];
   parent_rec   record;
   child_rec    record;
@@ -67,7 +68,9 @@ begin
     raise exception 'not authenticated';
   end if;
 
-  -- Only the incident's creator may delete it.
+  -- The incident's creator, or a system admin.
+  -- KEEP IN SYNC: defined identically in supabase-leave-schema.sql and
+  -- supabase-admin-schema.sql, so either of those files may be run last.
   select created_by into v_creator
   from incidents
   where incident_id = p_incident_id;
@@ -76,8 +79,16 @@ begin
     raise exception 'incident not found';
   end if;
 
+  -- The system-admin branch only exists once supabase-admin-schema.sql has been
+  -- installed. Until then there is no such concept, so the lookup is skipped
+  -- instead of every delete failing on a missing function.
   if v_creator is distinct from v_caller then
-    raise exception 'only the creator of this incident can delete it';
+    if to_regprocedure('public.is_system_admin()') is not null then
+      execute 'select public.is_system_admin()' into v_is_admin;
+    end if;
+    if not v_is_admin then
+      raise exception 'only the creator of this incident or a system admin can delete it';
+    end if;
   end if;
 
   -- Everyone who is about to lose access, captured before the sweep empties

@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { useAdmin } from '../context/AdminContext'
 import { getFormAccess, type FormAccess as FormAccessLevel, type FormKey, type IncidentRole } from '../lib/permissions'
 
 interface FormAccessValue {
@@ -47,6 +48,7 @@ export default function FormAccess({ form, children }: FormAccessProps) {
   const { id } = useParams<{ id: string }>()
   const [searchParams] = useSearchParams()
   const { user, loading } = useAuth()
+  const { isAdmin } = useAdmin()
 
   const [role, setRole] = useState<IncidentRole | null>(null)
   const [access, setAccess] = useState<FormAccessLevel | null>(null)
@@ -61,25 +63,41 @@ export default function FormAccess({ form, children }: FormAccessProps) {
     if (!id || !userId) return
 
     const load = async () => {
-      const { data } = await supabase
-        .from('incident_participants')
-        .select('role')
-        .eq('incident_id', id)
-        .eq('user_id', userId)
-        .eq('status', 'Active')
-        .order('joined_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
+      // The roster says what the user may do; the creator column says whether a
+      // system admin who never joined is still looking at their OWN incident.
+      const [participantRes, incidentRes] = await Promise.all([
+        supabase
+          .from('incident_participants')
+          .select('role')
+          .eq('incident_id', id)
+          .eq('user_id', userId)
+          .eq('status', 'Active')
+          .order('joined_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from('incidents')
+          .select('created_by')
+          .eq('incident_id', id)
+          .maybeSingle(),
+      ])
       if (cancelled) return
 
-      const participantRole = (data?.role as IncidentRole | null) ?? null
+      const participantRole = (participantRes.data?.role as IncidentRole | null) ?? null
+      const isCreator = incidentRes.data?.created_by === userId
+
       setRole(participantRole)
-      setAccess(getFormAccess(participantRole, form, { leaving }))
+      setAccess(
+        getFormAccess(participantRole, form, {
+          leaving,
+          restrictToView: isAdmin && !participantRole && !isCreator,
+        }),
+      )
     }
 
     load()
     return () => { cancelled = true }
-  }, [id, userId, form, leaving])
+  }, [id, userId, form, leaving, isAdmin])
 
   if (loading || access === null) {
     return <div style={loadingStyle}>Loading...</div>

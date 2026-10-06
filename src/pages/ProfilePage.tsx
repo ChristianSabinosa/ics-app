@@ -4,8 +4,6 @@ import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import {
   AVAILABILITY_OPTIONS,
-  ICS_POSITION_OPTIONS,
-  TRAINING_OPTIONS,
   displayName,
   emptyProfile,
   fetchProfile,
@@ -15,6 +13,7 @@ import {
   upsertProfile,
   type UserProfile,
 } from '../lib/profile'
+import { useReferenceData } from '../lib/settings'
 import './ProfilePage.css'
 
 type Notice = { kind: 'success' | 'error'; text: string } | null
@@ -23,6 +22,8 @@ export default function ProfilePage() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
   const fileRef = useRef<HTMLInputElement>(null)
+  // Option lists served from app_settings, with the built-in lists as fallback.
+  const reference = useReferenceData()
 
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
@@ -333,7 +334,7 @@ export default function ProfilePage() {
                       onChange={(e) => set('preferred_ics_position', e.target.value)}
                     >
                       <option value="">Select…</option>
-                      {ICS_POSITION_OPTIONS.map((o) => (
+                      {reference.positions.map((o) => (
                         <option key={o} value={o}>{o}</option>
                       ))}
                     </select>
@@ -356,7 +357,7 @@ export default function ProfilePage() {
 
                 <h3>Trainings</h3>
                 <div className="training-list">
-                  {TRAINING_OPTIONS.map((t) => (
+                  {reference.trainings.map((t) => (
                     <label key={t} className="check">
                       <input
                         type="checkbox"

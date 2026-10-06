@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { AdminProvider } from './context/AdminContext'
 import ProtectedRoute from './components/ProtectedRoute'
+import AdminRoute from './components/AdminRoute'
 import FormAccess from './components/FormAccess'
 import LoginPage from './pages/LoginPage'
 import Dashboard from './pages/Dashboard'
@@ -34,6 +36,13 @@ import MessagesPage from './pages/MessagesPage'
 import MessageForm from './pages/MessageForm'
 import ProfilePage from './pages/ProfilePage'
 import NotificationToast from './components/NotificationToast'
+import AdminLayout from './pages/admin/AdminLayout'
+import AdminUsersPage from './pages/admin/AdminUsersPage'
+import AdminDeletionRequestsPage from './pages/admin/AdminDeletionRequestsPage'
+import AdminIncidentsPage from './pages/admin/AdminIncidentsPage'
+import AdminBroadcastPage from './pages/admin/AdminBroadcastPage'
+import AdminAuditPage from './pages/admin/AdminAuditPage'
+import AdminSettingsPage from './pages/admin/AdminSettingsPage'
 
 /**
  * Fallback for any URL that does not match a route.
@@ -103,46 +112,59 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/create-incident" element={<ProtectedRoute><CreateIncident /></ProtectedRoute>} />
-          <Route path="/join-incident" element={<ProtectedRoute><JoinIncident /></ProtectedRoute>} />
-          <Route path="/ongoing-incidents" element={<ProtectedRoute><OngoingIncidents /></ProtectedRoute>} />
-          {/* Mailbox is global rather than incident-scoped, so it gets
-              ProtectedRoute only — FormAccess needs a :id in the URL to work
-              out a role, and there is none here. */}
-          <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
-          <Route path="/messages/compose" element={<ProtectedRoute><MessageForm /></ProtectedRoute>} />
-          <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-          <Route path="/incident/:id" element={<ProtectedRoute><IncidentPage /></ProtectedRoute>} />
-          <Route path="/incident/:id/iap/:iapId" element={<ProtectedRoute><FormAccess form="IAP"><IapPreviewPage /></FormAccess></ProtectedRoute>} />
-          <Route path="/incident/:id/checkin" element={<ProtectedRoute><FormAccess form="CHECKIN"><CheckInForm /></FormAccess></ProtectedRoute>} />
-          <Route path="/incident/:id/checkin/view" element={<ProtectedRoute><FormAccess form="CHECKIN"><CheckInView /></FormAccess></ProtectedRoute>} />
-          <Route path="/incident/:id/ics-211" element={<ProtectedRoute><FormAccess form="211"><Ics211Form /></FormAccess></ProtectedRoute>} />
-          <Route path="/incident/:id/ics-207" element={<ProtectedRoute><FormAccess form="207"><Ics207Form /></FormAccess></ProtectedRoute>} />
-          <Route path="/incident/:id/ics-201" element={<ProtectedRoute><FormAccess form="201"><Ics201Form /></FormAccess></ProtectedRoute>} />
-          <Route path="/incident/:id/incident-map" element={<ProtectedRoute><FormAccess form="MAP"><IncidentMapForm /></FormAccess></ProtectedRoute>} />
-          <Route path="/incident/:id/ics-202" element={<ProtectedRoute><FormAccess form="202"><Ics202Form /></FormAccess></ProtectedRoute>} />
-          <Route path="/incident/:id/ics-203" element={<ProtectedRoute><FormAccess form="203"><Ics203Form /></FormAccess></ProtectedRoute>} />
-          <Route path="/incident/:id/ics-204" element={<ProtectedRoute><FormAccess form="204"><Ics204List /></FormAccess></ProtectedRoute>} />
-          <Route path="/incident/:id/ics-204/edit" element={<ProtectedRoute><FormAccess form="204"><Ics204Form /></FormAccess></ProtectedRoute>} />
-          <Route path="/incident/:id/ics-205" element={<ProtectedRoute><FormAccess form="205"><Ics205Form /></FormAccess></ProtectedRoute>} />
-          <Route path="/incident/:id/ics-206" element={<ProtectedRoute><FormAccess form="206"><Ics206Form /></FormAccess></ProtectedRoute>} />
-          <Route path="/incident/:id/ics-208" element={<ProtectedRoute><FormAccess form="208"><Ics208Form /></FormAccess></ProtectedRoute>} />
-          <Route path="/incident/:id/ics-209" element={<ProtectedRoute><FormAccess form="209"><Ics209Form /></FormAccess></ProtectedRoute>} />
-          <Route path="/incident/:id/ics-213" element={<ProtectedRoute><FormAccess form="213"><Ics213Form /></FormAccess></ProtectedRoute>} />
-          <Route path="/incident/:id/ics-214" element={<ProtectedRoute><FormAccess form="214"><Ics214List /></FormAccess></ProtectedRoute>} />
-          <Route path="/incident/:id/ics-214/edit" element={<ProtectedRoute><FormAccess form="214"><Ics214Form /></FormAccess></ProtectedRoute>} />
-          <Route path="/incident/:id/ics-215" element={<ProtectedRoute><FormAccess form="215"><Ics215Form /></FormAccess></ProtectedRoute>} />
-          <Route path="/incident/:id/ics-215a" element={<ProtectedRoute><FormAccess form="215-A"><Ics215AForm /></FormAccess></ProtectedRoute>} />
-          <Route path="/incident/:id/ics-221" element={<ProtectedRoute><FormAccess form="221"><Ics221List /></FormAccess></ProtectedRoute>} />
-          <Route path="/incident/:id/ics-221/edit" element={<ProtectedRoute><FormAccess form="221"><Ics221Form /></FormAccess></ProtectedRoute>} />
-          <Route path="*" element={<RouteFallback />} />
-        </Routes>
-        {/* Arrival popup only — the notification list lives in the profile
-            dropdown on the Dashboard. Renders nothing while signed out. */}
-        <NotificationToast />
+        <AdminProvider>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/create-incident" element={<ProtectedRoute><CreateIncident /></ProtectedRoute>} />
+            <Route path="/join-incident" element={<ProtectedRoute><JoinIncident /></ProtectedRoute>} />
+            <Route path="/ongoing-incidents" element={<ProtectedRoute><OngoingIncidents /></ProtectedRoute>} />
+            {/* Mailbox is global rather than incident-scoped, so it gets
+                ProtectedRoute only — FormAccess needs a :id in the URL to work
+                out a role, and there is none here. */}
+            <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
+            <Route path="/messages/compose" element={<ProtectedRoute><MessageForm /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            {/* System administration: every tab is behind AdminRoute, and every
+                action inside re-checks is_system_admin() on the server. */}
+            <Route path="/admin" element={<ProtectedRoute><AdminRoute><AdminLayout /></AdminRoute></ProtectedRoute>}>
+              <Route index element={<Navigate to="users" replace />} />
+              <Route path="users" element={<AdminUsersPage />} />
+              <Route path="requests" element={<AdminDeletionRequestsPage />} />
+              <Route path="incidents" element={<AdminIncidentsPage />} />
+              <Route path="broadcast" element={<AdminBroadcastPage />} />
+              <Route path="audit" element={<AdminAuditPage />} />
+              <Route path="settings" element={<AdminSettingsPage />} />
+            </Route>
+            <Route path="/incident/:id" element={<ProtectedRoute><IncidentPage /></ProtectedRoute>} />
+            <Route path="/incident/:id/iap/:iapId" element={<ProtectedRoute><FormAccess form="IAP"><IapPreviewPage /></FormAccess></ProtectedRoute>} />
+            <Route path="/incident/:id/checkin" element={<ProtectedRoute><FormAccess form="CHECKIN"><CheckInForm /></FormAccess></ProtectedRoute>} />
+            <Route path="/incident/:id/checkin/view" element={<ProtectedRoute><FormAccess form="CHECKIN"><CheckInView /></FormAccess></ProtectedRoute>} />
+            <Route path="/incident/:id/ics-211" element={<ProtectedRoute><FormAccess form="211"><Ics211Form /></FormAccess></ProtectedRoute>} />
+            <Route path="/incident/:id/ics-207" element={<ProtectedRoute><FormAccess form="207"><Ics207Form /></FormAccess></ProtectedRoute>} />
+            <Route path="/incident/:id/ics-201" element={<ProtectedRoute><FormAccess form="201"><Ics201Form /></FormAccess></ProtectedRoute>} />
+            <Route path="/incident/:id/incident-map" element={<ProtectedRoute><FormAccess form="MAP"><IncidentMapForm /></FormAccess></ProtectedRoute>} />
+            <Route path="/incident/:id/ics-202" element={<ProtectedRoute><FormAccess form="202"><Ics202Form /></FormAccess></ProtectedRoute>} />
+            <Route path="/incident/:id/ics-203" element={<ProtectedRoute><FormAccess form="203"><Ics203Form /></FormAccess></ProtectedRoute>} />
+            <Route path="/incident/:id/ics-204" element={<ProtectedRoute><FormAccess form="204"><Ics204List /></FormAccess></ProtectedRoute>} />
+            <Route path="/incident/:id/ics-204/edit" element={<ProtectedRoute><FormAccess form="204"><Ics204Form /></FormAccess></ProtectedRoute>} />
+            <Route path="/incident/:id/ics-205" element={<ProtectedRoute><FormAccess form="205"><Ics205Form /></FormAccess></ProtectedRoute>} />
+            <Route path="/incident/:id/ics-206" element={<ProtectedRoute><FormAccess form="206"><Ics206Form /></FormAccess></ProtectedRoute>} />
+            <Route path="/incident/:id/ics-208" element={<ProtectedRoute><FormAccess form="208"><Ics208Form /></FormAccess></ProtectedRoute>} />
+            <Route path="/incident/:id/ics-209" element={<ProtectedRoute><FormAccess form="209"><Ics209Form /></FormAccess></ProtectedRoute>} />
+            <Route path="/incident/:id/ics-213" element={<ProtectedRoute><FormAccess form="213"><Ics213Form /></FormAccess></ProtectedRoute>} />
+            <Route path="/incident/:id/ics-214" element={<ProtectedRoute><FormAccess form="214"><Ics214List /></FormAccess></ProtectedRoute>} />
+            <Route path="/incident/:id/ics-214/edit" element={<ProtectedRoute><FormAccess form="214"><Ics214Form /></FormAccess></ProtectedRoute>} />
+            <Route path="/incident/:id/ics-215" element={<ProtectedRoute><FormAccess form="215"><Ics215Form /></FormAccess></ProtectedRoute>} />
+            <Route path="/incident/:id/ics-215a" element={<ProtectedRoute><FormAccess form="215-A"><Ics215AForm /></FormAccess></ProtectedRoute>} />
+            <Route path="/incident/:id/ics-221" element={<ProtectedRoute><FormAccess form="221"><Ics221List /></FormAccess></ProtectedRoute>} />
+            <Route path="/incident/:id/ics-221/edit" element={<ProtectedRoute><FormAccess form="221"><Ics221Form /></FormAccess></ProtectedRoute>} />
+            <Route path="*" element={<RouteFallback />} />
+          </Routes>
+          {/* Arrival popup only — the notification list lives in the profile
+              dropdown on the Dashboard. Renders nothing while signed out. */}
+          <NotificationToast />
+        </AdminProvider>
       </BrowserRouter>
     </AuthProvider>
   )
