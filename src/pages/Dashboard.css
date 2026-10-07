@@ -324,6 +324,20 @@
   color: #7c3aed;
 }
 
+.action-card.offline {
+  border-color: #0e7490;
+}
+
+.action-card.offline:hover {
+  background: #0e7490;
+  color: white;
+}
+
+.action-card.offline:hover .action-icon {
+  background: white;
+  color: #0e7490;
+}
+
 .action-icon {
   width: 60px;
   height: 60px;
@@ -354,6 +368,11 @@
 .training .action-icon {
   background: rgba(124, 58, 237, 0.1);
   color: #7c3aed;
+}
+
+.offline .action-icon {
+  background: rgba(14, 116, 144, 0.1);
+  color: #0e7490;
 }
 
 .action-card h3 {

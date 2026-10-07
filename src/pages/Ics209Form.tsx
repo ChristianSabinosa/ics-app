@@ -1,10 +1,20 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
+import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import Ics209Print from './Ics209Print'
 import { useFormAccess } from '../components/FormAccess'
 import { useTrainingSignature } from '../lib/signatureRules'
+import { isOfflinePath, getOperatorName } from '../lib/offline/mode'
+import {
+  getOfflineIncident,
+  offAll,
+  offLatest,
+  offGet,
+  offInsert,
+  offUpdate,
+  touchOfflineIncident,
+} from '../lib/offline/store'
 import './Ics209Form.css'
 
 interface ClusterRow {
@@ -85,6 +95,10 @@ export default function Ics209Form() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { canEdit } = useFormAccess()
+
+  // Offline Mode (/offline/...): same form, local IndexedDB store, no auth.
+  const offMode = isOfflinePath(useLocation().pathname)
+  const homePath = offMode ? `/offline/${incidentId}` : `/incident/${incidentId}`
 
   const [formId, setFormId] = useState<string | null>(null)
   const [incidentName, setIncidentName] = useState('')
@@ -180,6 +194,113 @@ export default function Ics209Form() {
   const loadForm = useCallback(async () => {
     if (!incidentId) return
     setLoading(true)
+
+    if (offMode) {
+      const incident = await getOfflineIncident(incidentId)
+      if (incident) {
+        setIncidentName(incident.name)
+        setAddressLocation(incident.location || '')
+      }
+
+      const form202 = await offLatest('ics_202_forms', incidentId)
+      if (form202) {
+        setOpFromDate(form202.op_period_from_date as string || '')
+        setOpFromTime(form202.op_period_from_time as string || '')
+        setOpToDate(form202.op_period_to_date as string || '')
+        setOpToTime(form202.op_period_to_time as string || '')
+        if (form202.objectives) setObjectives(form202.objectives as string)
+      }
+
+      const existingCount = (await offAll('ics_209_forms', incidentId)).length
+      setReportNo(existingCount + 1)
+
+      const formParam = searchParams.get('form')
+      const formToLoad = formParam
+        ? await offGet('ics_209_forms', formParam)
+        : await offLatest('ics_209_forms', incidentId)
+
+      if (formToLoad) {
+        setFormId(formToLoad.id as string)
+        setIncidentName(formToLoad.incident_name as string)
+        setOpFromDate(formToLoad.op_period_from_date as string)
+        setOpFromTime(formToLoad.op_period_from_time as string)
+        setOpToDate(formToLoad.op_period_to_date as string)
+        setOpToTime(formToLoad.op_period_to_time as string)
+        setReportNo(formToLoad.report_no as number)
+        setReportType(formToLoad.report_type as 'Initial' | 'Update' | 'Final')
+        setPreparedByName(formToLoad.prepared_by_name as string)
+        setPreparedBySig(formToLoad.prepared_by_sig as string)
+        setPreparedDate(formToLoad.prepared_date as string)
+        setPreparedTime(formToLoad.prepared_time as string)
+        setApprovedByName(formToLoad.approved_by_name as string)
+        setApprovedBySig(formToLoad.approved_by_sig as string)
+        setApprovedDate(formToLoad.approved_date as string)
+        setApprovedTime(formToLoad.approved_time as string)
+        setGeneralDescription(formToLoad.general_description as string)
+        setPolicyGuidance(formToLoad.policy_guidance as string)
+        setObjectives(formToLoad.objectives as string)
+        setAddressLocation(formToLoad.address_location as string)
+        setJurisdiction(formToLoad.jurisdiction as string)
+        setGpsCoordinates(formToLoad.gps_coordinates as string)
+        setLandmarks(formToLoad.landmarks as string)
+        setSignificantEvents(formToLoad.significant_events as string)
+
+        if (formToLoad.cluster_assessment && Array.isArray(formToLoad.cluster_assessment)) {
+          setClusterAssessment(formToLoad.cluster_assessment as ClusterRow[])
+        }
+        if (formToLoad.public_status && Array.isArray(formToLoad.public_status)) {
+          setPublicStatus(formToLoad.public_status as StatusRow[])
+        }
+        if (formToLoad.responders_status && Array.isArray(formToLoad.responders_status)) {
+          setRespondersStatus(formToLoad.responders_status as StatusRow[])
+        }
+        if (formToLoad.threat_management && typeof formToLoad.threat_management === 'object') {
+          const tm = formToLoad.threat_management as Record<string, unknown>
+          setThreatManagement(prev => {
+            const updated = { ...prev }
+            for (const key of Object.keys(updated)) {
+              updated[key] = (tm[key] as boolean) || false
+            }
+            return updated
+          })
+          setThreatOthers((tm._others as boolean) || false)
+          setThreatOthersText((tm._othersText as string) || '')
+        }
+
+        setWeatherConcerns(formToLoad.weather_concerns as string)
+        setEscalation12h(formToLoad.escalation_12h as string)
+        setEscalation24h(formToLoad.escalation_24h as string)
+        setEscalation48h(formToLoad.escalation_48h as string)
+        setEscalation72h(formToLoad.escalation_72h as string)
+        setEscalationAfter72h(formToLoad.escalation_after72h as string)
+        setThreatsRisk12h(formToLoad.threats_risk_12h as string)
+        setThreatsRisk24h(formToLoad.threats_risk_24h as string)
+        setThreatsRisk48h(formToLoad.threats_risk_48h as string)
+        setThreatsRisk72h(formToLoad.threats_risk_72h as string)
+        setThreatsRiskAfter72h(formToLoad.threats_risk_after72h as string)
+        setCriticalResources12h(formToLoad.critical_resources_12h as string)
+        setCriticalResources24h(formToLoad.critical_resources_24h as string)
+        setCriticalResources48h(formToLoad.critical_resources_48h as string)
+        setCriticalResources72h(formToLoad.critical_resources_72h as string)
+        setCriticalResourcesAfter72h(formToLoad.critical_resources_after72h as string)
+        setPlannedActions(formToLoad.planned_actions as string)
+        setOtherConcerns(formToLoad.other_concerns as string)
+        setAnticipatedCosts(formToLoad.anticipated_costs as string)
+        setProjectedCosts(formToLoad.projected_costs as string)
+
+        if (formToLoad.resources && Array.isArray(formToLoad.resources)) {
+          setResources(formToLoad.resources as ResourceRow[])
+        }
+        if (formToLoad.assisting_agencies && Array.isArray(formToLoad.assisting_agencies)) {
+          setAssistingAgencies(formToLoad.assisting_agencies as string[])
+        }
+
+        setStatus(formToLoad.status as 'Draft' | 'Submitted')
+      }
+
+      setLoading(false)
+      return
+    }
 
     const { data: incident } = await supabase
       .from('incidents')
@@ -316,18 +437,18 @@ export default function Ics209Form() {
   }, [incidentId, searchParams])
 
   useEffect(() => {
-    if (!user) return
+    if (!user && !offMode) return
     const now = new Date()
-    setPreparedByName(user.user_metadata?.first_name
+    setPreparedByName((user?.user_metadata?.first_name
       ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`.trim()
-      : user.email || '')
+      : user?.email || '') || (offMode ? getOperatorName() : ''))
     setPreparedDate(now.toISOString().slice(0, 10))
     setPreparedTime(now.toTimeString().slice(0, 5))
     loadForm()
-  }, [incidentId, user, searchParams, loadForm])
+  }, [incidentId, user, searchParams, loadForm, offMode])
 
   const saveForm = async (formStatus: 'Draft' | 'Submitted') => {
-    if (!incidentId || !user) return
+    if (!incidentId || (!user && !offMode)) return
     setSaving(true)
     setError('')
     setSuccess('')
@@ -389,6 +510,28 @@ export default function Ics209Form() {
     }
 
     let fId = formId
+
+    if (offMode) {
+      try {
+        if (fId) {
+          await offUpdate('ics_209_forms', fId, formData)
+        } else {
+          const inserted = await offInsert('ics_209_forms', formData)
+          fId = inserted.id as string
+          setFormId(fId)
+        }
+        await touchOfflineIncident(incidentId)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Could not save the form.')
+        setSaving(false)
+        return
+      }
+      setSaving(false)
+      setStatus(formStatus)
+      setIsEditing(false)
+      setSuccess(formStatus === 'Draft' ? 'Progress saved as draft.' : 'ICS Form 209 submitted successfully!')
+      return
+    }
 
     if (fId) {
       const { error: updateError } = await supabase.from('ics_209_forms').update(formData).eq('id', fId)
@@ -456,7 +599,7 @@ export default function Ics209Form() {
   return (
     <div className="ics209-page">
       <header className="ics209-header no-print">
-        <div className="header-brand" onClick={() => navigate(`/incident/${incidentId}`)} style={{ cursor: 'pointer' }}>
+        <div className="header-brand" onClick={() => navigate(homePath)} style={{ cursor: 'pointer' }}>
           <img src="/alaminos-logo.png" alt="Logo" className="header-logo" />
           <div>
             <h1>Incident Command System</h1>
@@ -467,7 +610,7 @@ export default function Ics209Form() {
 
       <div className="ics209-topbar no-print">
         <div className="topbar-left">
-          <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}`)}>&larr; Back</button>
+          <button className="topbar-btn back" onClick={() => navigate(homePath)}>&larr; Back</button>
           <span className="form-badge">ICS 209</span>
           <span className={`status-badge ${status.toLowerCase()}`}>{status}</span>
         </div>

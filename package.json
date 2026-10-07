@@ -12,6 +12,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
     "@xyflow/react": "^12.11.6",
+    "dexie": "^4.4.6",
     "html-to-image": "^1.11.13",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",

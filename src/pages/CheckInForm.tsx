@@ -1,10 +1,13 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
+import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { generateCheckinId } from '../lib/utils'
 import type { CheckinPersonnel, CheckinVehicle, CheckinEquipment } from '../lib/types'
 import { useFormAccess } from '../components/FormAccess'
+import { isOfflinePath, getOperatorId, getOperatorName } from '../lib/offline/mode'
+import { offGet, offAll, offChildren, offInsert, offUpdate, offDeleteChildren, touchOfflineIncident } from '../lib/offline/store'
+import type { OfflineRow } from '../lib/offline/db'
 import './CheckInForm.css'
 
 const emptyLeader: Omit<CheckinPersonnel, 'id' | 'manifest_id'> = {
@@ -20,12 +23,22 @@ const emptyEquipment: Omit<CheckinEquipment, 'id' | 'manifest_id'> = {
   equipment_id: '', operator_name: '', kind: '', type: '', source_of_power: '', fuel_type: '', weight: '', contact_details: '', capabilities: '', others: '',
 }
 
+/** Drop local-store bookkeeping columns so a row matches its online child shape. */
+function stripLocal<T>(row: OfflineRow): T {
+  const { _key: _k, id: _id, table: _t, incident_id: _iid, form_id: _fid, manifest_id: _mid, created_at: _c, updated_at: _u, ...rest } = row
+  return rest as unknown as T
+}
+
 export default function CheckInForm() {
   const { id: incidentId } = useParams<{ id: string }>()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { user } = useAuth()
   const { canEdit } = useFormAccess()
+
+  // Offline Mode (/offline/...): same form, local IndexedDB store, no auth.
+  const offMode = isOfflinePath(useLocation().pathname)
+  const homePath = offMode ? `/offline/${incidentId}` : `/incident/${incidentId}`
 
   const [checkinId, setCheckinId] = useState('')
   const [manifestId, setManifestId] = useState<string | null>(null)
@@ -56,10 +69,49 @@ export default function CheckInForm() {
   const airCount = vehicles.filter((v) => v.method_of_travel === 'Air').length
 
   const loadOrInitManifest = useCallback(async () => {
-    if (!incidentId || !user) return
+    if (!incidentId || (!user && !offMode)) return
     setLoading(true)
 
     const manifestParam = searchParams.get('manifest')
+
+    if (offMode) {
+      let local: OfflineRow | undefined
+      if (manifestParam) {
+        const m = await offGet('checkin_manifests', manifestParam)
+        local = m && m.incident_id === incidentId ? m : undefined
+      } else {
+        const drafts = (await offAll('checkin_manifests', incidentId))
+          .filter((m) => m.user_id === getOperatorId() && m.status === 'Draft')
+          .sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
+        local = drafts[0]
+      }
+
+      if (local) {
+        const mid = local.id as string
+        setManifestId(mid)
+        setCheckinId(local.checkin_id as string)
+        setAgencyName((local.agency_name as string) ?? '')
+        setOthers((local.others as string) ?? '')
+        setPreparedByName((local.prepared_by_name as string) ?? '')
+        setStatus((local.status as 'Draft' | 'Submitted') || 'Draft')
+
+        const personnel = await offChildren('checkin_personnel', mid)
+        const l = personnel.find((p) => p.role === 'Leader')
+        if (l) setLeader({ ...emptyLeader, ...stripLocal<Omit<CheckinPersonnel, 'id' | 'manifest_id'>>(l) })
+        setMembers(personnel.filter((p) => p.role === 'Member').map((p) => stripLocal<Omit<CheckinPersonnel, 'id' | 'manifest_id'>>(p)))
+
+        const veh = await offChildren('checkin_vehicles', mid)
+        setVehicles(veh.map((v) => stripLocal<Omit<CheckinVehicle, 'id' | 'manifest_id'>>(v)))
+
+        const eq = await offChildren('checkin_equipment', mid)
+        setEquipment(eq.map((e) => stripLocal<Omit<CheckinEquipment, 'id' | 'manifest_id'>>(e)))
+      } else {
+        setCheckinId(generateCheckinId())
+      }
+
+      setLoading(false)
+      return
+    }
 
     let existing = null
 
@@ -76,7 +128,7 @@ export default function CheckInForm() {
         .from('checkin_manifests')
         .select('*')
         .eq('incident_id', incidentId)
-        .eq('user_id', user.id)
+        .eq('user_id', user!.id)
         .eq('status', 'Draft')
         .order('created_at', { ascending: false })
         .limit(1)
@@ -109,15 +161,15 @@ export default function CheckInForm() {
     }
 
     setLoading(false)
-  }, [incidentId, user, searchParams])
+  }, [incidentId, user, searchParams, offMode])
 
   useEffect(() => {
-    if (!user) return
-    setPreparedByName(user.user_metadata?.first_name
+    if (!user && !offMode) return
+    setPreparedByName(user?.user_metadata?.first_name
       ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`.trim()
-      : user.email || '')
+      : user?.email || (offMode ? getOperatorName() : ''))
     loadOrInitManifest()
-  }, [incidentId, user, searchParams, loadOrInitManifest])
+  }, [incidentId, user, searchParams, loadOrInitManifest, offMode])
 
   const updateMember = (index: number, field: string, value: string) => {
     const updated = [...members]
@@ -147,14 +199,14 @@ export default function CheckInForm() {
   const removeEquipment = (index: number) => setEquipment(equipment.filter((_, i) => i !== index))
 
   const saveManifest = async (status: 'Draft' | 'Submitted') => {
-    if (!incidentId || !user) return
+    if (!incidentId || (!user && !offMode)) return
     setSaving(true)
     setError('')
     setSuccess('')
 
     const manifestData = {
       incident_id: incidentId,
-      user_id: user.id,
+      user_id: user?.id ?? getOperatorId(),
       user_name: preparedByName,
       agency_name: agencyName,
       total_personnel: 1 + members.length,
@@ -168,6 +220,40 @@ export default function CheckInForm() {
     }
 
     let mId = manifestId
+
+    if (offMode) {
+      try {
+        if (mId) {
+          await offUpdate('checkin_manifests', mId, manifestData)
+        } else {
+          const inserted = await offInsert('checkin_manifests', { ...manifestData, checkin_id: checkinId })
+          mId = inserted.id as string
+          setManifestId(mId)
+        }
+
+        // form_id mirrors manifest_id so the store's child helpers can find these rows.
+        const link = { incident_id: incidentId, manifest_id: mId, form_id: mId }
+        await offDeleteChildren('checkin_personnel', mId)
+        await offDeleteChildren('checkin_vehicles', mId)
+        await offDeleteChildren('checkin_equipment', mId)
+
+        for (const p of [leader, ...members]) await offInsert('checkin_personnel', { ...p, ...link }, false)
+        for (const v of vehicles) await offInsert('checkin_vehicles', { ...v, ...link }, false)
+        for (const e of equipment) await offInsert('checkin_equipment', { ...e, ...link }, false)
+        await touchOfflineIncident(incidentId)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Could not save the manifest.')
+        setSaving(false)
+        return
+      }
+
+      setSaving(false)
+      setSuccess(status === 'Draft' ? 'Progress saved as draft.' : 'Check-in manifest submitted successfully!')
+      if (status === 'Submitted') {
+        setTimeout(() => navigate(`${homePath}/checkin/view`), 1000)
+      }
+      return
+    }
 
     if (mId) {
       const { error: updateError } = await supabase.from('checkin_manifests').update(manifestData).eq('id', mId)
@@ -206,14 +292,14 @@ export default function CheckInForm() {
     }
 
     if (status === 'Submitted') {
-      await supabase.from('incident_participants').update({ checked_in: true }).eq('incident_id', incidentId).eq('user_id', user.id).eq('status', 'Active')
+      await supabase.from('incident_participants').update({ checked_in: true }).eq('incident_id', incidentId).eq('user_id', user!.id).eq('status', 'Active')
     }
 
     setSaving(false)
     setSuccess(status === 'Draft' ? 'Progress saved as draft.' : 'Check-in manifest submitted successfully!')
 
     if (status === 'Submitted') {
-      setTimeout(() => navigate(`/incident/${incidentId}/checkin/view`), 1000)
+      setTimeout(() => navigate(`${homePath}/checkin/view`), 1000)
     }
   }
 
@@ -228,7 +314,7 @@ export default function CheckInForm() {
   return (
     <div className="checkin-page">
       <header className="checkin-header">
-        <div className="header-brand" onClick={() => navigate(`/incident/${incidentId}`)} style={{ cursor: 'pointer' }}>
+        <div className="header-brand" onClick={() => navigate(homePath)} style={{ cursor: 'pointer' }}>
           <img src="/alaminos-logo.png" alt="Logo" className="header-logo" />
           <div>
             <h1>Incident Command System</h1>
@@ -239,7 +325,7 @@ export default function CheckInForm() {
 
       <div className="checkin-topbar no-print">
         <div className="topbar-left">
-          <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}`)}>&larr; Back</button>
+          <button className="topbar-btn back" onClick={() => navigate(homePath)}>&larr; Back</button>
           <span className="form-badge">Check-In Manifest</span>
           <span className={`status-badge ${status.toLowerCase()}`}>{status}</span>
         </div>

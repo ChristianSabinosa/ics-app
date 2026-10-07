@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { isOfflinePath, getOperatorName } from '../lib/offline/mode'
+import { getOfflineIncident, offGetIap, offUpsertIap, touchOfflineIncident } from '../lib/offline/store'
 import { useAuth } from '../context/AuthContext'
 import { loadIapData, formatOpPeriod } from '../lib/iap'
 import { notifyIncident } from '../lib/notifications'
@@ -34,6 +36,10 @@ export default function IapPreviewPage() {
   const { user } = useAuth()
   const { canEdit } = useFormAccess()
 
+  // Offline Mode (/offline/...): same page, local IndexedDB store, no auth.
+  const offMode = isOfflinePath(useLocation().pathname)
+  const homePath = offMode ? `/offline/${id}` : `/incident/${id}`
+
   const [row, setRow] = useState<IapRow | null>(null)
   const [data, setData] = useState<IapData | null>(null)
   const [incidentName, setIncidentName] = useState('')
@@ -47,6 +53,43 @@ export default function IapPreviewPage() {
     if (!id || !iapId) return
     setLoading(true)
     setError('')
+
+    if (offMode) {
+      const [localRow, localInc] = await Promise.all([offGetIap(iapId), getOfflineIncident(id)])
+      const loaded = (localRow as IapRow | undefined) ?? null
+      if (!loaded || loaded.incident_id !== id) {
+        setError('Incident Action Plan not found.')
+        setLoading(false)
+        return
+      }
+
+      const name = localInc?.name || ''
+      const op = {
+        from_date: loaded.op_period_from_date || '',
+        from_time: loaded.op_period_from_time || '',
+        to_date: loaded.op_period_to_date || '',
+        to_time: loaded.op_period_to_time || '',
+      }
+
+      let doc: IapData
+      if (loaded.snapshot) {
+        doc = loaded.snapshot
+      } else {
+        try {
+          doc = await loadIapData(id, op, name, true)
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Failed to load the IAP pages.')
+          setLoading(false)
+          return
+        }
+      }
+
+      setRow(loaded)
+      setData(doc)
+      setIncidentName(name)
+      setLoading(false)
+      return
+    }
 
     const [rowRes, incRes] = await Promise.all([
       supabase.from('incident_iap').select('*').eq('id', iapId).maybeSingle(),
@@ -91,7 +134,7 @@ export default function IapPreviewPage() {
     setData(doc)
     setIncidentName(name)
     setLoading(false)
-  }, [id, iapId])
+  }, [id, iapId, offMode])
 
   useEffect(() => {
     load()
@@ -103,6 +146,30 @@ export default function IapPreviewPage() {
     setError('')
 
     const now = new Date().toISOString()
+
+    if (offMode) {
+      const approver = getOperatorName()
+      try {
+        await offUpsertIap(row.id, {
+          status: 'Approved',
+          snapshot: data,
+          approved_at: now,
+          approved_by: approver,
+        })
+        await touchOfflineIncident(row.incident_id)
+      } catch (err) {
+        setApproving(false)
+        setShowConfirm(false)
+        setError(err instanceof Error ? err.message : 'Failed to approve the IAP.')
+        return
+      }
+      setApproving(false)
+      setShowConfirm(false)
+      setRow({ ...row, status: 'Approved', approved_at: now, approved_by: approver, updated_at: now })
+      setNotice('Incident Action Plan approved. It is now a read-only document for this incident.')
+      return
+    }
+
     const { error: updateError } = await supabase
       .from('incident_iap')
       .update({
@@ -153,7 +220,7 @@ export default function IapPreviewPage() {
               The <code>incident_iap</code> table is missing or out of date — run <code>supabase-iap-schema.sql</code> in the Supabase SQL editor, then reload.
             </p>
           )}
-          <button onClick={() => navigate(`/incident/${id}`)}>Back to Incident</button>
+          <button onClick={() => navigate(homePath)}>Back to Incident</button>
         </div>
       </div>
     )
@@ -170,7 +237,7 @@ export default function IapPreviewPage() {
   return (
     <div className="iap-preview-page">
       <header className="iap-preview-header iap-no-print">
-        <div className="header-brand" onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer' }}>
+        <div className="header-brand" onClick={() => navigate(offMode ? homePath : '/dashboard')} style={{ cursor: 'pointer' }}>
           <img src="/alaminos-logo.png" alt="Logo" className="header-logo" />
           <div>
             <h1>Incident Command System</h1>
@@ -181,7 +248,7 @@ export default function IapPreviewPage() {
 
       <div className="iap-preview-bar iap-no-print">
         <div className="iap-bar-left">
-          <button className="iap-bar-btn back" onClick={() => navigate(`/incident/${id}`)}>
+          <button className="iap-bar-btn back" onClick={() => navigate(homePath)}>
             &larr; Back
           </button>
           <span className="iap-bar-badge code">{row.incident_id}</span>

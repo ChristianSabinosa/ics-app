@@ -38,6 +38,8 @@ import ProfilePage from './pages/ProfilePage'
 import TrainingHub from './pages/TrainingHub'
 import TrainingJoin from './pages/TrainingJoin'
 import TrainingPage from './pages/TrainingPage'
+import OfflineHome from './pages/OfflineHome'
+import OfflineIncident from './pages/OfflineIncident'
 import TrainingGuideHost from './components/TrainingGuideHost'
 import NotificationToast from './components/NotificationToast'
 import AdminLayout from './pages/admin/AdminLayout'
@@ -136,6 +138,32 @@ function App() {
             <Route path="/training" element={<ProtectedRoute><TrainingHub /></ProtectedRoute>} />
             <Route path="/training/join/:token" element={<TrainingJoin />} />
             <Route path="/training/:id" element={<ProtectedRoute><TrainingPage /></ProtectedRoute>} />
+            {/* Offline Mode — on-device incidents, no login, no server. The
+                211 form detects the /offline path and uses IndexedDB. */}
+            <Route path="/offline" element={<OfflineHome />} />
+            <Route path="/offline/:id" element={<OfflineIncident />} />
+            <Route path="/offline/:id/iap/:iapId" element={<IapPreviewPage />} />
+            <Route path="/offline/:id/checkin" element={<CheckInForm />} />
+            <Route path="/offline/:id/checkin/view" element={<CheckInView />} />
+            <Route path="/offline/:id/ics-211" element={<Ics211Form />} />
+            <Route path="/offline/:id/ics-207" element={<Ics207Form />} />
+            <Route path="/offline/:id/ics-201" element={<Ics201Form />} />
+            <Route path="/offline/:id/incident-map" element={<IncidentMapForm />} />
+            <Route path="/offline/:id/ics-202" element={<Ics202Form />} />
+            <Route path="/offline/:id/ics-203" element={<Ics203Form />} />
+            <Route path="/offline/:id/ics-204" element={<Ics204List />} />
+            <Route path="/offline/:id/ics-204/edit" element={<Ics204Form />} />
+            <Route path="/offline/:id/ics-205" element={<Ics205Form />} />
+            <Route path="/offline/:id/ics-206" element={<Ics206Form />} />
+            <Route path="/offline/:id/ics-208" element={<Ics208Form />} />
+            <Route path="/offline/:id/ics-209" element={<Ics209Form />} />
+            <Route path="/offline/:id/ics-213" element={<Ics213Form />} />
+            <Route path="/offline/:id/ics-214" element={<Ics214List />} />
+            <Route path="/offline/:id/ics-214/edit" element={<Ics214Form />} />
+            <Route path="/offline/:id/ics-215" element={<Ics215Form />} />
+            <Route path="/offline/:id/ics-215a" element={<Ics215AForm />} />
+            <Route path="/offline/:id/ics-221" element={<Ics221List />} />
+            <Route path="/offline/:id/ics-221/edit" element={<Ics221Form />} />
             {/* System administration: every tab is behind AdminRoute, and every
                 action inside re-checks is_system_admin() on the server. */}
             <Route path="/admin" element={<ProtectedRoute><AdminRoute><AdminLayout /></AdminRoute></ProtectedRoute>}>

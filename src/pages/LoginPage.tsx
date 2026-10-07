@@ -200,6 +200,10 @@ export default function LoginPage() {
               <button type="submit" className="submit-btn" disabled={loading}>
                 {loading ? 'Signing In...' : 'Sign In'}
               </button>
+              <p style={{ textAlign: 'center', marginTop: '14px', fontSize: '0.85rem' }}>
+                No connection or no account?{' '}
+                <a href="#" onClick={(e) => { e.preventDefault(); navigate('/offline') }}>Use Offline Mode</a>
+              </p>
             </form>
           )}
 

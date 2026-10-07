@@ -1,5 +1,65 @@
 import { supabase } from './supabase'
 import type { Ics204CommsRow, Ics204OpsPerson, Ics204Row, Ics204Summary } from './types'
+import { offAll, offChildren } from './offline/store'
+
+// ---------------------------------------------------------------------------
+// Offline Mode (IndexedDB) variants of the prefill helpers below
+// ---------------------------------------------------------------------------
+
+const newestFirst = <T extends { created_at?: string }>(rows: T[]): T[] =>
+  [...rows].sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
+
+/** Offline: Operations Section Chief name from the latest local ICS 207. */
+export async function loadOscNameOffline(incidentId: string): Promise<string> {
+  const forms = newestFirst(await offAll('ics_207_forms', incidentId))
+  const form = forms.find((f) => f.form_type === 'expanded') ?? forms[0]
+  if (!form) return ''
+  const positions = await offChildren('ics_207_positions', form.id as string)
+  const osc = positions.find((p) => p.position_key === 'osc')
+  return (osc?.person_name as string) || ''
+}
+
+/** Offline: communications summary rows from the latest local ICS 205. */
+export async function load205CommsOffline(incidentId: string): Promise<Ics204CommsRow[]> {
+  const form = newestFirst(await offAll('ics_205_forms', incidentId))[0]
+  if (!form) return []
+  const channels = await offChildren('ics_205_channels', form.id as string)
+  return channels.map((c) => ({
+    function: (c.function as string) || '',
+    system: (c.system as string) || '',
+    channel: (c.channel as string) || '',
+    frequency: (c.frequency as string) || '',
+    others: (c.others as string) || '',
+  }))
+}
+
+/** Offline: mitigating measures from the latest local ICS 215A. */
+export async function load215AMitigatingOffline(incidentId: string, divisionLabel: string): Promise<string> {
+  const form = newestFirst(await offAll('ics_215a_forms', incidentId))[0]
+  const divisions = (form?.divisions as Array<{ division_group?: string; mitigating_measures?: string }>) ?? []
+  if (divisions.length === 0) return ''
+
+  const label = divisionLabel.trim().toLowerCase()
+  if (label) {
+    const match = divisions.find((d) => {
+      const g = (d.division_group || '').trim().toLowerCase()
+      if (!g) return false
+      return g === label || g.includes(label) || label.includes(g)
+    })
+    if (match?.mitigating_measures?.trim()) return match.mitigating_measures
+  }
+
+  return divisions
+    .map((d) => (d.mitigating_measures || '').trim())
+    .filter(Boolean)
+    .join('\n\n')
+}
+
+/** Offline: all local 204 instances for an incident (newest first). */
+export async function loadIcs204ListOffline(incidentId: string): Promise<Ics204Summary[]> {
+  const rows = newestFirst(await offAll('ics_204_forms', incidentId))
+  return rows as unknown as Ics204Summary[]
+}
 
 // Fixed section-4 rows shown on every ICS 204 (order matches the printed form)
 export const OPS_POSITIONS = [

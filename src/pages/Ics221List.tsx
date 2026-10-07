@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { isOfflinePath } from '../lib/offline/mode'
+import { getOfflineIncident, offAll, offDelete, touchOfflineIncident } from '../lib/offline/store'
 import type { Ics221Summary } from '../lib/types'
 import { useFormAccess } from '../components/FormAccess'
 import './Ics221List.css'
@@ -9,6 +11,10 @@ export default function Ics221List() {
   const { id: incidentId } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { canEdit } = useFormAccess()
+
+  // Offline Mode (/offline/...): list from the local IndexedDB store.
+  const offMode = isOfflinePath(useLocation().pathname)
+  const homePath = offMode ? `/offline/${incidentId}` : `/incident/${incidentId}`
 
   const [items, setItems] = useState<Ics221Summary[]>([])
   const [incidentName, setIncidentName] = useState('')
@@ -19,6 +25,17 @@ export default function Ics221List() {
     if (!incidentId) return
     setLoading(true)
     setError('')
+    if (offMode) {
+      const [offIncident, rows] = await Promise.all([
+        getOfflineIncident(incidentId),
+        offAll('ics_221_forms', incidentId),
+      ])
+      if (offIncident) setIncidentName(offIncident.name)
+      rows.sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
+      setItems(rows as unknown as Ics221Summary[])
+      setLoading(false)
+      return
+    }
     const [incidentRes, listRes] = await Promise.all([
       supabase.from('incidents').select('name').eq('incident_id', incidentId).single(),
       supabase
@@ -31,7 +48,7 @@ export default function Ics221List() {
     if (listRes.error) setError(listRes.error.message)
     setItems((listRes.data ?? []) as Ics221Summary[])
     setLoading(false)
-  }, [incidentId])
+  }, [incidentId, offMode])
 
   useEffect(() => {
     loadList()
@@ -47,6 +64,17 @@ export default function Ics221List() {
     if (!canEdit) return
     if (!confirm('Are you sure you want to delete this demobilization check-out?')) return
     setError('')
+    if (offMode) {
+      try {
+        await offDelete('ics_221_forms', formId)
+        if (incidentId) await touchOfflineIncident(incidentId)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Could not delete the check-out.')
+        return
+      }
+      setItems((prev) => prev.filter((i) => i.id !== formId))
+      return
+    }
     const { error: delError } = await supabase.from('ics_221_forms').delete().eq('id', formId)
     if (delError) { setError(delError.message); return }
 
@@ -75,7 +103,7 @@ export default function Ics221List() {
   return (
     <div className="ics221list-page">
       <header className="ics221list-header no-print">
-        <div className="header-brand" onClick={() => navigate(`/incident/${incidentId}`)} style={{ cursor: 'pointer' }}>
+        <div className="header-brand" onClick={() => navigate(homePath)} style={{ cursor: 'pointer' }}>
           <img src="/alaminos-logo.png" alt="Logo" className="header-logo" />
           <div>
             <h1>Incident Command System</h1>
@@ -86,14 +114,14 @@ export default function Ics221List() {
 
       <div className="ics221list-topbar no-print">
         <div className="topbar-left">
-          <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}`)}>&larr; Back</button>
+          <button className="topbar-btn back" onClick={() => navigate(homePath)}>&larr; Back</button>
           <span className="form-badge">ICS 221</span>
           <span className="list-title">Demobilization Check-outs{incidentName ? ` — ${incidentName}` : ''}</span>
         </div>
         <div className="topbar-actions">
           {!canEdit && <span className="view-only-badge">View only</span>}
           {canEdit && (
-            <button className="action-btn submit" onClick={() => navigate(`/incident/${incidentId}/ics-221/edit?new=1`)}>
+            <button className="action-btn submit" onClick={() => navigate(`${homePath}/ics-221/edit?new=1`)}>
               + New Demobilization Check-out
             </button>
           )}
@@ -109,7 +137,7 @@ export default function Ics221List() {
               <p>No demobilization check-outs yet.</p>
               <p className="empty-hint">Create one ICS 221 for each resource or team being released from this incident.</p>
               {canEdit && (
-                <button className="action-btn submit" onClick={() => navigate(`/incident/${incidentId}/ics-221/edit?new=1`)}>
+                <button className="action-btn submit" onClick={() => navigate(`${homePath}/ics-221/edit?new=1`)}>
                   + New Demobilization Check-out
                 </button>
               )}
@@ -138,7 +166,7 @@ export default function Ics221List() {
                       <td className="actions-cell">
                         <button
                           className="list-btn view"
-                          onClick={() => navigate(`/incident/${incidentId}/ics-221/edit?form=${item.id}&view=1`)}
+                          onClick={() => navigate(`${homePath}/ics-221/edit?form=${item.id}&view=1`)}
                         >
                           View
                         </button>
@@ -146,7 +174,7 @@ export default function Ics221List() {
                           <>
                             <button
                               className="list-btn edit"
-                              onClick={() => navigate(`/incident/${incidentId}/ics-221/edit?form=${item.id}`)}
+                              onClick={() => navigate(`${homePath}/ics-221/edit?form=${item.id}`)}
                             >
                               Edit
                             </button>

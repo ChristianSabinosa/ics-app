@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
+import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { completeLeave } from '../lib/leaveIncident'
@@ -7,6 +7,16 @@ import { notifyIncident, getIncidentCommanderName } from '../lib/notifications'
 import Ics221Print from './Ics221Print'
 import { useFormAccess } from '../components/FormAccess'
 import { useTrainingSignature } from '../lib/signatureRules'
+import { isOfflinePath, getOperatorName } from '../lib/offline/mode'
+import {
+  getOfflineIncident,
+  offLatest,
+  offGet,
+  offAll,
+  offInsert,
+  offUpdate,
+  touchOfflineIncident,
+} from '../lib/offline/store'
 import './Ics221Form.css'
 
 interface UnitSignoff {
@@ -109,8 +119,13 @@ export default function Ics221Form() {
   const { user } = useAuth()
   const { canEdit } = useFormAccess()
 
-  // Set when the user arrived here from the "Leave Incident" flow (step 2 of 2)
-  const isLeaveMode = searchParams.get('leave') === '1'
+  // Offline Mode (/offline/...): same form, local IndexedDB store, no auth.
+  const offMode = isOfflinePath(useLocation().pathname)
+  const homePath = offMode ? `/offline/${incidentId}` : `/incident/${incidentId}`
+
+  // Set when the user arrived here from the "Leave Incident" flow (step 2 of 2).
+  // Offline incidents have no roster, so there is nothing to leave.
+  const isLeaveMode = !offMode && searchParams.get('leave') === '1'
 
   const [formId, setFormId] = useState<string | null>(null)
   const [incidentName, setIncidentName] = useState('')
@@ -165,6 +180,19 @@ export default function Ics221Form() {
   const loadPositionsFrom203 = useCallback(async () => {
     if (!incidentId) return
 
+    if (offMode) {
+      const form207 = await offLatest('ics_207_forms', incidentId)
+      if (!form207) { setPositions203([]); return }
+      const posData = (await offAll('ics_207_positions', incidentId)).filter(p => p.form_id === form207.id)
+      setPositions203(posData.map(p => ({
+        position_key: p.position_key as string,
+        position_title: p.position_title as string,
+        section: p.section as string,
+        person_name: p.person_name as string,
+      })))
+      return
+    }
+
     const { data: form203 } = await supabase
       .from('ics_203_forms')
       .select('id')
@@ -210,7 +238,7 @@ export default function Ics221Form() {
 
       if (posData) setPositions203(posData)
     }
-  }, [incidentId])
+  }, [incidentId, offMode])
 
   const lookupName = (unitName: string, sectionKey: string): string => {
     const keys = UNIT_TO_POSITION_KEY[unitName] || []
@@ -230,19 +258,25 @@ export default function Ics221Form() {
     if (!incidentId) return
     setLoading(true)
 
-    const { data: incident } = await supabase
-      .from('incidents')
-      .select('name')
-      .eq('incident_id', incidentId)
-      .single()
-    if (incident) setIncidentName(incident.name)
-
     const formParam = searchParams.get('form')
-    let formToLoad = null
+    let formToLoad: any = null
+
+    if (offMode) {
+      const offIncident = await getOfflineIncident(incidentId)
+      if (offIncident) setIncidentName(offIncident.name)
+      if (formParam) formToLoad = (await offGet('ics_221_forms', formParam)) ?? null
+    } else {
+      const { data: incident } = await supabase
+        .from('incidents')
+        .select('name')
+        .eq('incident_id', incidentId)
+        .single()
+      if (incident) setIncidentName(incident.name)
+    }
 
     // Many 221s per incident (same as ICS 204): only ?form=<id> opens a saved
     // instance — every other visit starts a brand-new check-out.
-    if (formParam) {
+    if (!offMode && formParam) {
       const { data: form } = await supabase
         .from('ics_221_forms')
         .select('*')
@@ -282,7 +316,7 @@ export default function Ics221Form() {
     }
 
     setLoading(false)
-  }, [incidentId, searchParams])
+  }, [incidentId, searchParams, offMode])
 
   // Leaving the incident: identify the departing participant and pre-fill the check-out.
   const loadLeaveContext = useCallback(async () => {
@@ -324,17 +358,17 @@ export default function Ics221Form() {
   }, [isLeaveMode, incidentId, user])
 
   useEffect(() => {
-    if (!user) return
+    if (!user && !offMode) return
     const now = new Date()
-    setPreparedByName(user.user_metadata?.first_name
+    setPreparedByName((user?.user_metadata?.first_name
       ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`.trim()
-      : user.email || '')
+      : user?.email || '') || (offMode ? getOperatorName() : ''))
     setPreparedDate(now.toISOString().slice(0, 10))
     setPreparedTime(now.toTimeString().slice(0, 5))
     loadForm()
     loadPositionsFrom203()
     loadLeaveContext()
-  }, [incidentId, user, searchParams, loadForm, loadPositionsFrom203, loadLeaveContext])
+  }, [incidentId, user, searchParams, loadForm, loadPositionsFrom203, loadLeaveContext, offMode])
 
   useEffect(() => {
     if (positions203.length === 0) return
@@ -425,7 +459,7 @@ export default function Ics221Form() {
   }
 
   const saveForm = async (formStatus: 'Draft' | 'Submitted') => {
-    if (!incidentId || !user) return
+    if (!incidentId || (!user && !offMode)) return
 
     setSaving(true)
     setError('')
@@ -464,6 +498,28 @@ export default function Ics221Form() {
     }
 
     let fId = formId
+
+    if (offMode) {
+      try {
+        if (fId) {
+          await offUpdate('ics_221_forms', fId, formData)
+        } else {
+          const inserted = await offInsert('ics_221_forms', formData)
+          fId = inserted.id as string
+          setFormId(fId)
+        }
+        await touchOfflineIncident(incidentId)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Could not save the form.')
+        setSaving(false)
+        return
+      }
+      setSaving(false)
+      setStatus(formStatus)
+      setIsEditing(false)
+      setSuccess(formStatus === 'Draft' ? 'Progress saved as draft.' : 'ICS Form 221 submitted successfully!')
+      return
+    }
 
     if (fId) {
       const { error: updateError } = await supabase.from('ics_221_forms').update(formData).eq('id', fId)
@@ -596,7 +652,7 @@ export default function Ics221Form() {
   return (
     <div className="ics221-page">
       <header className="ics221-header no-print">
-        <div className="header-brand" onClick={() => navigate(`/incident/${incidentId}`)} style={{ cursor: 'pointer' }}>
+        <div className="header-brand" onClick={() => navigate(homePath)} style={{ cursor: 'pointer' }}>
           <img src="/alaminos-logo.png" alt="Logo" className="header-logo" />
           <div>
             <h1>Incident Command System</h1>
@@ -607,7 +663,7 @@ export default function Ics221Form() {
 
       <div className="ics221-topbar no-print">
         <div className="topbar-left">
-          <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}`)}>&larr; Back</button>
+          <button className="topbar-btn back" onClick={() => navigate(homePath)}>&larr; Back</button>
           <span className="form-badge">ICS 221</span>
           <span className={`status-badge ${status.toLowerCase()}`}>{status}</span>
         </div>

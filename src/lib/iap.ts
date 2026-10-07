@@ -1,4 +1,6 @@
 import { supabase } from './supabase'
+import { offLatest, offAll, offChildren, offGetMap } from './offline/store'
+import type { OfflineRow } from './offline/db'
 import { OPS_POSITIONS } from './ics204'
 import type { Ics204RowInput } from './ics204'
 import type { Ics204CommsRow, Ics204OpsPerson, Ics204Row } from './types'
@@ -185,37 +187,73 @@ export async function loadIapData(
   incidentId: string,
   op: IapOpPeriod,
   incidentName: string,
+  offline = false,
 ): Promise<IapData> {
-  const latest = async (table: string): Promise<Record<string, unknown> | null> => {
-    const { data } = await supabase
-      .from(table)
-      .select('*')
-      .eq('incident_id', incidentId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-    return (data as Record<string, unknown>) ?? null
-  }
+  type Rec = Record<string, unknown>
+  type ListRes = { data: unknown[] | null }
 
-  const [r202, r203, r205, r206, r208, r204s, r207s, rMap] = await Promise.all([
-    latest('ics_202_forms'),
-    latest('ics_203_forms'),
-    latest('ics_205_forms'),
-    latest('ics_206_forms'),
-    latest('ics_208_forms'),
-    supabase
-      .from('ics_204_forms')
-      .select('*')
-      .eq('incident_id', incidentId)
-      .order('created_at', { ascending: false }),
-    supabase
-      .from('ics_207_forms')
-      .select('id, form_type')
-      .eq('incident_id', incidentId)
-      .order('created_at', { ascending: false })
-      .limit(50),
-    supabase.from('incident_maps').select('map_image').eq('incident_id', incidentId).maybeSingle(),
-  ])
+  let r202: Rec | null
+  let r203: Rec | null
+  let r205: Rec | null
+  let r206: Rec | null
+  let r208: Rec | null
+  let r204s: ListRes
+  let r207s: ListRes
+  let rMap: { data: { map_image?: string | null } | null }
+
+  if (offline) {
+    const offLatestRow = async (table: string): Promise<Rec | null> =>
+      ((await offLatest(table, incidentId)) as Rec | undefined) ?? null
+    const newestFirst = (rows: OfflineRow[]) =>
+      [...rows].sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
+
+    ;[r202, r203, r205, r206, r208] = await Promise.all([
+      offLatestRow('ics_202_forms'),
+      offLatestRow('ics_203_forms'),
+      offLatestRow('ics_205_forms'),
+      offLatestRow('ics_206_forms'),
+      offLatestRow('ics_208_forms'),
+    ])
+    r204s = { data: newestFirst(await offAll('ics_204_forms', incidentId)) }
+    r207s = {
+      data: newestFirst(await offAll('ics_207_forms', incidentId))
+        .slice(0, 50)
+        .map((f) => ({ id: f.id, form_type: f.form_type })),
+    }
+    const localMap = await offGetMap(incidentId)
+    rMap = { data: localMap ? { map_image: localMap.map_image } : null }
+  } else {
+    const latest = async (table: string): Promise<Record<string, unknown> | null> => {
+      const { data } = await supabase
+        .from(table)
+        .select('*')
+        .eq('incident_id', incidentId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      return (data as Record<string, unknown>) ?? null
+    }
+
+    ;[r202, r203, r205, r206, r208, r204s, r207s, rMap] = await Promise.all([
+      latest('ics_202_forms'),
+      latest('ics_203_forms'),
+      latest('ics_205_forms'),
+      latest('ics_206_forms'),
+      latest('ics_208_forms'),
+      supabase
+        .from('ics_204_forms')
+        .select('*')
+        .eq('incident_id', incidentId)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('ics_207_forms')
+        .select('id, form_type')
+        .eq('incident_id', incidentId)
+        .order('created_at', { ascending: false })
+        .limit(50),
+      supabase.from('incident_maps').select('map_image').eq('incident_id', incidentId).maybeSingle(),
+    ])
+  }
 
   // Same "expanded first, otherwise latest" rule the ICS 203 form uses
   const forms207 = (r207s.data ?? []) as Array<{ id: string; form_type?: string | null }>
@@ -225,30 +263,71 @@ export async function loadIapData(
   const rawForms204 = (r204s.data ?? []) as Array<Record<string, unknown>>
   const form204Ids = rawForms204.map((f) => String(f.id))
 
-  const [posRes, chRes, aidRes, ambRes, hospRes, rowsRes] = await Promise.all([
-    form207Id
-      ? supabase
-          .from('ics_207_positions')
-          .select('position_key, position_title, abbreviation, section, person_name, agency, parent_key')
-          .eq('form_id', form207Id)
-          .order('sort_order')
-      : Promise.resolve({ data: null as unknown[] | null }),
-    r205?.id
-      ? supabase.from('ics_205_channels').select('*').eq('form_id', r205.id).order('sort_order')
-      : Promise.resolve({ data: null as unknown[] | null }),
-    r206?.id
-      ? supabase.from('ics_206_aid_stations').select('*').eq('form_id', r206.id).order('sort_order')
-      : Promise.resolve({ data: null as unknown[] | null }),
-    r206?.id
-      ? supabase.from('ics_206_ambulances').select('*').eq('form_id', r206.id).order('sort_order')
-      : Promise.resolve({ data: null as unknown[] | null }),
-    r206?.id
-      ? supabase.from('ics_206_hospitals').select('*').eq('form_id', r206.id).order('sort_order')
-      : Promise.resolve({ data: null as unknown[] | null }),
-    form204Ids.length > 0
-      ? supabase.from('ics_204_rows').select('*').in('form_id', form204Ids).order('sort_order')
-      : Promise.resolve({ data: null as unknown[] | null }),
-  ])
+  let posRes: ListRes
+  let chRes: ListRes
+  let aidRes: ListRes
+  let ambRes: ListRes
+  let hospRes: ListRes
+  let rowsRes: ListRes
+
+  if (offline) {
+    // Local child rows carry store bookkeeping columns — drop them so the shape matches online.
+    const clean = (rows: OfflineRow[]): Rec[] =>
+      rows.map((r) => {
+        const { _key: _k, table: _t, incident_id: _i, created_at: _c, updated_at: _u, ...rest } = r
+        return rest
+      })
+    const children = async (table: string, formId: unknown): Promise<ListRes> => ({
+      data: formId ? clean(await offChildren(table, String(formId))) : null,
+    })
+
+    posRes = form207Id
+      ? {
+          data: (await offChildren('ics_207_positions', form207Id)).map((p) => ({
+            position_key: p.position_key,
+            position_title: p.position_title,
+            abbreviation: p.abbreviation,
+            section: p.section,
+            person_name: p.person_name,
+            agency: p.agency,
+            parent_key: p.parent_key,
+          })),
+        }
+      : { data: null }
+    chRes = await children('ics_205_channels', r205?.id)
+    aidRes = await children('ics_206_aid_stations', r206?.id)
+    ambRes = await children('ics_206_ambulances', r206?.id)
+    hospRes = await children('ics_206_hospitals', r206?.id)
+
+    const allRows: Rec[] = []
+    for (const id of form204Ids) allRows.push(...clean(await offChildren('ics_204_rows', id)))
+    rowsRes = { data: form204Ids.length > 0 ? allRows : null }
+  } else {
+    ;[posRes, chRes, aidRes, ambRes, hospRes, rowsRes] = await Promise.all([
+      form207Id
+        ? supabase
+            .from('ics_207_positions')
+            .select('position_key, position_title, abbreviation, section, person_name, agency, parent_key')
+            .eq('form_id', form207Id)
+            .order('sort_order')
+        : Promise.resolve({ data: null as unknown[] | null }),
+      r205?.id
+        ? supabase.from('ics_205_channels').select('*').eq('form_id', r205.id).order('sort_order')
+        : Promise.resolve({ data: null as unknown[] | null }),
+      r206?.id
+        ? supabase.from('ics_206_aid_stations').select('*').eq('form_id', r206.id).order('sort_order')
+        : Promise.resolve({ data: null as unknown[] | null }),
+      r206?.id
+        ? supabase.from('ics_206_ambulances').select('*').eq('form_id', r206.id).order('sort_order')
+        : Promise.resolve({ data: null as unknown[] | null }),
+      r206?.id
+        ? supabase.from('ics_206_hospitals').select('*').eq('form_id', r206.id).order('sort_order')
+        : Promise.resolve({ data: null as unknown[] | null }),
+      form204Ids.length > 0
+        ? supabase.from('ics_204_rows').select('*').in('form_id', form204Ids).order('sort_order')
+        : Promise.resolve({ data: null as unknown[] | null }),
+    ])
+  }
 
   const rowsByForm = new Map<string, Ics204RowInput[]>()
   for (const row of (rowsRes.data ?? []) as Ics204Row[]) {

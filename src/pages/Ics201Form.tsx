@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
+import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import Ics201Print from './Ics201Print'
@@ -7,6 +7,17 @@ import OrgChart from '../components/OrgChart'
 import type { OrgChartPosition } from '../components/OrgChart'
 import { useFormAccess } from '../components/FormAccess'
 import { useTrainingSignature } from '../lib/signatureRules'
+import { isOfflinePath, getOperatorName } from '../lib/offline/mode'
+import {
+  getOfflineIncident,
+  offAll,
+  offLatest,
+  offGet,
+  offInsert,
+  offUpdate,
+  offGetMap,
+  touchOfflineIncident,
+} from '../lib/offline/store'
 import './Ics201Form.css'
 
 export interface Ics201ActionRow {
@@ -32,6 +43,10 @@ export default function Ics201Form() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { canEdit } = useFormAccess()
+
+  // Offline Mode (/offline/...): same form, local IndexedDB store, no auth.
+  const offMode = isOfflinePath(useLocation().pathname)
+  const homePath = offMode ? `/offline/${incidentId}` : `/incident/${incidentId}`
 
   const [formId, setFormId] = useState<string | null>(null)
   const [incidentName, setIncidentName] = useState('')
@@ -79,6 +94,21 @@ export default function Ics201Form() {
   // ── ICS 201-3: retrieve organization chart from ICS 207 ──
   const loadOrgChart = useCallback(async () => {
     if (!incidentId) return
+    if (offMode) {
+      const form207 = await offLatest('ics_207_forms', incidentId)
+      if (!form207) { setOrgPositions([]); return }
+      const posData = await offAll('ics_207_positions', incidentId)
+      const positions = posData.filter(p => p.form_id === form207.id)
+      setOrgPositions(positions.map(p => ({
+        position_key: p.position_key as string,
+        position_title: p.position_title as string,
+        abbreviation: p.abbreviation as string,
+        section: p.section as string,
+        person_name: p.person_name as string,
+        agency: p.agency as string,
+      })))
+      return
+    }
     const { data: form207 } = await supabase
       .from('ics_207_forms')
       .select('id')
@@ -101,6 +131,10 @@ export default function Ics201Form() {
   // ── ICS 201-4: retrieve resources from check-in manifests ──
   const pullFromCheckins = useCallback(async (current: Ics201ResourceRow[], manual: boolean) => {
     if (!incidentId) return
+    if (offMode) {
+      if (manual) setError('Check-in import needs an online incident — add rows manually offline.')
+      return
+    }
 
     const { data: manifests } = await supabase
       .from('checkin_manifests')
@@ -146,6 +180,37 @@ export default function Ics201Form() {
   const loadForm = useCallback(async () => {
     if (!incidentId) return
     setLoading(true)
+
+    if (offMode) {
+      const incident = await getOfflineIncident(incidentId)
+      if (incident) setIncidentName(incident.name)
+
+      const formParam = searchParams.get('form')
+      const formToLoad = formParam
+        ? await offGet('ics_201_forms', formParam)
+        : await offLatest('ics_201_forms', incidentId)
+
+      if (formToLoad) {
+        setFormId(formToLoad.id as string)
+        setIncidentName(formToLoad.incident_name as string)
+        setDatePrepared(formToLoad.date_prepared as string)
+        setTimePrepared(formToLoad.time_prepared as string)
+        setSituationSummary(formToLoad.situation_summary as string)
+        setObjectives(Array.isArray(formToLoad.objectives) && (formToLoad.objectives as string[]).length > 0 ? formToLoad.objectives as string[] : [''])
+        setActions(Array.isArray(formToLoad.actions) && (formToLoad.actions as unknown[]).length > 0 ? formToLoad.actions as Ics201ActionRow[] : [emptyAction()])
+        setResources(Array.isArray(formToLoad.resources) ? formToLoad.resources as Ics201ResourceRow[] : [])
+        setPreparedByName(formToLoad.prepared_by_name as string)
+        setPreparedBySig(formToLoad.prepared_by_sig as string)
+        setPreparedDate(formToLoad.prepared_date as string)
+        setPreparedTime(formToLoad.prepared_time as string)
+        setStatus(formToLoad.status as 'Draft' | 'Submitted')
+      }
+
+      const mapData = await offGetMap(incidentId)
+      setMapImage(mapData?.map_image || '')
+      setLoading(false)
+      return
+    }
 
     const { data: incident } = await supabase
       .from('incidents')
@@ -210,21 +275,21 @@ export default function Ics201Form() {
   }, [incidentId, searchParams, pullFromCheckins])
 
   useEffect(() => {
-    if (!user) return
+    if (!user && !offMode) return
     const now = new Date()
-    setPreparedByName(user.user_metadata?.first_name
+    setPreparedByName((user?.user_metadata?.first_name
       ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`.trim()
-      : user.email || '')
+      : user?.email || '') || (offMode ? getOperatorName() : ''))
     setDatePrepared(now.toISOString().slice(0, 10))
     setTimePrepared(now.toTimeString().slice(0, 5))
     setPreparedDate(now.toISOString().slice(0, 10))
     setPreparedTime(now.toTimeString().slice(0, 5))
     loadForm()
     loadOrgChart()
-  }, [incidentId, user, searchParams, loadForm, loadOrgChart])
+  }, [incidentId, user, searchParams, loadForm, loadOrgChart, offMode])
 
   const saveForm = async (formStatus: 'Draft' | 'Submitted') => {
-    if (!incidentId || !user) return
+    if (!incidentId || (!user && !offMode)) return
     setSaving(true)
     setError('')
     setSuccess('')
@@ -248,6 +313,28 @@ export default function Ics201Form() {
     }
 
     let fId = formId
+
+    if (offMode) {
+      try {
+        if (fId) {
+          await offUpdate('ics_201_forms', fId, formData)
+        } else {
+          const inserted = await offInsert('ics_201_forms', formData)
+          fId = inserted.id as string
+          setFormId(fId)
+        }
+        await touchOfflineIncident(incidentId)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Could not save the form.')
+        setSaving(false)
+        return
+      }
+      setSaving(false)
+      setStatus(formStatus)
+      setIsEditing(false)
+      setSuccess(formStatus === 'Draft' ? 'Progress saved as draft.' : 'ICS Form 201 submitted successfully!')
+      return
+    }
 
     if (fId) {
       const { error: updateError } = await supabase.from('ics_201_forms').update(formData).eq('id', fId)
@@ -324,7 +411,7 @@ export default function Ics201Form() {
   return (
     <div className="ics201-page">
       <header className="ics201-header no-print">
-        <div className="header-brand" onClick={() => navigate(`/incident/${incidentId}`)} style={{ cursor: 'pointer' }}>
+        <div className="header-brand" onClick={() => navigate(homePath)} style={{ cursor: 'pointer' }}>
           <img src="/alaminos-logo.png" alt="Logo" className="header-logo" />
           <div>
             <h1>Incident Command System</h1>
@@ -335,7 +422,7 @@ export default function Ics201Form() {
 
       <div className="ics201-topbar no-print">
         <div className="topbar-left">
-          <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}`)}>&larr; Back</button>
+          <button className="topbar-btn back" onClick={() => navigate(homePath)}>&larr; Back</button>
           <span className="form-badge">ICS 201</span>
           <span className={`status-badge ${status.toLowerCase()}`}>{status}</span>
         </div>
@@ -403,7 +490,7 @@ export default function Ics201Form() {
                 <button
                   type="button"
                   className="map-btn upload"
-                  onClick={() => navigate(`/incident/${incidentId}/incident-map`)}
+                  onClick={() => navigate(`${homePath}/incident-map`)}
                   title="Upload and crop the incident map"
                 >
                   Upload Map

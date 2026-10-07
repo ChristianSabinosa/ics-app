@@ -1,11 +1,14 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
+import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { formatMilitaryTime } from '../lib/utils'
 import type { CheckinManifest, CheckinPersonnel, CheckinVehicle, CheckinEquipment } from '../lib/types'
 import CheckInPrint from './CheckInPrint'
 import { useFormAccess } from '../components/FormAccess'
+import { isOfflinePath, getOperatorId } from '../lib/offline/mode'
+import { offGet, offAll, offChildren } from '../lib/offline/store'
+import type { OfflineRow } from '../lib/offline/db'
 import './CheckInView.css'
 
 export default function CheckInView() {
@@ -14,6 +17,10 @@ export default function CheckInView() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { canEdit } = useFormAccess()
+
+  // Offline Mode (/offline/...): same page, local IndexedDB store, no auth.
+  const offMode = isOfflinePath(useLocation().pathname)
+  const homePath = offMode ? `/offline/${incidentId}` : `/incident/${incidentId}`
 
   const [manifest, setManifest] = useState<CheckinManifest | null>(null)
   const [personnel, setPersonnel] = useState<CheckinPersonnel[]>([])
@@ -26,6 +33,37 @@ export default function CheckInView() {
   const fetchManifest = useCallback(async () => {
     setLoading(true)
     const manifestId = searchParams.get('manifest')
+
+    if (offMode) {
+      if (!incidentId) { setLoading(false); return }
+      let m: OfflineRow | undefined
+      if (manifestId) {
+        const found = await offGet('checkin_manifests', manifestId)
+        m = found && found.incident_id === incidentId ? found : undefined
+      } else {
+        const mine = (await offAll('checkin_manifests', incidentId))
+          .filter((r) => r.user_id === getOperatorId())
+          .sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
+        m = mine[0]
+      }
+
+      if (!m) {
+        setError('No check-in manifest found.')
+        setLoading(false)
+        return
+      }
+
+      const mid = m.id as string
+      const withIds = <T,>(rows: OfflineRow[]) =>
+        rows.map((r) => ({ ...r, id: String(r.id ?? r._key) })) as unknown as T[]
+
+      setManifest(m as unknown as CheckinManifest)
+      setPersonnel(withIds<CheckinPersonnel>(await offChildren('checkin_personnel', mid)))
+      setVehicles(withIds<CheckinVehicle>(await offChildren('checkin_vehicles', mid)))
+      setEquipment(withIds<CheckinEquipment>(await offChildren('checkin_equipment', mid)))
+      setLoading(false)
+      return
+    }
 
     let query = supabase
       .from('checkin_manifests')
@@ -61,7 +99,7 @@ export default function CheckInView() {
     if (e) setEquipment(e)
 
     setLoading(false)
-  }, [incidentId, user, searchParams])
+  }, [incidentId, user, searchParams, offMode])
 
   useEffect(() => {
     fetchManifest()
@@ -80,7 +118,7 @@ export default function CheckInView() {
       <div className="checkin-view-page">
         <div className="checkin-error">
           <p>{error || 'Manifest not found.'}</p>
-          <button onClick={() => navigate(`/incident/${incidentId}`)}>Back to Incident</button>
+          <button onClick={() => navigate(homePath)}>Back to Incident</button>
         </div>
       </div>
     )
@@ -95,7 +133,7 @@ export default function CheckInView() {
   return (
     <div className="checkin-view-page">
       <header className="checkin-header no-print">
-        <div className="header-brand" onClick={() => navigate(`/incident/${incidentId}`)} style={{ cursor: 'pointer' }}>
+        <div className="header-brand" onClick={() => navigate(homePath)} style={{ cursor: 'pointer' }}>
           <img src="/alaminos-logo.png" alt="Logo" className="header-logo" />
           <div>
             <h1>Incident Command System</h1>
@@ -106,13 +144,13 @@ export default function CheckInView() {
 
       <div className="checkin-topbar no-print">
         <div className="topbar-left">
-          <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}`)}>&larr; Back</button>
+          <button className="topbar-btn back" onClick={() => navigate(homePath)}>&larr; Back</button>
           <span className="form-badge">Check-In Manifest</span>
           <span className={`status-badge ${manifest.status.toLowerCase()}`}>{manifest.status}</span>
         </div>
         <div className="topbar-actions">
           {canEdit && (
-            <button className="action-btn edit" onClick={() => navigate(`/incident/${incidentId}/checkin?manifest=${manifest.id}`)}>Edit</button>
+            <button className="action-btn edit" onClick={() => navigate(`${homePath}/checkin?manifest=${manifest.id}`)}>Edit</button>
           )}
           <button className="action-btn print" onClick={() => setShowPrint(true)}>Print</button>
         </div>

@@ -1,10 +1,19 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
+import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import Ics202Print from './Ics202Print'
 import { useFormAccess } from '../components/FormAccess'
 import { useTrainingSignature } from '../lib/signatureRules'
+import { isOfflinePath, getOperatorName } from '../lib/offline/mode'
+import {
+  getOfflineIncident,
+  offLatest,
+  offGet,
+  offInsert,
+  offUpdate,
+  touchOfflineIncident,
+} from '../lib/offline/store'
 import './Ics202Form.css'
 
 export default function Ics202Form() {
@@ -13,6 +22,10 @@ export default function Ics202Form() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { canEdit } = useFormAccess()
+
+  // Offline Mode (/offline/...): same form, local IndexedDB store, no auth.
+  const offMode = isOfflinePath(useLocation().pathname)
+  const homePath = offMode ? `/offline/${incidentId}` : `/incident/${incidentId}`
 
   const [formId, setFormId] = useState<string | null>(null)
   const [incidentName, setIncidentName] = useState('')
@@ -80,6 +93,11 @@ export default function Ics202Form() {
       { table: 'ics_209_forms', setter: setAttach209 },
     ]
     for (const check of checks) {
+      if (offMode) {
+        const row = await offLatest(check.table, incId)
+        if (row) check.setter(true)
+        continue
+      }
       const { data } = await supabase
         .from(check.table)
         .select('id')
@@ -87,11 +105,57 @@ export default function Ics202Form() {
         .limit(1)
       if (data && data.length > 0) check.setter(true)
     }
-  }, [])
+  }, [offMode])
 
   const loadForm = useCallback(async () => {
     if (!incidentId) return
     setLoading(true)
+
+    if (offMode) {
+      const incident = await getOfflineIncident(incidentId)
+      if (incident) setIncidentName(incident.name)
+
+      const formParam = searchParams.get('form')
+      const formToLoad = formParam
+        ? await offGet('ics_202_forms', formParam)
+        : await offLatest('ics_202_forms', incidentId)
+
+      if (formToLoad) {
+        setFormId(formToLoad.id as string)
+        setIncidentName(formToLoad.incident_name as string)
+        setOpFromDate(formToLoad.op_period_from_date as string)
+        setOpFromTime(formToLoad.op_period_from_time as string)
+        setOpToDate(formToLoad.op_period_to_date as string)
+        setOpToTime(formToLoad.op_period_to_time as string)
+        setObjectives(formToLoad.objectives as string)
+        setCommandEmphasis(formToLoad.command_emphasis as string)
+        setWeatherForecast(formToLoad.weather_forecast as string)
+        setSafetyMessage(formToLoad.safety_message as string)
+        setSafetyPlanRequired(formToLoad.safety_plan_required as boolean)
+        setSafetyPlanLocation(formToLoad.safety_plan_location as string)
+        setAttach203(formToLoad.attach_203 as boolean)
+        setAttach204(formToLoad.attach_204 as boolean)
+        setAttach205(formToLoad.attach_205 as boolean)
+        setAttach206(formToLoad.attach_206 as boolean)
+        setAttach209(formToLoad.attach_209 as boolean)
+        setAttachMap(formToLoad.attach_map as boolean)
+        setAttachOthers(formToLoad.attach_others as boolean)
+        setAttachOthersText(formToLoad.attach_others_text as string)
+        setPreparedByName(formToLoad.prepared_by_name as string)
+        setPreparedBySig(formToLoad.prepared_by_sig as string)
+        setPreparedDate(formToLoad.prepared_date as string)
+        setPreparedTime(formToLoad.prepared_time as string)
+        setApprovedByName(formToLoad.approved_by_name as string)
+        setApprovedBySig(formToLoad.approved_by_sig as string)
+        setApprovedDate(formToLoad.approved_date as string)
+        setApprovedTime(formToLoad.approved_time as string)
+        setStatus(formToLoad.status as 'Draft' | 'Submitted')
+      }
+
+      await autoCheckAttachments(incidentId)
+      setLoading(false)
+      return
+    }
 
     const { data: incident } = await supabase
       .from('incidents')
@@ -160,18 +224,18 @@ export default function Ics202Form() {
   }, [incidentId, searchParams, autoCheckAttachments])
 
   useEffect(() => {
-    if (!user) return
+    if (!user && !offMode) return
     const now = new Date()
-    setPreparedByName(user.user_metadata?.first_name
+    setPreparedByName((user?.user_metadata?.first_name
       ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`.trim()
-      : user.email || '')
+      : user?.email || '') || (offMode ? getOperatorName() : ''))
     setPreparedDate(now.toISOString().slice(0, 10))
     setPreparedTime(now.toTimeString().slice(0, 5))
     loadForm()
-  }, [incidentId, user, searchParams, loadForm])
+  }, [incidentId, user, searchParams, loadForm, offMode])
 
   const saveForm = async (formStatus: 'Draft' | 'Submitted') => {
-    if (!incidentId || !user) return
+    if (!incidentId || (!user && !offMode)) return
     setSaving(true)
     setError('')
     setSuccess('')
@@ -212,6 +276,28 @@ export default function Ics202Form() {
 
     let fId = formId
 
+    if (offMode) {
+      try {
+        if (fId) {
+          await offUpdate('ics_202_forms', fId, formData)
+        } else {
+          const inserted = await offInsert('ics_202_forms', formData)
+          fId = inserted.id as string
+          setFormId(fId)
+        }
+        await touchOfflineIncident(incidentId)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Could not save the form.')
+        setSaving(false)
+        return
+      }
+      setSaving(false)
+      setStatus(formStatus)
+      setIsEditing(false)
+      setSuccess(formStatus === 'Draft' ? 'Progress saved as draft.' : 'ICS Form 202 submitted successfully!')
+      return
+    }
+
     if (fId) {
       const { error: updateError } = await supabase.from('ics_202_forms').update(formData).eq('id', fId)
       if (updateError) { setError(updateError.message); setSaving(false); return }
@@ -245,7 +331,7 @@ export default function Ics202Form() {
   return (
     <div className="ics202-page">
       <header className="ics202-header no-print">
-        <div className="header-brand" onClick={() => navigate(`/incident/${incidentId}`)} style={{ cursor: 'pointer' }}>
+        <div className="header-brand" onClick={() => navigate(homePath)} style={{ cursor: 'pointer' }}>
           <img src="/alaminos-logo.png" alt="Logo" className="header-logo" />
           <div>
             <h1>Incident Command System</h1>
@@ -256,7 +342,7 @@ export default function Ics202Form() {
 
       <div className="ics202-topbar no-print">
         <div className="topbar-left">
-          <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}`)}>&larr; Back</button>
+          <button className="topbar-btn back" onClick={() => navigate(homePath)}>&larr; Back</button>
           <span className="form-badge">ICS 202</span>
           <span className={`status-badge ${status.toLowerCase()}`}>{status}</span>
         </div>

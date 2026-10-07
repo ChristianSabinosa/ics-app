@@ -1,10 +1,19 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
+import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import Ics214Print from './Ics214Print'
 import { useFormAccess } from '../components/FormAccess'
 import { useTrainingSignature } from '../lib/signatureRules'
+import { isOfflinePath, getOperatorName } from '../lib/offline/mode'
+import {
+  getOfflineIncident,
+  offLatest,
+  offGet,
+  offInsert,
+  offUpdate,
+  touchOfflineIncident,
+} from '../lib/offline/store'
 import './Ics214Form.css'
 
 interface ResourceRow {
@@ -34,6 +43,10 @@ export default function Ics214Form() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { canEdit } = useFormAccess()
+
+  // Offline Mode (/offline/...): same form, local IndexedDB store, no auth.
+  const offMode = isOfflinePath(useLocation().pathname)
+  const homePath = offMode ? `/offline/${incidentId}` : `/incident/${incidentId}`
 
   const [formId, setFormId] = useState<string | null>(null)
   const [incidentName, setIncidentName] = useState('')
@@ -75,6 +88,42 @@ export default function Ics214Form() {
   const loadForm = useCallback(async () => {
     if (!incidentId) return
     setLoading(true)
+
+    if (offMode) {
+      const incident = await getOfflineIncident(incidentId)
+      if (incident) setIncidentName(incident.name)
+
+      const form202 = await offLatest('ics_202_forms', incidentId)
+      if (form202) {
+        setOpFromDate((form202.op_period_from_date as string) || '')
+        setOpFromTime((form202.op_period_from_time as string) || '')
+        setOpToDate((form202.op_period_to_date as string) || '')
+        setOpToTime((form202.op_period_to_time as string) || '')
+      }
+
+      const formParam = searchParams.get('form')
+      const saved = formParam ? await offGet('ics_214_forms', formParam) : undefined
+      if (saved) {
+        setFormId(saved.id as string)
+        setIncidentName(saved.incident_name as string)
+        setOpFromDate(saved.op_period_from_date as string)
+        setOpFromTime(saved.op_period_from_time as string)
+        setOpToDate(saved.op_period_to_date as string)
+        setOpToTime(saved.op_period_to_time as string)
+        setName(saved.name as string)
+        setIcsPosition(saved.ics_position as string)
+        setAgencyOffice(saved.agency_office as string)
+        if (Array.isArray(saved.resources_assigned)) setResources(saved.resources_assigned as ResourceRow[])
+        if (Array.isArray(saved.activity_log)) setActivityLog(saved.activity_log as ActivityRow[])
+        setPreparedByName(saved.prepared_by_name as string)
+        setPreparedBySig(saved.prepared_by_sig as string)
+        setPreparedDate(saved.prepared_date as string)
+        setPreparedTime(saved.prepared_time as string)
+        setStatus(saved.status as 'Draft' | 'Submitted')
+      }
+      setLoading(false)
+      return
+    }
 
     const { data: incident } = await supabase
       .from('incidents')
@@ -135,23 +184,23 @@ export default function Ics214Form() {
     }
 
     setLoading(false)
-  }, [incidentId, searchParams])
+  }, [incidentId, searchParams, offMode])
 
   useEffect(() => {
-    if (!user) return
+    if (!user && !offMode) return
     const now = new Date()
-    const firstName = user.user_metadata?.first_name || ''
-    const lastName = user.user_metadata?.last_name || ''
-    const fullName = `${firstName} ${lastName}`.trim()
-    setName(fullName || user.email || '')
-    setPreparedByName(fullName || user.email || '')
+    const firstName = user?.user_metadata?.first_name || ''
+    const lastName = user?.user_metadata?.last_name || ''
+    const fullName = `${firstName} ${lastName}`.trim() || user?.email || (offMode ? getOperatorName() : '')
+    setName(fullName)
+    setPreparedByName(fullName)
     setPreparedDate(now.toISOString().slice(0, 10))
     setPreparedTime(now.toTimeString().slice(0, 5))
     loadForm()
-  }, [incidentId, user, searchParams, loadForm])
+  }, [incidentId, user, searchParams, loadForm, offMode])
 
   const saveForm = async (formStatus: 'Draft' | 'Submitted') => {
-    if (!incidentId || !user) return
+    if (!incidentId || (!user && !offMode)) return
     setSaving(true)
     setError('')
     setSuccess('')
@@ -178,6 +227,28 @@ export default function Ics214Form() {
     }
 
     let fId = formId
+
+    if (offMode) {
+      try {
+        if (fId) {
+          await offUpdate('ics_214_forms', fId, formData)
+        } else {
+          const inserted = await offInsert('ics_214_forms', formData)
+          fId = inserted.id as string
+          setFormId(fId)
+        }
+        await touchOfflineIncident(incidentId)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Could not save the form.')
+        setSaving(false)
+        return
+      }
+      setSaving(false)
+      setStatus(formStatus)
+      setIsEditing(false)
+      setSuccess(formStatus === 'Draft' ? 'Progress saved as draft.' : 'ICS Form 214 submitted successfully!')
+      return
+    }
 
     if (fId) {
       const { error: updateError } = await supabase.from('ics_214_forms').update(formData).eq('id', fId)
@@ -225,7 +296,7 @@ export default function Ics214Form() {
   return (
     <div className="ics214-page">
       <header className="ics214-header no-print">
-        <div className="header-brand" onClick={() => navigate(`/incident/${incidentId}`)} style={{ cursor: 'pointer' }}>
+        <div className="header-brand" onClick={() => navigate(homePath)} style={{ cursor: 'pointer' }}>
           <img src="/alaminos-logo.png" alt="Logo" className="header-logo" />
           <div>
             <h1>Incident Command System</h1>
@@ -236,7 +307,7 @@ export default function Ics214Form() {
 
       <div className="ics214-topbar no-print">
         <div className="topbar-left">
-          <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}/ics-214`)}>&larr; Back</button>
+          <button className="topbar-btn back" onClick={() => navigate(`${homePath}/ics-214`)}>&larr; Back</button>
           <span className="form-badge">ICS 214</span>
           <span className={`status-badge ${status.toLowerCase()}`}>{status}</span>
         </div>

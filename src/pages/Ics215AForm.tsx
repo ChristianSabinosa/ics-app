@@ -1,10 +1,19 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
+import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import Ics215APrint from './Ics215APrint'
 import { useFormAccess } from '../components/FormAccess'
 import { useTrainingSignature } from '../lib/signatureRules'
+import { isOfflinePath, getOperatorName } from '../lib/offline/mode'
+import {
+  getOfflineIncident,
+  offLatest,
+  offGet,
+  offInsert,
+  offUpdate,
+  touchOfflineIncident,
+} from '../lib/offline/store'
 import './Ics215AForm.css'
 
 let _nextId = 0
@@ -52,6 +61,10 @@ export default function Ics215AForm() {
   const { user } = useAuth()
   const { canEdit } = useFormAccess()
 
+  // Offline Mode (/offline/...): same form, local IndexedDB store, no auth.
+  const offMode = isOfflinePath(useLocation().pathname)
+  const homePath = offMode ? `/offline/${incidentId}` : `/incident/${incidentId}`
+
   const [formId, setFormId] = useState<string | null>(null)
   const [incidentName, setIncidentName] = useState('')
   const [opFromDate, setOpFromDate] = useState('')
@@ -91,14 +104,33 @@ export default function Ics215AForm() {
     if (!incidentId) return
     setLoading(true)
 
-    const { data: incident } = await supabase
+    let offFormToLoad: any = null
+    if (offMode) {
+      const incident = await getOfflineIncident(incidentId)
+      if (incident) setIncidentName(incident.name)
+
+      const form202 = await offLatest('ics_202_forms', incidentId)
+      if (form202) {
+        setOpFromDate(form202.op_period_from_date as string)
+        setOpFromTime(form202.op_period_from_time as string)
+        setOpToDate(form202.op_period_to_date as string)
+        setOpToTime(form202.op_period_to_time as string)
+      }
+
+      const formParamOff = searchParams.get('form')
+      offFormToLoad = formParamOff
+        ? await offGet('ics_215a_forms', formParamOff)
+        : await offLatest('ics_215a_forms', incidentId)
+    }
+
+    const { data: incident } = offMode ? { data: null } : await supabase
       .from('incidents')
       .select('name')
       .eq('incident_id', incidentId)
       .single()
     if (incident) setIncidentName(incident.name)
 
-    const { data: form202 } = await supabase
+    const { data: form202 } = offMode ? { data: null } : await supabase
       .from('ics_202_forms')
       .select('op_period_from_date, op_period_from_time, op_period_to_date, op_period_to_time')
       .eq('incident_id', incidentId)
@@ -114,7 +146,9 @@ export default function Ics215AForm() {
 
     const formParam = searchParams.get('form')
     let formToLoad: any = null
-    if (formParam) {
+    if (offMode) {
+      formToLoad = offFormToLoad
+    } else if (formParam) {
       const { data } = await supabase.from('ics_215a_forms').select('*').eq('id', formParam).single()
       formToLoad = data
     } else {
@@ -167,10 +201,19 @@ export default function Ics215AForm() {
     }
 
     setLoading(false)
-  }, [incidentId, searchParams])
+  }, [incidentId, searchParams, offMode])
 
   const prefillDivisionsFrom215 = async () => {
     if (!incidentId) return
+    if (offMode) {
+      const row = await offLatest('ics_215_forms', incidentId)
+      const was = (row?.work_assignments as any[] | undefined) ?? []
+      if (was.length > 0) {
+        const divNames: string[] = [...new Set(was.map((wa: any) => wa.division_group as string).filter(Boolean))]
+        setDivisions(divNames.map(name => makeDivision(name)))
+      }
+      return
+    }
     const { data: latest215 } = await supabase
       .from('ics_215_forms')
       .select('work_assignments')
@@ -193,11 +236,11 @@ export default function Ics215AForm() {
   }
 
   useEffect(() => {
-    if (!user) return
+    if (!user && !offMode) return
     const now = new Date()
-    const firstName = user.user_metadata?.first_name || ''
-    const lastName = user.user_metadata?.last_name || ''
-    const fullName = `${firstName} ${lastName}`.trim() || user.email || ''
+    const firstName = user?.user_metadata?.first_name || ''
+    const lastName = user?.user_metadata?.last_name || ''
+    const fullName = `${firstName} ${lastName}`.trim() || user?.email || (offMode ? getOperatorName() : '')
     setPreparedBySofr(fullName)
     setPreparedByOsc(fullName)
     setDatePreparedSofr(now.toISOString().slice(0, 10))
@@ -205,10 +248,10 @@ export default function Ics215AForm() {
     setDatePreparedOsc(now.toISOString().slice(0, 10))
     setTimePreparedOsc(now.toTimeString().slice(0, 5))
     loadForm()
-  }, [incidentId, user, searchParams, loadForm])
+  }, [incidentId, user, searchParams, loadForm, offMode])
 
   const saveForm = async (formStatus: 'Draft' | 'Submitted') => {
-    if (!incidentId || !user) return
+    if (!incidentId || (!user && !offMode)) return
     setSaving(true)
     setError('')
     setSuccess('')
@@ -237,6 +280,27 @@ export default function Ics215AForm() {
     }
 
     let fId = formId
+    if (offMode) {
+      try {
+        if (fId) {
+          await offUpdate('ics_215a_forms', fId, formData)
+        } else {
+          const inserted = await offInsert('ics_215a_forms', formData)
+          fId = inserted.id as string
+          setFormId(fId)
+        }
+        await touchOfflineIncident(incidentId)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Could not save the form.')
+        setSaving(false)
+        return
+      }
+      setStatus(formStatus)
+      setIsEditing(false)
+      setSaving(false)
+      setSuccess(formStatus === 'Draft' ? 'Progress saved as draft.' : 'ICS 215-A submitted successfully!')
+      return
+    }
     if (fId) {
       const { error: e } = await supabase.from('ics_215a_forms').update(formData).eq('id', fId)
       if (e) {
@@ -339,7 +403,7 @@ export default function Ics215AForm() {
       <header className="ics215a-header no-print">
         <div
           className="header-brand"
-          onClick={() => navigate(`/incident/${incidentId}`)}
+          onClick={() => navigate(homePath)}
           style={{ cursor: 'pointer' }}
         >
           <img src="/alaminos-logo.png" alt="Logo" className="header-logo" />
@@ -354,7 +418,7 @@ export default function Ics215AForm() {
         <div className="topbar-left">
           <button
             className="topbar-btn back"
-            onClick={() => navigate(`/incident/${incidentId}`)}
+            onClick={() => navigate(homePath)}
           >
             &larr; Back
           </button>

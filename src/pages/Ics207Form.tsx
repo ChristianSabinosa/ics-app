@@ -1,8 +1,19 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
+import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { notifyIncident } from '../lib/notifications'
+import { isOfflinePath, getOperatorName } from '../lib/offline/mode'
+import {
+  getOfflineIncident,
+  offAll,
+  offGet,
+  offChildren,
+  offInsert,
+  offUpdate,
+  offDeleteChildren,
+  touchOfflineIncident,
+} from '../lib/offline/store'
 import Ics207Print from './Ics207Print'
 import Ics207ExpandedExport from './Ics207ExpandedExport'
 import { useFormAccess } from '../components/FormAccess'
@@ -154,6 +165,10 @@ export default function Ics207Form() {
   const navigate = useNavigate()
   const { user } = useAuth()
 
+  // Offline Mode (/offline/...): same form, local IndexedDB store, no auth.
+  const offMode = isOfflinePath(useLocation().pathname)
+  const homePath = offMode ? `/offline/${incidentId}` : `/incident/${incidentId}`
+
   const [formId, setFormId] = useState<string | null>(null)
   const [formType, setFormType] = useState<'standard' | 'expanded'>('standard')
   const [incidentName, setIncidentName] = useState('')
@@ -269,6 +284,56 @@ export default function Ics207Form() {
     if (!incidentId) return
     setLoading(true)
 
+    if (offMode) {
+      const offIncident = await getOfflineIncident(incidentId)
+      if (offIncident) setIncidentName(offIncident.name)
+
+      const offFormParam = searchParams.get('form')
+      let offForm
+      if (offFormParam) {
+        offForm = await offGet('ics_207_forms', offFormParam)
+      } else {
+        const all = await offAll('ics_207_forms', incidentId)
+        all.sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
+        offForm = all.find((f) => ((f.form_type as string) || 'standard') === formType)
+      }
+
+      if (offForm) {
+        setFormId(offForm.id as string)
+        setFormType(((offForm.form_type as string) || 'standard') as 'standard' | 'expanded')
+        setIncidentName(offForm.incident_name as string)
+        setPreparedBy(offForm.prepared_by as string)
+        setDatePrepared(offForm.date_prepared as string)
+        setTimePrepared(offForm.time_prepared as string)
+        setStatus(offForm.status as 'Draft' | 'Submitted')
+
+        const posData = await offChildren('ics_207_positions', offForm.id as string)
+        if (posData.length > 0) {
+          const loadedPositions: Position[] = posData.map((r) => ({
+            position_key: r.position_key as string,
+            position_title: r.position_title as string,
+            abbreviation: r.abbreviation as string,
+            section: r.section as string,
+            person_name: (r.person_name as string) ?? '',
+            agency: (r.agency as string) ?? '',
+            parent_key: (r.parent_key as string) || '',
+            user_id: null,
+          }))
+          setPositions(loadedPositions)
+          restoreCounters(loadedPositions)
+          baselineAssignments.current = new Map(loadedPositions.map((p) => [p.position_key, p.person_name || '']))
+        } else {
+          baselineAssignments.current = new Map()
+        }
+      } else {
+        setPositions(DEFAULT_POSITIONS)
+        baselineAssignments.current = new Map()
+      }
+
+      setLoading(false)
+      return
+    }
+
     const { data: incident } = await supabase
       .from('incidents')
       .select('name')
@@ -330,10 +395,11 @@ export default function Ics207Form() {
     }
 
     setLoading(false)
-  }, [incidentId, searchParams, formType])
+  }, [incidentId, searchParams, formType, offMode])
 
   const loadPersonnel = useCallback(async () => {
-    if (!incidentId) return
+    // Offline: no accounts, check-ins or training roster — free-text names only.
+    if (!incidentId || offMode) return
 
     // Training Mode: the pool is the group's own accounts — positions must
     // link to real users so the signature rules can resolve them later.
@@ -404,19 +470,19 @@ export default function Ics207Form() {
         }
       }))
     }
-  }, [incidentId])
+  }, [incidentId, offMode])
 
   useEffect(() => {
-    if (!user) return
+    if (!user && !offMode) return
     const now = new Date()
-    setPreparedBy(user.user_metadata?.first_name
+    setPreparedBy((user?.user_metadata?.first_name
       ? `${user.user_metadata.first_name} ${user.user_metadata.last_name|| ''}`.trim()
-      : user.email || '')
+      : user?.email || '') || (offMode ? getOperatorName() : ''))
     setDatePrepared(now.toISOString().slice(0, 10))
     setTimePrepared(now.toTimeString().slice(0, 5))
     loadForm()
     loadPersonnel()
-  }, [incidentId, user, searchParams, formType, loadForm, loadPersonnel])
+  }, [incidentId, user, searchParams, formType, loadForm, loadPersonnel, offMode])
 
   const assignPersonToPosition = (positionKey: string, personName: string, agency: string, userId?: string) => {
     setPositions((prev) =>
@@ -741,7 +807,7 @@ export default function Ics207Form() {
   }
 
   const saveForm = async (formStatus: 'Draft' | 'Submitted') => {
-    if (!incidentId || !user || isReadonly) return
+    if (!incidentId || (!user && !offMode) || isReadonly) return
     setSaving(true)
     setError('')
     setSuccess('')
@@ -759,6 +825,53 @@ export default function Ics207Form() {
     }
 
     let fId = formId
+
+    if (offMode) {
+      try {
+        if (fId) {
+          await offUpdate('ics_207_forms', fId, formData)
+        } else {
+          const inserted = await offInsert('ics_207_forms', formData)
+          fId = inserted.id as string
+          setFormId(fId)
+        }
+
+        await offDeleteChildren('ics_207_positions', fId)
+        for (let i = 0; i < positions.length; i++) {
+          const p = positions[i]
+          await offInsert(
+            'ics_207_positions',
+            {
+              incident_id: incidentId,
+              form_id: fId,
+              position_key: p.position_key,
+              position_title: p.position_title,
+              abbreviation: p.abbreviation,
+              section: p.section,
+              person_name: p.person_name,
+              agency: p.agency,
+              parent_key: p.parent_key || '',
+              user_id: null,
+              sort_order: i,
+            },
+            false,
+          )
+        }
+        await touchOfflineIncident(incidentId)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Could not save the form.')
+        setSaving(false)
+        return
+      }
+
+      baselineAssignments.current = new Map(
+        positions.map((p) => [p.position_key, p.person_name || '']),
+      )
+      setSaving(false)
+      setStatus(formStatus)
+      setSuccess(formStatus === 'Draft' ? 'Progress saved as draft.' : 'ICS Form 207 submitted successfully!')
+      return
+    }
 
     if (fId) {
       const { error: updateError } = await supabase.from('ics_207_forms').update(formData).eq('id', fId)
@@ -1107,7 +1220,7 @@ export default function Ics207Form() {
   return (
     <div className="ics207-page">
       <header className="ics207-header no-print">
-        <div className="header-brand" onClick={() => navigate(`/incident/${incidentId}`)} style={{ cursor: 'pointer' }}>
+        <div className="header-brand" onClick={() => navigate(homePath)} style={{ cursor: 'pointer' }}>
           <img src="/alaminos-logo.png" alt="Logo" className="header-logo" />
           <div>
             <h1>Incident Command System</h1>
@@ -1118,7 +1231,7 @@ export default function Ics207Form() {
 
       <div className="ics207-topbar no-print">
         <div className="topbar-left">
-          <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}`)}>&larr; Back</button>
+          <button className="topbar-btn back" onClick={() => navigate(homePath)}>&larr; Back</button>
           <span className="form-badge">ICS 207</span>
           <div className="form-type-tabs">
             <button className={`form-type-tab ${formType === 'standard' ? 'active' : ''}`} onClick={() => switchToTab('standard')}>Standard</button>

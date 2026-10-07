@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
+import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import {
@@ -10,7 +10,21 @@ import {
   load205Comms,
   load215AMitigating,
   loadOscName,
+  load205CommsOffline,
+  load215AMitigatingOffline,
+  loadOscNameOffline,
 } from '../lib/ics204'
+import { isOfflinePath, getOperatorName } from '../lib/offline/mode'
+import {
+  getOfflineIncident,
+  offLatest,
+  offGet,
+  offChildren,
+  offInsert,
+  offUpdate,
+  offDeleteChildren,
+  touchOfflineIncident,
+} from '../lib/offline/store'
 import type { Ics204RowInput } from '../lib/ics204'
 import type { Ics204CommsRow, Ics204OpsPerson } from '../lib/types'
 import Ics204Print from './Ics204Print'
@@ -24,6 +38,10 @@ export default function Ics204Form() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { canEdit } = useFormAccess()
+
+  // Offline Mode (/offline/...): same form, local IndexedDB store, no auth.
+  const offMode = isOfflinePath(useLocation().pathname)
+  const homePath = offMode ? `/offline/${incidentId}` : `/incident/${incidentId}`
 
   const [formId, setFormId] = useState<string | null>(null)
   const [incidentName, setIncidentName] = useState('')
@@ -77,6 +95,84 @@ export default function Ics204Form() {
     setError('')
 
     const formParam = searchParams.get('form')
+
+    if (offMode) {
+      const offIncident = await getOfflineIncident(incidentId)
+      if (offIncident) setIncidentName(offIncident.name)
+
+      const off202 = await offLatest('ics_202_forms', incidentId)
+      setHas202(!!off202)
+      const s = (v: unknown) => (v as string) || ''
+
+      if (formParam) {
+        const form = await offGet('ics_204_forms', formParam)
+        if (!form) {
+          setError('Assignment list not found.')
+          setLoading(false)
+          return
+        }
+
+        setFormId(form.id as string)
+        setIncidentName(s(form.incident_name) || offIncident?.name || '')
+        setOpFromDate(s(form.op_period_from_date) || s(off202?.op_period_from_date))
+        setOpFromTime(s(form.op_period_from_time) || s(off202?.op_period_from_time))
+        setOpToDate(s(form.op_period_to_date) || s(off202?.op_period_to_date))
+        setOpToTime(s(form.op_period_to_time) || s(off202?.op_period_to_time))
+        setBranch(s(form.branch))
+        setGroupName(s(form.group_name))
+        setDivision(s(form.division))
+        setStagingArea(s(form.staging_area))
+
+        const stored: Ics204OpsPerson[] = Array.isArray(form.ops_personnel) ? (form.ops_personnel as Ics204OpsPerson[]) : []
+        const byPos = new Map(stored.map((p) => [p.position, p]))
+        setOpsPersonnel(
+          OPS_POSITIONS.map((pos, i) => {
+            const sp = byPos.get(pos) || stored[i]
+            return { position: pos, name: sp?.name || '', contact: sp?.contact || '' }
+          }),
+        )
+
+        setSpecificWorkAssignment(s(form.specific_work_assignment))
+        setSpecialInstructions(s(form.special_instructions))
+        const offComms = form.comms as Ics204CommsRow[] | undefined
+        setComms(Array.isArray(offComms) && offComms.length > 0 ? offComms : [emptyCommsRow()])
+
+        setPreparedByName(s(form.prepared_by_name))
+        setPreparedBySig(s(form.prepared_by_sig))
+        setPreparedDate(s(form.prepared_date))
+        setPreparedTime(s(form.prepared_time))
+        setStatus((form.status as 'Draft' | 'Submitted') || 'Draft')
+
+        const rows = await offChildren('ics_204_rows', form.id as string)
+        setResourceRows(
+          rows.length > 0
+            ? rows.map(({ _key: _k, id: _id, form_id: _fid, table: _t, created_at: _c, updated_at: _u, incident_id: _i, ...rest }) =>
+                rest as unknown as Ics204RowInput,
+              )
+            : [emptyResourceRow()],
+        )
+      } else {
+        if (off202) {
+          setOpFromDate(s(off202.op_period_from_date))
+          setOpFromTime(s(off202.op_period_from_time))
+          setOpToDate(s(off202.op_period_to_date))
+          setOpToTime(s(off202.op_period_to_time))
+        }
+        const [oscName, commsRows] = await Promise.all([
+          loadOscNameOffline(incidentId),
+          load205CommsOffline(incidentId),
+        ])
+        if (oscName) {
+          setOpsPersonnel((prev) =>
+            prev.map((p) => (p.position === 'Operations Section Chief' ? { ...p, name: oscName } : p)),
+          )
+        }
+        if (commsRows.length > 0) setComms(commsRows)
+      }
+
+      setLoading(false)
+      return
+    }
 
     // Wave 1: incident name + operational period (parallel)
     const [incidentRes, form202] = await Promise.all([
@@ -165,18 +261,18 @@ export default function Ics204Form() {
     }
 
     setLoading(false)
-  }, [incidentId, searchParams])
+  }, [incidentId, searchParams, offMode])
 
   useEffect(() => {
-    if (!user) return
+    if (!user && !offMode) return
     const now = new Date()
-    setPreparedByName(user.user_metadata?.first_name
+    setPreparedByName((user?.user_metadata?.first_name
       ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`.trim()
-      : user.email || '')
+      : user?.email || '') || (offMode ? getOperatorName() : ''))
     setPreparedDate(now.toISOString().slice(0, 10))
     setPreparedTime(now.toTimeString().slice(0, 5))
     loadForm()
-  }, [incidentId, user, searchParams, loadForm])
+  }, [incidentId, user, searchParams, loadForm, offMode])
 
   const updateResourceRow = (index: number, field: keyof Ics204RowInput, value: string | boolean) => {
     setResourceRows((prev) => prev.map((r, i) => (i === index ? { ...r, [field]: value } : r)))
@@ -202,7 +298,9 @@ export default function Ics204Form() {
     setError('')
     setSuccess('')
     const label = division || groupName || branch
-    const text = await load215AMitigating(incidentId, label)
+    const text = offMode
+      ? await load215AMitigatingOffline(incidentId, label)
+      : await load215AMitigating(incidentId, label)
     setFetchingSafety(false)
 
     if (!text) {
@@ -217,7 +315,7 @@ export default function Ics204Form() {
   }
 
   const saveForm = async (formStatus: 'Draft' | 'Submitted') => {
-    if (!incidentId || !user) return
+    if (!incidentId || (!user && !offMode)) return
 
     if (!branch.trim() && !groupName.trim() && !division.trim()) {
       setError('Enter a Branch, Group, or Division to identify this assignment list.')
@@ -257,6 +355,45 @@ export default function Ics204Form() {
     }
 
     let fId = formId
+
+    if (offMode) {
+      const rowsToSaveOff = resourceRows.filter(
+        (r) =>
+          r.trans_needed ||
+          r.resource_identifier || r.leader_name || r.contact_numbers ||
+          r.personnel || r.drop_off || r.pick_up_time || r.remarks,
+      )
+      try {
+        if (fId) {
+          await offUpdate('ics_204_forms', fId, formData)
+        } else {
+          const inserted = await offInsert('ics_204_forms', formData)
+          fId = inserted.id as string
+          setFormId(fId)
+        }
+
+        await offDeleteChildren('ics_204_rows', fId)
+        for (let i = 0; i < rowsToSaveOff.length; i++) {
+          await offInsert(
+            'ics_204_rows',
+            { ...rowsToSaveOff[i], incident_id: incidentId, form_id: fId, sort_order: i },
+            false,
+          )
+        }
+        await touchOfflineIncident(incidentId)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Could not save the form.')
+        setSaving(false)
+        return
+      }
+
+      setSaving(false)
+      setStatus(formStatus)
+      setIsEditing(false)
+      setSuccess(formStatus === 'Draft' ? 'Progress saved as draft.' : 'ICS Form 204 submitted successfully!')
+      return
+    }
+
     if (fId) {
       const { error: updateError } = await supabase.from('ics_204_forms').update(formData).eq('id', fId)
       if (updateError) { setError(updateError.message); setSaving(false); return }
@@ -307,7 +444,7 @@ export default function Ics204Form() {
   return (
     <div className="ics204-page">
       <header className="ics204-header no-print">
-        <div className="header-brand" onClick={() => navigate(`/incident/${incidentId}`)} style={{ cursor: 'pointer' }}>
+        <div className="header-brand" onClick={() => navigate(homePath)} style={{ cursor: 'pointer' }}>
           <img src="/alaminos-logo.png" alt="Logo" className="header-logo" />
           <div>
             <h1>Incident Command System</h1>
@@ -318,7 +455,7 @@ export default function Ics204Form() {
 
       <div className="ics204-topbar no-print">
         <div className="topbar-left">
-          <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}/ics-204`)}>&larr; Back</button>
+          <button className="topbar-btn back" onClick={() => navigate(`${homePath}/ics-204`)}>&larr; Back</button>
           <span className="form-badge">ICS 204</span>
           {instanceLabel && <span className="instance-badge">{instanceLabel}</span>}
           <span className={`status-badge ${status.toLowerCase()}`}>{status}</span>

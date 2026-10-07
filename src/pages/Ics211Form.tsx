@@ -1,11 +1,22 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
+import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import type { Ics211Resource } from '../lib/types'
 import Ics211Print from './Ics211Print'
 import { useFormAccess } from '../components/FormAccess'
 import { useTrainingSignature } from '../lib/signatureRules'
+import { isOfflinePath, getOperatorName } from '../lib/offline/mode'
+import {
+  getOfflineIncident,
+  offLatest,
+  offGet,
+  offChildren,
+  offInsert,
+  offUpdate,
+  offDeleteChildren,
+  touchOfflineIncident,
+} from '../lib/offline/store'
 import './Ics211Form.css'
 
 const emptyResource: Omit<Ics211Resource, 'id' | 'form_id'> = {
@@ -23,6 +34,11 @@ export default function Ics211Form() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { canEdit } = useFormAccess()
+
+  // Offline Mode (/offline/...): same form, local IndexedDB store, no auth.
+  // <FormAccess> is omitted on offline routes so canEdit falls back to true.
+  const offMode = isOfflinePath(useLocation().pathname)
+  const homePath = offMode ? `/offline/${incidentId}` : `/incident/${incidentId}`
 
   // Set when the user arrived here from the "Leave Incident" flow (step 1 of 2)
   const isLeaveMode = searchParams.get('leave') === '1'
@@ -54,7 +70,7 @@ export default function Ics211Form() {
   const isReadonly = (status === 'Submitted' && !isEditing) || !canEdit
 
   const loadFromManifests = useCallback(async () => {
-    if (!incidentId) return
+    if (!incidentId || offMode) return
 
     const { data: manifests } = await supabase
       .from('checkin_manifests')
@@ -111,6 +127,39 @@ export default function Ics211Form() {
   const loadForm = useCallback(async () => {
     if (!incidentId) return
     setLoading(true)
+
+    if (offMode) {
+      const incident = await getOfflineIncident(incidentId)
+      if (incident) setIncidentName(incident.name)
+
+      const formParam = searchParams.get('form')
+      const formToLoad = formParam
+        ? await offGet('ics_211_forms', formParam)
+        : await offLatest('ics_211_forms', incidentId)
+
+      if (formToLoad) {
+        setFormId(formToLoad.id as string)
+        setIncidentName(formToLoad.incident_name as string)
+        setStartDate(formToLoad.start_date as string)
+        setStartTime(formToLoad.start_time as string)
+        const loc = formToLoad.checkin_location as string
+        setCheckinLocation(loc ? loc.split(',').filter(Boolean) : [])
+        setPreparedBy(formToLoad.prepared_by as string)
+        setDatePrepared(formToLoad.date_prepared as string)
+        setTimePrepared(formToLoad.time_prepared as string)
+        setStatus(formToLoad.status as 'Draft' | 'Submitted')
+
+        const resData = await offChildren('ics_211_resources', formToLoad.id as string)
+        setResources(
+          resData.map(({ _key: _k, id: _id, form_id: _fid, table: _t, created_at: _c, updated_at: _u, ...rest }) =>
+            rest as unknown as Omit<Ics211Resource, 'id' | 'form_id'>,
+          ),
+        )
+      }
+
+      setLoading(false)
+      return
+    }
 
     const { data: incident } = await supabase
       .from('incidents')
@@ -178,18 +227,22 @@ export default function Ics211Form() {
   }, [incidentId, searchParams, loadFromManifests, navigate])
 
   useEffect(() => {
-    if (!user) return
+    if (!user && !offMode) return
     const now = new Date()
-    setPreparedBy(user.user_metadata?.first_name
+    setPreparedBy((user?.user_metadata?.first_name
       ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`.trim()
-      : user.email || '')
+      : user?.email || '') || (offMode ? getOperatorName() : ''))
     setDatePrepared(now.toISOString().slice(0, 10))
     setTimePrepared(now.toTimeString().slice(0, 5))
     loadForm()
-  }, [incidentId, user, searchParams, loadForm])
+  }, [incidentId, user, searchParams, loadForm, offMode])
 
   const fetchFromCheckins = async () => {
     if (!incidentId) return
+    if (offMode) {
+      setError('Check-in import needs an online incident — add rows manually offline.')
+      return
+    }
 
     const { data: manifests } = await supabase
       .from('checkin_manifests')
@@ -287,7 +340,7 @@ export default function Ics211Form() {
   }
 
   const saveForm = async (formStatus: 'Draft' | 'Submitted') => {
-    if (!incidentId || !user) return
+    if (!incidentId || (!user && !offMode)) return
     setSaving(true)
     setError('')
     setSuccess('')
@@ -307,6 +360,49 @@ export default function Ics211Form() {
     }
 
     let fId = formId
+
+    if (offMode) {
+      try {
+        if (fId) {
+          await offUpdate('ics_211_forms', fId, formData)
+        } else {
+          const inserted = await offInsert('ics_211_forms', formData)
+          fId = inserted.id as string
+          setFormId(fId)
+        }
+
+        const now211 = formStatus === 'Submitted' ? (() => {
+          const d = new Date()
+          const pad = (n: number) => String(n).padStart(2, '0')
+          return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+        })() : ''
+        await offDeleteChildren('ics_211_resources', fId)
+        for (let i = 0; i < resources.length; i++) {
+          const r = resources[i]
+          await offInsert(
+            'ics_211_resources',
+            {
+              ...r,
+              incident_id: incidentId,
+              form_id: fId,
+              data_sent_to_resl: formStatus === 'Submitted' ? now211 : r.data_sent_to_resl,
+              sort_order: i,
+            },
+            false,
+          )
+        }
+        await touchOfflineIncident(incidentId)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Could not save the form.')
+        setSaving(false)
+        return
+      }
+
+      setSaving(false)
+      setStatus(formStatus)
+      setSuccess(formStatus === 'Draft' ? 'Progress saved as draft.' : 'ICS Form 211 submitted successfully!')
+      return
+    }
 
     if (fId) {
       const { error: updateError } = await supabase.from('ics_211_forms').update(formData).eq('id', fId)
@@ -361,7 +457,7 @@ export default function Ics211Form() {
   return (
     <div className="ics211-page">
       <header className="ics211-header no-print">
-        <div className="header-brand" onClick={() => navigate(`/incident/${incidentId}`)} style={{ cursor: 'pointer' }}>
+        <div className="header-brand" onClick={() => navigate(homePath)} style={{ cursor: 'pointer' }}>
           <img src="/alaminos-logo.png" alt="Logo" className="header-logo" />
           <div>
             <h1>Incident Command System</h1>
@@ -372,7 +468,7 @@ export default function Ics211Form() {
 
       <div className="ics211-topbar no-print">
         <div className="topbar-left">
-          <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}`)}>&larr; Back</button>
+          <button className="topbar-btn back" onClick={() => navigate(homePath)}>&larr; Back</button>
           <span className="form-badge">ICS 211</span>
           <span className={`status-badge ${status.toLowerCase()}`}>{status}</span>
         </div>
@@ -399,7 +495,7 @@ export default function Ics211Form() {
                 <strong>Leaving {incidentName || 'this incident'} — step 1 of 2.</strong>{' '}
                 Submit the Incident Check-In List to continue to your Demobilization Check-out (ICS 221). You remain a member of the incident until that is submitted.
               </div>
-              <button className="leave-step-cancel" onClick={() => navigate(`/incident/${incidentId}`)}>
+              <button className="leave-step-cancel" onClick={() => navigate(homePath)}>
                 Cancel and stay
               </button>
             </div>

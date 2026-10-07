@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { isOfflinePath } from '../lib/offline/mode'
+import { offListIaps, offUpsertIap, offLatest, touchOfflineIncident } from '../lib/offline/store'
 import { formatOpPeriod } from '../lib/iap'
 import { notifyIncident } from '../lib/notifications'
 import { useAuth } from '../context/AuthContext'
@@ -92,6 +95,8 @@ interface IapCoverModalProps {
 
 export default function IapCoverModal({ incidentId, incidentName, onClose, onStatusChange, onProceed }: IapCoverModalProps) {
   const { user } = useAuth()
+  // Offline Mode (/offline/...): IAP rows live in the local IndexedDB store.
+  const offMode = isOfflinePath(useLocation().pathname)
   const [imgSrc, setImgSrc] = useState('')
   const [crop, setCrop] = useState<CropRect>(blankCrop())
   const [drag, setDrag] = useState<DragState | null>(null)
@@ -118,6 +123,28 @@ export default function IapCoverModal({ incidentId, incidentName, onClose, onSta
   const loadCover = useCallback(async () => {
     if (!incidentId) return
     setLoading(true)
+
+    if (offMode) {
+      const iaps = await offListIaps(incidentId) // newest first
+      setCanReuse(iaps.some((r) => r.status === 'Approved' && !!r.cover_image))
+      const working = iaps.find((r) => r.status !== 'Approved')
+      if (working) {
+        setIapId(working.id)
+        if (working.cover_image) {
+          setImgSrc(working.cover_image)
+          setStatus(working.status ?? 'Draft')
+          setDirty(false)
+        }
+        setOp({
+          from_date: working.op_period_from_date || '',
+          from_time: working.op_period_from_time || '',
+          to_date: working.op_period_to_date || '',
+          to_time: working.op_period_to_time || '',
+        })
+      }
+      setLoading(false)
+      return
+    }
 
     // Does an already-approved IAP exist? (its cover can be reused for the next period)
     const prevCoverPromise = supabase
@@ -175,7 +202,7 @@ export default function IapCoverModal({ incidentId, incidentName, onClose, onSta
       }
     }
     setLoading(false)
-  }, [incidentId])
+  }, [incidentId, offMode])
 
   useEffect(() => {
     loadCover()
@@ -307,6 +334,27 @@ export default function IapCoverModal({ incidentId, incidentName, onClose, onSta
     setReusing(true)
     setError('')
     setSuccess('')
+
+    if (offMode) {
+      const approved = (await offListIaps(incidentId))
+        .filter((r) => r.status === 'Approved' && !!r.cover_image)
+        .sort((a, b) => (b.approved_at ?? '').localeCompare(a.approved_at ?? ''))[0]
+      setReusing(false)
+      if (!approved?.cover_image) {
+        setError('No approved cover page is available to reuse yet.')
+        setCanReuse(false)
+        return
+      }
+      setImgSrc(approved.cover_image)
+      setDirty(true)
+      setSuccess(
+        approved.operational_period
+          ? `Cover page copied from the approved IAP for ${approved.operational_period} — press Save to keep it on this one.`
+          : 'Cover page copied from the previous approved IAP — press Save to keep it on this one.',
+      )
+      return
+    }
+
     const { data, error: prevError } = await supabase
       .from('incident_iap')
       .select('cover_image, operational_period')
@@ -370,6 +418,37 @@ export default function IapCoverModal({ incidentId, incidentName, onClose, onSta
         payload.op_period_to_time = op.to_time
         payload.operational_period = formatOpPeriod(op)
         payload.submitted_at = new Date().toISOString()
+      }
+
+      if (offMode) {
+        const localId = iapId || crypto.randomUUID()
+        await offUpsertIap(
+          localId,
+          iapId
+            ? payload
+            : {
+                operational_period: '',
+                op_period_from_date: '',
+                op_period_from_time: '',
+                op_period_to_date: '',
+                op_period_to_time: '',
+                snapshot: null,
+                approved_at: null,
+                approved_by: '',
+                submitted_at: null,
+                ...payload,
+              },
+        )
+        await touchOfflineIncident(incidentId)
+        if (!iapId) setIapId(localId)
+
+        setImgSrc(dataUrl)
+        setCrop(blankCrop())
+        setDirty(false)
+        setStatus(nextStatus)
+        onStatusChange(nextStatus)
+        setSuccess(withOp ? 'Incident Action Plan submitted for review.' : 'Cover page saved as draft.')
+        return localId
       }
 
       let savedId = iapId
@@ -456,6 +535,19 @@ export default function IapCoverModal({ incidentId, incidentName, onClose, onSta
 
     // autopopulate from ICS 202
     setPrefilling(true)
+    if (offMode) {
+      const f = await offLatest('ics_202_forms', incidentId)
+      if (f) {
+        setOp({
+          from_date: (f.op_period_from_date as string) || '',
+          from_time: (f.op_period_from_time as string) || '',
+          to_date: (f.op_period_to_date as string) || '',
+          to_time: (f.op_period_to_time as string) || '',
+        })
+      }
+      setPrefilling(false)
+      return
+    }
     const { data } = await supabase
       .from('ics_202_forms')
       .select('op_period_from_date, op_period_from_time, op_period_to_date, op_period_to_time')

@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { offGetMap, offUpsertMap, touchOfflineIncident } from './offline/store'
 
 /** Default live-map view: Alaminos, Laguna. */
 export const ALAMINOS_CENTER = { lat: 14.0634, lng: 121.4236 }
@@ -490,13 +491,19 @@ const asCustomSymbols = (v: unknown): CustomSymbolDef[] => {
   return out
 }
 
-export async function fetchMapRow(incidentId: string): Promise<IncidentMapRow | null> {
-  const { data, error } = await supabase
-    .from('incident_maps')
-    .select('*')
-    .eq('incident_id', incidentId)
-    .maybeSingle()
-  if (error) throw error
+export async function fetchMapRow(incidentId: string, offline = false): Promise<IncidentMapRow | null> {
+  let data: unknown
+  if (offline) {
+    data = (await offGetMap(incidentId)) ?? null
+  } else {
+    const res = await supabase
+      .from('incident_maps')
+      .select('*')
+      .eq('incident_id', incidentId)
+      .maybeSingle()
+    if (res.error) throw res.error
+    data = res.data
+  }
   if (!data) return null
   const row = data as Record<string, unknown>
   // `markers` is the legacy single-column shape; prefer the per-tab columns.
@@ -530,7 +537,24 @@ export async function saveMapRow(
     center_lng: number | null
     zoom: number | null
   },
+  offline = false,
 ) {
+  if (offline) {
+    await offUpsertMap(incidentId, {
+      map_type: row.map_type,
+      map_image: row.map_image,
+      sketch_markers: row.sketch_markers,
+      live_markers: row.live_markers,
+      sketch_shapes: row.sketch_shapes,
+      live_shapes: row.live_shapes,
+      custom_symbols: row.custom_symbols,
+      center_lat: row.center_lat,
+      center_lng: row.center_lng,
+      zoom: row.zoom,
+    })
+    await touchOfflineIncident(incidentId)
+    return
+  }
   const payload = {
     incident_id: incidentId,
     map_type: row.map_type,

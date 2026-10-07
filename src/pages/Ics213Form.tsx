@@ -1,9 +1,19 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
+import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import Ics213Print from './Ics213Print'
 import { useFormAccess } from '../components/FormAccess'
+import { isOfflinePath, getOperatorName } from '../lib/offline/mode'
+import {
+  getOfflineIncident,
+  offAll,
+  offLatest,
+  offGet,
+  offInsert,
+  offUpdate,
+  touchOfflineIncident,
+} from '../lib/offline/store'
 import './Ics213Form.css'
 
 interface PersonnelSuggestion {
@@ -17,6 +27,10 @@ export default function Ics213Form() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { canEdit } = useFormAccess()
+
+  // Offline Mode (/offline/...): same form, local IndexedDB store, no auth.
+  const offMode = isOfflinePath(useLocation().pathname)
+  const homePath = offMode ? `/offline/${incidentId}` : `/incident/${incidentId}`
 
   const [formId, setFormId] = useState<string | null>(null)
   const [incidentName, setIncidentName] = useState('')
@@ -59,6 +73,57 @@ export default function Ics213Form() {
   const loadForm = useCallback(async () => {
     if (!incidentId) return
     setLoading(true)
+
+    if (offMode) {
+      const incident = await getOfflineIncident(incidentId)
+      if (incident) setIncidentName(incident.name)
+
+      // No roster offline — suggestions come from check-in personnel only.
+      const suggestionsMap = new Map<string, PersonnelSuggestion>()
+      const manifests = await offAll('checkin_manifests', incidentId)
+      for (const m of manifests) {
+        const personnel = await offAll('checkin_personnel', incidentId)
+        for (const p of personnel) {
+          if (p.manifest_id !== m.id) continue
+          const name = (p.name as string)?.trim()
+          if (name && !suggestionsMap.has(name.toLowerCase())) {
+            suggestionsMap.set(name.toLowerCase(), { name, source: 'personnel' })
+          }
+        }
+      }
+      setToSuggestions(Array.from(suggestionsMap.values()))
+
+      const formParam = searchParams.get('form')
+      const formToLoad = formParam
+        ? await offGet('ics_213_forms', formParam)
+        : await offLatest('ics_213_forms', incidentId)
+
+      if (formToLoad) {
+        setFormId(formToLoad.id as string)
+        setIncidentName(formToLoad.incident_name as string)
+        setMsgDate(formToLoad.msg_date as string)
+        setMsgTime(formToLoad.msg_time as string)
+        setToName(formToLoad.to_name as string)
+        setToPosition(formToLoad.to_position as string)
+        setFromName(formToLoad.from_name as string)
+        setFromPosition(formToLoad.from_position as string)
+        setSubject(formToLoad.subject as string)
+        setMessage(formToLoad.message as string)
+        setApprovedByName(formToLoad.approved_by_name as string)
+        setApprovedByPosition(formToLoad.approved_by_position as string)
+        setApprovedBySig(formToLoad.approved_by_sig as string)
+        setApprovedDate(formToLoad.approved_date as string)
+        setApprovedTime(formToLoad.approved_time as string)
+        setReply(formToLoad.reply as string)
+        setReceivedByName(formToLoad.received_by_name as string)
+        setReceivedByPosition(formToLoad.received_by_position as string)
+        setReceivedBySig(formToLoad.received_by_sig as string)
+        setStatus(formToLoad.status as 'Draft' | 'Submitted')
+      }
+
+      setLoading(false)
+      return
+    }
 
     const { data: incident } = await supabase
       .from('incidents')
@@ -153,19 +218,19 @@ export default function Ics213Form() {
     }
 
     setLoading(false)
-  }, [incidentId, searchParams])
+  }, [incidentId, searchParams, offMode])
 
   useEffect(() => {
-    if (!user) return
+    if (!user && !offMode) return
     const now = new Date()
-    const firstName = user.user_metadata?.first_name || ''
-    const lastName = user.user_metadata?.last_name || ''
+    const firstName = user?.user_metadata?.first_name || ''
+    const lastName = user?.user_metadata?.last_name || ''
     const fullName = `${firstName} ${lastName}`.trim()
-    setFromName(fullName || user.email || '')
+    setFromName(fullName || user?.email || (offMode ? getOperatorName() : ''))
     setMsgDate(now.toISOString().slice(0, 10))
     setMsgTime(now.toTimeString().slice(0, 5))
     loadForm()
-  }, [incidentId, user, searchParams, loadForm])
+  }, [incidentId, user, searchParams, loadForm, offMode])
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -178,7 +243,7 @@ export default function Ics213Form() {
   }, [])
 
   const saveForm = async (formStatus: 'Draft' | 'Submitted') => {
-    if (!incidentId || !user) return
+    if (!incidentId || (!user && !offMode)) return
     setSaving(true)
     setError('')
     setSuccess('')
@@ -209,6 +274,28 @@ export default function Ics213Form() {
     }
 
     let fId = formId
+
+    if (offMode) {
+      try {
+        if (fId) {
+          await offUpdate('ics_213_forms', fId, formData)
+        } else {
+          const inserted = await offInsert('ics_213_forms', formData)
+          fId = inserted.id as string
+          setFormId(fId)
+        }
+        await touchOfflineIncident(incidentId)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Could not save the form.')
+        setSaving(false)
+        return
+      }
+      setSaving(false)
+      setStatus(formStatus)
+      setIsEditing(false)
+      setSuccess(formStatus === 'Draft' ? 'Progress saved as draft.' : 'ICS Form 213 submitted successfully!')
+      return
+    }
 
     if (fId) {
       const { error: updateError } = await supabase.from('ics_213_forms').update(formData).eq('id', fId)
@@ -248,7 +335,7 @@ export default function Ics213Form() {
   return (
     <div className="ics213-page">
       <header className="ics213-header no-print">
-        <div className="header-brand" onClick={() => navigate(`/incident/${incidentId}`)} style={{ cursor: 'pointer' }}>
+        <div className="header-brand" onClick={() => navigate(homePath)} style={{ cursor: 'pointer' }}>
           <img src="/alaminos-logo.png" alt="Logo" className="header-logo" />
           <div>
             <h1>Incident Command System</h1>
@@ -259,7 +346,7 @@ export default function Ics213Form() {
 
       <div className="ics213-topbar no-print">
         <div className="topbar-left">
-          <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}`)}>&larr; Back</button>
+          <button className="topbar-btn back" onClick={() => navigate(homePath)}>&larr; Back</button>
           <span className="form-badge">ICS 213</span>
           <span className={`status-badge ${status.toLowerCase()}`}>{status}</span>
         </div>

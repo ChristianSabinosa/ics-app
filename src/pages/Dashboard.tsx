@@ -164,6 +164,12 @@ export default function Dashboard() {
             <h3>Training Mode</h3>
             <p>Run or join a guided training drill with groups and monitoring</p>
           </button>
+
+          <button className="action-card offline" onClick={() => navigate('/offline')}>
+            <div className="action-icon">▣</div>
+            <h3>Offline Mode</h3>
+            <p>Encode incidents on this device — no account, no connection needed</p>
+          </button>
         </div>
       </main>
     </div>

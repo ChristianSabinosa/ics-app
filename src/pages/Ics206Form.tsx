@@ -1,11 +1,22 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
+import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import type { Ics206AidStation, Ics206Ambulance, Ics206Hospital } from '../lib/types'
 import Ics206Print from './Ics206Print'
 import { useFormAccess } from '../components/FormAccess'
 import { useTrainingSignature } from '../lib/signatureRules'
+import { isOfflinePath, getOperatorName } from '../lib/offline/mode'
+import {
+  getOfflineIncident,
+  offLatest,
+  offGet,
+  offChildren,
+  offInsert,
+  offUpdate,
+  offDeleteChildren,
+  touchOfflineIncident,
+} from '../lib/offline/store'
 import './Ics206Form.css'
 
 const emptyAidStation: Omit<Ics206AidStation, 'id' | 'form_id'> = {
@@ -28,6 +39,10 @@ export default function Ics206Form() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { canEdit } = useFormAccess()
+
+  // Offline Mode (/offline/...): same form, local IndexedDB store, no auth.
+  const offMode = isOfflinePath(useLocation().pathname)
+  const homePath = offMode ? `/offline/${incidentId}` : `/incident/${incidentId}`
 
   const [formId, setFormId] = useState<string | null>(null)
   const [incidentName, setIncidentName] = useState('')
@@ -67,6 +82,58 @@ export default function Ics206Form() {
   const loadForm = useCallback(async () => {
     if (!incidentId) return
     setLoading(true)
+
+    if (offMode) {
+      const incident = await getOfflineIncident(incidentId)
+      if (incident) setIncidentName(incident.name)
+
+      const form202 = await offLatest('ics_202_forms', incidentId)
+      if (form202) {
+        setOpFromDate((form202.op_period_from_date as string) || '')
+        setOpFromTime((form202.op_period_from_time as string) || '')
+        setOpToDate((form202.op_period_to_date as string) || '')
+        setOpToTime((form202.op_period_to_time as string) || '')
+      }
+
+      const formParam = searchParams.get('form')
+      const formToLoad = formParam
+        ? await offGet('ics_206_forms', formParam)
+        : await offLatest('ics_206_forms', incidentId)
+
+      if (formToLoad) {
+        setFormId(formToLoad.id as string)
+        setIncidentName(formToLoad.incident_name as string)
+        setOpFromDate(formToLoad.op_period_from_date as string)
+        setOpFromTime(formToLoad.op_period_from_time as string)
+        setOpToDate(formToLoad.op_period_to_date as string)
+        setOpToTime(formToLoad.op_period_to_time as string)
+        setMedicalEmergencyProcedures(formToLoad.medical_emergency_procedures as string)
+        setAviationAssetsUsed(formToLoad.aviation_assets_used as boolean)
+        setPreparedBy(formToLoad.prepared_by as string)
+        setDatePrepared(formToLoad.date_prepared as string)
+        setTimePrepared(formToLoad.time_prepared as string)
+        setReviewedBy(formToLoad.reviewed_by as string)
+        setDateReviewed(formToLoad.date_reviewed as string)
+        setTimeReviewed(formToLoad.time_reviewed as string)
+        setStatus(formToLoad.status as 'Draft' | 'Submitted')
+
+        const fid = formToLoad.id as string
+        const strip = <T,>(rows: Awaited<ReturnType<typeof offChildren>>) =>
+          rows.map(({ _key: _k, id: _id, form_id: _fid, table: _t, created_at: _c, updated_at: _u, incident_id: _iid, ...rest }) =>
+            rest as unknown as T,
+          )
+        setAidStations(strip<Omit<Ics206AidStation, 'id' | 'form_id'>>(await offChildren('ics_206_aid_stations', fid)))
+        setAmbulances(strip<Omit<Ics206Ambulance, 'id' | 'form_id'>>(await offChildren('ics_206_ambulances', fid)))
+        setHospitals(strip<Omit<Ics206Hospital, 'id' | 'form_id'>>(await offChildren('ics_206_hospitals', fid)))
+      } else {
+        setAidStations([{ ...emptyAidStation, sort_order: 0 }])
+        setAmbulances([{ ...emptyAmbulance, sort_order: 0 }])
+        setHospitals([{ ...emptyHospital, sort_order: 0 }])
+      }
+
+      setLoading(false)
+      return
+    }
 
     const { data: incident } = await supabase
       .from('incidents').select('name').eq('incident_id', incidentId).single()
@@ -132,19 +199,19 @@ export default function Ics206Form() {
     }
 
     setLoading(false)
-  }, [incidentId, searchParams])
+  }, [incidentId, searchParams, offMode])
 
   useEffect(() => {
-    if (!user) return
+    if (!user && !offMode) return
     const now = new Date()
     const pad = (n: number) => String(n).padStart(2, '0')
-    setPreparedBy(user.user_metadata?.first_name
+    setPreparedBy((user?.user_metadata?.first_name
       ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`.trim()
-      : user.email || '')
+      : user?.email || '') || (offMode ? getOperatorName() : ''))
     setDatePrepared(`${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`)
     setTimePrepared(`${pad(now.getHours())}:${pad(now.getMinutes())}`)
     loadForm()
-  }, [incidentId, user, searchParams, loadForm])
+  }, [incidentId, user, searchParams, loadForm, offMode])
 
   const updateAidStation = (index: number, field: string, value: string | boolean) => {
     const updated = [...aidStations]
@@ -189,7 +256,7 @@ export default function Ics206Form() {
   }
 
   const saveForm = async (formStatus: 'Draft' | 'Submitted') => {
-    if (!incidentId || !user) return
+    if (!incidentId || (!user && !offMode)) return
     setSaving(true)
     setError('')
     setSuccess('')
@@ -219,6 +286,41 @@ export default function Ics206Form() {
     }
 
     let fId = formId
+
+    if (offMode) {
+      try {
+        if (fId) {
+          await offUpdate('ics_206_forms', fId, formData)
+        } else {
+          const inserted = await offInsert('ics_206_forms', formData)
+          fId = inserted.id as string
+          setFormId(fId)
+        }
+
+        const childTables: [string, Record<string, unknown>[]][] = [
+          ['ics_206_aid_stations', aidStations],
+          ['ics_206_ambulances', ambulances],
+          ['ics_206_hospitals', hospitals],
+        ]
+        for (const [table, rows] of childTables) {
+          await offDeleteChildren(table, fId)
+          for (let i = 0; i < rows.length; i++) {
+            await offInsert(table, { ...rows[i], incident_id: incidentId, form_id: fId, sort_order: i }, false)
+          }
+        }
+        await touchOfflineIncident(incidentId)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Could not save the form.')
+        setSaving(false)
+        return
+      }
+
+      setSaving(false)
+      setStatus(formStatus)
+      setIsEditing(false)
+      setSuccess(formStatus === 'Draft' ? 'Progress saved as draft.' : 'ICS Form 206 submitted successfully!')
+      return
+    }
 
     if (fId) {
       const { error: updateError } = await supabase.from('ics_206_forms').update(formData).eq('id', fId)
@@ -273,7 +375,7 @@ export default function Ics206Form() {
   return (
     <div className="ics206-page">
       <header className="ics206-header no-print">
-        <div className="header-brand" onClick={() => navigate(`/incident/${incidentId}`)} style={{ cursor: 'pointer' }}>
+        <div className="header-brand" onClick={() => navigate(homePath)} style={{ cursor: 'pointer' }}>
           <img src="/alaminos-logo.png" alt="Logo" className="header-logo" />
           <div>
             <h1>Incident Command System</h1>
@@ -284,7 +386,7 @@ export default function Ics206Form() {
 
       <div className="ics206-topbar no-print">
         <div className="topbar-left">
-          <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}`)}>&larr; Back</button>
+          <button className="topbar-btn back" onClick={() => navigate(homePath)}>&larr; Back</button>
           <span className="form-badge">ICS 206</span>
           <span className={`status-badge ${status.toLowerCase()}`}>{status}</span>
         </div>

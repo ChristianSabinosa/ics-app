@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { isOfflinePath } from '../lib/offline/mode'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { MapContainer, Marker, Polygon, Polyline, TileLayer, useMap, useMapEvents } from 'react-leaflet'
@@ -182,6 +183,10 @@ export default function IncidentMapForm() {
   const navigate = useNavigate()
   const { canEdit } = useFormAccess()
 
+  // Offline Mode (/offline/...): same page, local IndexedDB store, no auth.
+  const offMode = isOfflinePath(useLocation().pathname)
+  const homePath = offMode ? `/offline/${incidentId}` : `/incident/${incidentId}`
+
   const [tab, setTab] = useState<MapType>('sketch')
 
   // ── Sketch tab state ──
@@ -237,7 +242,7 @@ export default function IncidentMapForm() {
     if (!incidentId) return
     setLoading(true)
     try {
-      const row = await fetchMapRow(incidentId)
+      const row = await fetchMapRow(incidentId, offMode)
       if (row) {
         setTab(row.map_type)
         setSavedType(row.map_image ? row.map_type : null)
@@ -257,7 +262,7 @@ export default function IncidentMapForm() {
       setError(err instanceof Error ? err.message : 'Failed to load the incident map.')
     }
     setLoading(false)
-  }, [incidentId])
+  }, [incidentId, offMode])
 
   useEffect(() => {
     loadMap()
@@ -666,7 +671,7 @@ export default function IncidentMapForm() {
         center_lat: null,
         center_lng: null,
         zoom: null,
-      })
+      }, offMode)
 
       setImgSrc(dataUrl)
       setCrop(FULL_CROP)
@@ -729,7 +734,7 @@ export default function IncidentMapForm() {
         center_lat: center.lat,
         center_lng: center.lng,
         zoom,
-      })
+      }, offMode)
 
       if (dataUrl) setImgSrc(dataUrl)
       setSketchMarkers([])
@@ -979,7 +984,7 @@ export default function IncidentMapForm() {
   return (
     <div className="map-page">
       <header className="map-header no-print">
-        <div className="header-brand" onClick={() => navigate(`/incident/${incidentId}`)} style={{ cursor: 'pointer' }}>
+        <div className="header-brand" onClick={() => navigate(homePath)} style={{ cursor: 'pointer' }}>
           <img src="/alaminos-logo.png" alt="Logo" className="header-logo" />
           <div>
             <h1>Incident Command System</h1>
@@ -990,7 +995,7 @@ export default function IncidentMapForm() {
 
       <div className="map-topbar no-print">
         <div className="topbar-left">
-          <button className="topbar-btn back" onClick={() => navigate(`/incident/${incidentId}`)}>&larr; Back</button>
+          <button className="topbar-btn back" onClick={() => navigate(homePath)}>&larr; Back</button>
           <span className="form-badge">Incident Map</span>
           <span className={`map-state ${saved ? 'saved' : 'empty'}`}>
             {saved ? `Saved · ${savedType === 'live' ? 'Live GPS' : 'Sketch'}` : 'No map'}
