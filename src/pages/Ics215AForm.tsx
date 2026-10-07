@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import Ics215APrint from './Ics215APrint'
 import { useFormAccess } from '../components/FormAccess'
+import { useTrainingSignature } from '../lib/signatureRules'
 import './Ics215AForm.css'
 
 let _nextId = 0
@@ -67,6 +68,14 @@ export default function Ics215AForm() {
   const [preparedByOsc, setPreparedByOsc] = useState('')
   const [datePreparedOsc, setDatePreparedOsc] = useState('')
   const [timePreparedOsc, setTimePreparedOsc] = useState('')
+
+  // Training Mode: the two lines come from the SOFR and OSC positions (ICS 207)
+  const sig = useTrainingSignature('215-A')
+  useEffect(() => {
+    if (!sig.enabled) return
+    if (sig.sofr && !preparedBySofr) setPreparedBySofr(sig.sofr)
+    if (sig.osc && !preparedByOsc) setPreparedByOsc(sig.osc)
+  }, [sig.enabled, sig.sofr, sig.osc, preparedBySofr, preparedByOsc])
 
   const [status, setStatus] = useState<'Draft' | 'Submitted'>('Draft')
   const [loading, setLoading] = useState(true)
@@ -382,6 +391,7 @@ export default function Ics215AForm() {
       <main className="ics215a-main no-print">
         <div className="ics215a-container">
           {error && <div className="error-message">{error}</div>}
+          {sig.enabled && sig.hint && <p className="sig-autofill-hint no-print">{sig.hint}</p>}
           {success && <div className="success-message">{success}</div>}
 
           <div className="form-header-section">

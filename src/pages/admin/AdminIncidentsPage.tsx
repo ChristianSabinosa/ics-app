@@ -45,7 +45,7 @@ export default function AdminIncidentsPage() {
     setError('')
     try {
       const [incidentsRes, participantsRes, userRows] = await Promise.all([
-        supabase.from('incidents').select('*').order('created_at', { ascending: false }),
+        supabase.from('incidents').select('*').is('training_id', null).order('created_at', { ascending: false }),
         supabase.from('incident_participants').select('*'),
         listUsers(),
       ])

@@ -35,6 +35,10 @@ import Ics221List from './pages/Ics221List'
 import MessagesPage from './pages/MessagesPage'
 import MessageForm from './pages/MessageForm'
 import ProfilePage from './pages/ProfilePage'
+import TrainingHub from './pages/TrainingHub'
+import TrainingJoin from './pages/TrainingJoin'
+import TrainingPage from './pages/TrainingPage'
+import TrainingGuideHost from './components/TrainingGuideHost'
 import NotificationToast from './components/NotificationToast'
 import AdminLayout from './pages/admin/AdminLayout'
 import AdminUsersPage from './pages/admin/AdminUsersPage'
@@ -125,6 +129,13 @@ function App() {
             <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
             <Route path="/messages/compose" element={<ProtectedRoute><MessageForm /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            {/* Training Mode — separate from Incidents / Planned Events.
+                Trainees reach it through the invite link or the hub, and work
+                inside their group's child incident (/incident/:id) where the
+                guided walkthrough overlays the existing forms. */}
+            <Route path="/training" element={<ProtectedRoute><TrainingHub /></ProtectedRoute>} />
+            <Route path="/training/join/:token" element={<TrainingJoin />} />
+            <Route path="/training/:id" element={<ProtectedRoute><TrainingPage /></ProtectedRoute>} />
             {/* System administration: every tab is behind AdminRoute, and every
                 action inside re-checks is_system_admin() on the server. */}
             <Route path="/admin" element={<ProtectedRoute><AdminRoute><AdminLayout /></AdminRoute></ProtectedRoute>}>
@@ -164,6 +175,9 @@ function App() {
           {/* Arrival popup only — the notification list lives in the profile
               dropdown on the Dashboard. Renders nothing while signed out. */}
           <NotificationToast />
+          {/* Skippable window guides for Training Mode — renders nothing
+              outside a started training's group workspace. */}
+          <TrainingGuideHost />
         </AdminProvider>
       </BrowserRouter>
     </AuthProvider>

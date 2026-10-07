@@ -4,6 +4,8 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useAdmin } from '../context/AdminContext'
 import { getFormAccess, type FormAccess as FormAccessLevel, type FormKey, type IncidentRole } from '../lib/permissions'
+import { resolveTrainingAccess, type TrainingAccess } from '../lib/signatureRules'
+import { userDisplayName } from '../lib/training'
 
 interface FormAccessValue {
   /** The user's role in this incident (null when they are not an active participant). */
@@ -77,14 +79,37 @@ export default function FormAccess({ form, children }: FormAccessProps) {
           .maybeSingle(),
         supabase
           .from('incidents')
-          .select('created_by')
+          .select('created_by, training_id')
           .eq('incident_id', id)
           .maybeSingle(),
       ])
       if (cancelled) return
 
       const participantRole = (participantRes.data?.role as IncidentRole | null) ?? null
-      const isCreator = incidentRes.data?.created_by === userId
+      const incidentRow = incidentRes.data as { created_by: string; training_id: string | null } | null
+      const isCreator = incidentRow?.created_by === userId
+
+      // ---- Training Mode: a group's child incident follows the signature
+      // rules (who may prepare this form per ICS 207), not the incident roles.
+      if (incidentRow?.training_id) {
+        const training: TrainingAccess | null = await resolveTrainingAccess(id!, userId, form, userDisplayName(user))
+        if (cancelled) return
+
+        if (!training || training.role === null) {
+          // Not a member of this training — outsiders get nothing (a system
+          // admin keeps the same read-only oversight as everywhere else).
+          setRole(null)
+          setAccess(isAdmin ? 'view' : 'none')
+          return
+        }
+
+        setRole(training.role === 'trainor' ? 'Observer' : participantRole ?? 'IMT')
+        if (training.role === 'trainor') setAccess('view')
+        else if (leaving && (form === '211' || form === '221')) setAccess('edit') // check-out flow
+        else if (training.inGroup) setAccess(training.canEdit ? 'edit' : 'view')
+        else setAccess('none') // trainee of ANOTHER group
+        return
+      }
 
       setRole(participantRole)
       setAccess(
@@ -97,7 +122,7 @@ export default function FormAccess({ form, children }: FormAccessProps) {
 
     load()
     return () => { cancelled = true }
-  }, [id, userId, form, leaving, isAdmin])
+  }, [id, userId, form, leaving, isAdmin, user])
 
   if (loading || access === null) {
     return <div style={loadingStyle}>Loading...</div>

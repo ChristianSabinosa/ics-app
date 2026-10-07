@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import Ics214Print from './Ics214Print'
 import { useFormAccess } from '../components/FormAccess'
+import { useTrainingSignature } from '../lib/signatureRules'
 import './Ics214Form.css'
 
 interface ResourceRow {
@@ -51,6 +52,15 @@ export default function Ics214Form() {
 
   const [preparedByName, setPreparedByName] = useState('')
   const [preparedBySig, setPreparedBySig] = useState('')
+
+  // Training Mode: ICS 214 may be prepared by any trainee
+  const sig = useTrainingSignature('214')
+  useEffect(() => {
+    if (sig.enabled && sig.prepared && !preparedByName && !preparedBySig) {
+      setPreparedByName(sig.prepared)
+      setPreparedBySig(sig.prepared)
+    }
+  }, [sig.enabled, sig.prepared, preparedByName, preparedBySig])
   const [preparedDate, setPreparedDate] = useState('')
   const [preparedTime, setPreparedTime] = useState('')
 
@@ -248,6 +258,7 @@ export default function Ics214Form() {
       <main className="ics214-main no-print">
         <div className="ics214-container">
           {error && <div className="error-message">{error}</div>}
+          {sig.enabled && sig.hint && <p className="sig-autofill-hint no-print">{sig.hint}</p>}
           {success && <div className="success-message">{success}</div>}
 
           <div className="form-header-section">

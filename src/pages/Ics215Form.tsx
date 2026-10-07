@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import Ics215Print from './Ics215Print'
 import { useFormAccess } from '../components/FormAccess'
+import { useTrainingSignature } from '../lib/signatureRules'
 import './Ics215Form.css'
 
 let _nextId = 0
@@ -55,6 +56,12 @@ export default function Ics215Form() {
   const [workAssignments, setWorkAssignments] = useState<WorkAssignment[]>([])
   const [resourceIdentifiers, setResourceIdentifiers] = useState<string[]>([])
   const [preparedBy, setPreparedBy] = useState('')
+
+  // Training Mode: prepared by the OSC (ICS 207)
+  const sig = useTrainingSignature('215')
+  useEffect(() => {
+    if (sig.enabled && sig.prepared && !preparedBy) setPreparedBy(sig.prepared)
+  }, [sig.enabled, sig.prepared, preparedBy])
   const [datePrepared, setDatePrepared] = useState('')
   const [timePrepared, setTimePrepared] = useState('')
 
@@ -295,6 +302,7 @@ export default function Ics215Form() {
       <main className="ics215-main no-print">
         <div className="ics215-container">
           {error && <div className="error-message">{error}</div>}
+          {sig.enabled && sig.hint && <p className="sig-autofill-hint no-print">{sig.hint}</p>}
           {success && <div className="success-message">{success}</div>}
           {spanWarnings.map((w, i) => <div key={`w-${i}`} className="warning-message">{w}</div>)}
           {resourceSuggestions.map((s, i) => <div key={`s-${i}`} className="info-message">{s}</div>)}

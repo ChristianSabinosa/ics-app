@@ -244,7 +244,7 @@
 /* Action Cards */
 .action-cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   gap: 24px;
 }
 
@@ -310,6 +310,20 @@
   color: #1a5276;
 }
 
+.action-card.training {
+  border-color: #7c3aed;
+}
+
+.action-card.training:hover {
+  background: #7c3aed;
+  color: white;
+}
+
+.action-card.training:hover .action-icon {
+  background: white;
+  color: #7c3aed;
+}
+
 .action-icon {
   width: 60px;
   height: 60px;
@@ -335,6 +349,11 @@
 .view .action-icon {
   background: rgba(26, 82, 118, 0.1);
   color: #1a5276;
+}
+
+.training .action-icon {
+  background: rgba(124, 58, 237, 0.1);
+  color: #7c3aed;
 }
 
 .action-card h3 {

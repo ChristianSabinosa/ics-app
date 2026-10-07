@@ -72,6 +72,13 @@
   border-radius: 4px;
 }
 
+.incident-code-badge.training-badge {
+  font-family: inherit;
+  color: #4338ca;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+}
+
 .role-badge { font-size: 0.8rem; padding: 4px 12px; border-radius: 12px; font-weight: 600; }
 .role-badge.imt { background: #fee2e2; color: #991b1b; }
 .role-badge.tactical-resources { background: #dbeafe; color: #1e40af; }

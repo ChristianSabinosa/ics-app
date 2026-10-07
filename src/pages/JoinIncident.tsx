@@ -24,6 +24,8 @@ export default function JoinIncident() {
       .from('incidents')
       .select('*')
       .eq('status', 'Ongoing')
+      // Training groups are joined through their invite link, not here.
+      .is('training_id', null)
       .order('created_at', { ascending: false })
 
     if (error) {

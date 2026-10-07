@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import Ics202Print from './Ics202Print'
 import { useFormAccess } from '../components/FormAccess'
+import { useTrainingSignature } from '../lib/signatureRules'
 import './Ics202Form.css'
 
 export default function Ics202Form() {
@@ -47,6 +48,20 @@ export default function Ics202Form() {
   const [approvedBySig, setApprovedBySig] = useState('')
   const [approvedDate, setApprovedDate] = useState('')
   const [approvedTime, setApprovedTime] = useState('')
+
+  // Training Mode: prepared by the PSC, approved by the IC (ICS 207)
+  const sig = useTrainingSignature('202')
+  useEffect(() => {
+    if (!sig.enabled) return
+    if (sig.prepared && !preparedByName && !preparedBySig) {
+      setPreparedByName(sig.prepared)
+      setPreparedBySig(sig.prepared)
+    }
+    if (sig.approved && !approvedByName && !approvedBySig) {
+      setApprovedByName(sig.approved)
+      setApprovedBySig(sig.approved)
+    }
+  }, [sig.enabled, sig.prepared, sig.approved, preparedByName, preparedBySig, approvedByName, approvedBySig])
 
   const [status, setStatus] = useState<'Draft' | 'Submitted'>('Draft')
   const [loading, setLoading] = useState(true)
@@ -264,6 +279,7 @@ export default function Ics202Form() {
         <div className="ics202-container">
           {error && <div className="error-message">{error}</div>}
           {success && <div className="success-message">{success}</div>}
+          {sig.enabled && sig.hint && <p className="sig-autofill-hint no-print">{sig.hint}</p>}
 
           <div className="form-header-section">
             <h2>INCIDENT OBJECTIVES</h2>

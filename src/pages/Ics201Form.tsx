@@ -6,6 +6,7 @@ import Ics201Print from './Ics201Print'
 import OrgChart from '../components/OrgChart'
 import type { OrgChartPosition } from '../components/OrgChart'
 import { useFormAccess } from '../components/FormAccess'
+import { useTrainingSignature } from '../lib/signatureRules'
 import './Ics201Form.css'
 
 export interface Ics201ActionRow {
@@ -57,6 +58,15 @@ export default function Ics201Form() {
   const [preparedBySig, setPreparedBySig] = useState('')
   const [preparedDate, setPreparedDate] = useState('')
   const [preparedTime, setPreparedTime] = useState('')
+
+  // Training Mode: 201 is prepared by the IC from the ICS 207 org chart
+  const sig = useTrainingSignature('201')
+  useEffect(() => {
+    if (sig.enabled && sig.prepared && !preparedByName && !preparedBySig) {
+      setPreparedByName(sig.prepared)
+      setPreparedBySig(sig.prepared)
+    }
+  }, [sig.enabled, sig.prepared, preparedByName, preparedBySig])
 
   const [status, setStatus] = useState<'Draft' | 'Submitted'>('Draft')
   const [loading, setLoading] = useState(true)
@@ -348,6 +358,7 @@ export default function Ics201Form() {
         <div className="ics201-container">
           {error && <div className="error-message">{error}</div>}
           {success && <div className="success-message">{success}</div>}
+          {sig.enabled && sig.hint && <p className="sig-autofill-hint no-print">{sig.hint}</p>}
 
           {/* ══════════ PAGE 1 — ICS 201-1 ══════════ */}
           <section className="form-sheet">

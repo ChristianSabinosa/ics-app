@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import Ics208Print from './Ics208Print'
 import { useFormAccess } from '../components/FormAccess'
+import { useTrainingSignature } from '../lib/signatureRules'
 import './Ics208Form.css'
 
 export default function Ics208Form() {
@@ -26,6 +27,12 @@ export default function Ics208Form() {
   const [safetyPlanLocation, setSafetyPlanLocation] = useState('')
 
   const [preparedByName, setPreparedByName] = useState('')
+
+  // Training Mode: prepared by the SOFR (ICS 207)
+  const sig = useTrainingSignature('208')
+  useEffect(() => {
+    if (sig.enabled && sig.prepared && !preparedByName) setPreparedByName(sig.prepared)
+  }, [sig.enabled, sig.prepared, preparedByName])
   const [preparedDate, setPreparedDate] = useState('')
   const [preparedTime, setPreparedTime] = useState('')
 
@@ -205,6 +212,7 @@ export default function Ics208Form() {
       <main className="ics208-main no-print">
         <div className="ics208-container">
           {error && <div className="error-message">{error}</div>}
+          {sig.enabled && sig.hint && <p className="sig-autofill-hint no-print">{sig.hint}</p>}
           {success && <div className="success-message">{success}</div>}
 
           <div className="form-header-section">

@@ -1,0 +1,878 @@
+/* Training Mode — hub, invite landing and training home */
+
+.training-page,
+.training-join-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+
+.training-page .page-header,
+.training-join-page .page-header {
+  background: var(--brand);
+  color: var(--text-on-brand);
+  padding: 16px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.training-back {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.training-back:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.training-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.training-main {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 26px 20px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.error-message {
+  background: #fdecec;
+  border: 1px solid #f2b8b8;
+  color: var(--brand-strong);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.training-notice {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.training-notice button {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #065f46;
+}
+
+/* Action cards (hub) */
+.training-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.training-action-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.training-action-card:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.training-action-card h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.training-action-card p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.training-action-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  font-weight: 700;
+  background: var(--brand-tint);
+  color: var(--brand-ink-strong);
+}
+
+.training-action-card.join {
+  cursor: default;
+}
+
+.training-join-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.training-join-row input {
+  flex: 1;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.training-join-row button {
+  background: var(--brand);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.training-join-row button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Forms */
+.training-form-card,
+.training-invite-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+}
+
+.training-form-card h2,
+.training-invite-card h2 {
+  margin-top: 0;
+}
+
+.training-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.training-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.training-form label {
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.training-form input,
+.training-form textarea,
+.training-form select {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font: inherit;
+}
+
+.training-form small {
+  color: var(--text-faint);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.btn-primary,
+.btn-secondary,
+.btn-danger {
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font: inherit;
+  border: 1px solid transparent;
+}
+
+.btn-primary {
+  background: var(--brand);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--brand-strong);
+}
+
+.btn-secondary {
+  background: #fff;
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.btn-danger {
+  background: #fff;
+  color: var(--brand-strong);
+  border-color: var(--brand-line);
+}
+
+.btn-primary:disabled,
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* My trainings list */
+.training-list h2 {
+  margin-bottom: 12px;
+}
+
+.training-empty {
+  color: var(--text-faint);
+  font-size: 0.92rem;
+}
+
+.training-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.training-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: box-shadow 0.15s ease;
+}
+
+.training-card:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+.training-card h3 {
+  margin: 4px 0;
+}
+
+.training-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.training-card-meta {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.training-status {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--surface-sunken, #f3f4f6);
+  color: var(--text-muted);
+}
+
+.training-status.ongoing {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.training-status.closed {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.training-role {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.training-role.trainor {
+  background: var(--brand-tint);
+  color: var(--brand-ink-strong);
+  border-color: var(--brand-line);
+}
+
+/* Invite landing */
+.training-invite-badge {
+  display: inline-block;
+  background: var(--brand-tint);
+  color: var(--brand-ink-strong);
+  border: 1px solid var(--brand-line);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.training-invite-scenario {
+  background: var(--surface-sunken, #f9fafb);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.training-invite-trainer {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.training-invite-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.training-auth-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.training-auth-tabs button {
+  flex: 1;
+  padding: 9px;
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.training-auth-tabs button.active {
+  background: var(--brand-tint);
+  border-color: var(--brand-line);
+  color: var(--brand-ink-strong);
+}
+
+.training-auth-names {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.training-join-page .training-form input {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+/* Training home — tabs */
+.training-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  border-bottom: 2px solid var(--border-soft);
+  padding-bottom: 2px;
+}
+
+.training-tabs button {
+  background: none;
+  border: none;
+  padding: 10px 16px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+}
+
+.training-tabs button.active {
+  color: var(--brand-strong);
+  border-bottom-color: var(--brand);
+}
+
+.training-panel {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.training-panel h2,
+.training-panel h3 {
+  margin: 0;
+}
+
+.training-hint {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+.training-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.training-stat {
+  background: var(--surface-sunken, #f9fafb);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.training-stat span {
+  color: var(--text-faint);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.training-stat strong {
+  font-size: 1.15rem;
+}
+
+.training-scenario {
+  background: var(--surface-sunken, #f9fafb);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.training-scenario h3 {
+  font-size: 0.9rem;
+  margin-bottom: 6px;
+}
+
+.training-scenario p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+/* Groups & invite */
+.training-group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.training-group-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  background: var(--surface-sunken, #fafafa);
+}
+
+.training-group-row input {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.training-group-meta {
+  display: block;
+  color: var(--text-faint);
+  font-size: 0.8rem;
+  margin-top: 2px;
+}
+
+.training-group-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.training-add-group {
+  display: flex;
+  gap: 8px;
+}
+
+.training-add-group input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.training-invite-panel {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  background: var(--surface-sunken, #f9fafb);
+  border: 1px dashed var(--brand-line);
+  border-radius: 12px;
+  padding: 18px;
+}
+
+.training-invite-details {
+  flex: 1;
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.training-invite-details p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.training-invite-link {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 0.82rem;
+  word-break: break-all;
+}
+
+.training-invite-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+/* Roster / tables */
+.training-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.training-table th,
+.training-table td {
+  border-bottom: 1px solid var(--border-soft);
+  padding: 9px 10px;
+  text-align: left;
+}
+
+.training-table th {
+  background: var(--surface-sunken, #f9fafb);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-faint);
+}
+
+.training-table select {
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font: inherit;
+  width: 100%;
+  max-width: 220px;
+}
+
+.training-monitor-scroll {
+  overflow-x: auto;
+}
+
+.training-monitor-table td,
+.training-monitor-table th {
+  text-align: center;
+}
+
+.training-monitor-table td:first-child,
+.training-monitor-table th:first-child {
+  text-align: left;
+}
+
+.training-status-cell {
+  display: inline-block;
+  min-width: 76px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: var(--surface-sunken, #f3f4f6);
+  color: var(--text-faint);
+}
+
+.training-status-cell.done {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.training-status-cell.draft {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.training-monitor-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.training-monitor-card {
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 14px;
+  background: var(--surface-sunken, #fafafa);
+}
+
+.training-monitor-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.training-monitor-card ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.training-monitor-card li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+}
+
+.training-guide-chip {
+  font-size: 0.74rem;
+  font-weight: 700;
+  background: #eef2ff;
+  color: #4338ca;
+  border-radius: 999px;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+
+.training-iap-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.training-iap-list li {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-soft);
+  padding-bottom: 7px;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: var(--brand-strong);
+  font-weight: 600;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+  text-align: left;
+}
+
+/* Announcements */
+.training-ann-compose {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--surface-sunken, #f9fafb);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.training-ann-compose input,
+.training-ann-compose select,
+.training-ann-compose textarea {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font: inherit;
+}
+
+.training-ann-compose button {
+  align-self: flex-start;
+}
+
+.training-ann-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.training-ann-item {
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.training-ann-head {
+  width: 100%;
+  background: var(--surface-sunken, #fafafa);
+  border: none;
+  padding: 12px 14px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.training-ann-head span {
+  color: var(--text-faint);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.training-ann-body {
+  margin: 0;
+  padding: 12px 14px;
+  white-space: pre-wrap;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+}
+
+/* Trainee side */
+.training-waiting {
+  border-style: dashed;
+  background: var(--surface-sunken, #fcfcfc);
+}
+
+.training-my-group {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: var(--surface-sunken, #f9fafb);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.training-my-group-name {
+  font-size: 1.15rem;
+}
+
+.training-rename-btn {
+  margin-left: 10px;
+  font-size: 0.8rem;
+}
+
+.training-group-rename {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.training-group-rename input {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.training-guide-progress {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.training-progress-bar {
+  flex: 1;
+  min-width: 200px;
+  height: 12px;
+  background: var(--surface-sunken, #ececec);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.training-progress-bar span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--brand), var(--brand-strong));
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+@media print {
+  .training-back,
+  .training-tabs,
+  .training-action-card.join {
+    display: none !important;
+  }
+
+  .training-invite-panel {
+    border: none;
+    background: #fff;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 720px) {
+  .training-group-row,
+  .training-my-group {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .training-main {
+    padding: 16px 12px 50px;
+  }
+}

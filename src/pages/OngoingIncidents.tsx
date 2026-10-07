@@ -21,7 +21,7 @@ export default function OngoingIncidents() {
   const [editing, setEditing] = useState<Incident | null>(null)
   const [editName, setEditName] = useState('')
   const [editLocation, setEditLocation] = useState('')
-  const [editType, setEditType] = useState<'Incident' | 'Planned Event' | 'Training'>('Incident')
+  const [editType, setEditType] = useState<'Incident' | 'Planned Event'>('Incident')
   const [editStatus, setEditStatus] = useState<'Ongoing' | 'Closed'>('Ongoing')
   const [saving, setSaving] = useState(false)
 
@@ -30,6 +30,8 @@ export default function OngoingIncidents() {
     const { data, error } = await supabase
       .from('incidents')
       .select('*')
+      // Training groups live in Training Mode — never in the incident lists.
+      .is('training_id', null)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -68,7 +70,7 @@ export default function OngoingIncidents() {
     setEditing(incident)
     setEditName(incident.name)
     setEditLocation(incident.location)
-    setEditType(incident.type)
+    setEditType(incident.type === 'Training' ? 'Incident' : incident.type)
     setEditStatus(incident.status)
   }
 
@@ -307,8 +309,8 @@ export default function OngoingIncidents() {
               >
                 <option value="Incident">Incident</option>
                 <option value="Planned Event">Planned Event</option>
-                <option value="Training">Training</option>
               </select>
+              <small>Trainings are managed in Training Mode from the dashboard.</small>
             </div>
 
             <div className="form-group">

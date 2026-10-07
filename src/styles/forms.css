@@ -536,3 +536,14 @@ input[type="radio"]:disabled {
     display: none !important;
   }
 }
+
+/* Training Mode: where a signature was pre-filled from the ICS 207 org chart */
+.sig-autofill-hint {
+  margin: 10px 0 0;
+  padding: 7px 12px;
+  font-size: 0.82rem;
+  color: #4338ca;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 8px;
+}

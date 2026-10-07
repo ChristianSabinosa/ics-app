@@ -6,6 +6,7 @@ import { notifyIncident } from '../lib/notifications'
 import Ics207Print from './Ics207Print'
 import Ics207ExpandedExport from './Ics207ExpandedExport'
 import { useFormAccess } from '../components/FormAccess'
+import { useTrainingSignature } from '../lib/signatureRules'
 import './Ics207Form.css'
 
 interface PersonnelWithAgency {
@@ -28,6 +29,8 @@ interface Position {
   person_name: string
   agency: string
   parent_key?: string
+  /** Account of the person holding this seat (Training Mode signatures). */
+  user_id?: string | null
 }
 
 const DEFAULT_POSITIONS: Position[] = [
@@ -156,6 +159,12 @@ export default function Ics207Form() {
   const [incidentName, setIncidentName] = useState('')
   const [positions, setPositions] = useState<Position[]>(DEFAULT_POSITIONS)
   const [preparedBy, setPreparedBy] = useState('')
+
+  // Training Mode: any trainee may build the chart; the preparer is themselves
+  const sig = useTrainingSignature('207')
+  useEffect(() => {
+    if (sig.enabled && sig.prepared && !preparedBy) setPreparedBy(sig.prepared)
+  }, [sig.enabled, sig.prepared, preparedBy])
   const [datePrepared, setDatePrepared] = useState('')
   const [timePrepared, setTimePrepared] = useState('')
   const [status, setStatus] = useState<'Draft' | 'Submitted'>('Draft')
@@ -306,8 +315,8 @@ export default function Ics207Form() {
         .order('sort_order')
 
       if (posData && posData.length > 0) {
-        const loadedPositions = posData.map(({ position_key, position_title, abbreviation, section, person_name, agency, parent_key }) => ({
-          position_key, position_title, abbreviation, section, person_name, agency, parent_key: parent_key || ''
+        const loadedPositions = posData.map(({ position_key, position_title, abbreviation, section, person_name, agency, parent_key, user_id }) => ({
+          position_key, position_title, abbreviation, section, person_name, agency, parent_key: parent_key || '', user_id: user_id || null
         }))
         setPositions(loadedPositions)
         restoreCounters(loadedPositions)
@@ -325,6 +334,35 @@ export default function Ics207Form() {
 
   const loadPersonnel = useCallback(async () => {
     if (!incidentId) return
+
+    // Training Mode: the pool is the group's own accounts — positions must
+    // link to real users so the signature rules can resolve them later.
+    const { data: incidentRow } = await supabase
+      .from('incidents')
+      .select('training_id')
+      .eq('incident_id', incidentId)
+      .maybeSingle()
+
+    if (incidentRow?.training_id) {
+      const { data: parts } = await supabase
+        .from('incident_participants')
+        .select('user_id, user_name, user_email, role')
+        .eq('incident_id', incidentId)
+        .eq('status', 'Active')
+        .order('joined_at', { ascending: true })
+
+      setAllPersonnel((parts ?? []).map((p) => ({
+        id: p.user_id,
+        manifest_id: '',
+        role: p.role === 'IMT' ? 'Leader' : 'Member',
+        name: p.user_name || p.user_email,
+        agency: '',
+        capabilities: '',
+        participant_role: p.role,
+        user_id: p.user_id,
+      })))
+      return
+    }
 
     const { data: manifests } = await supabase
       .from('checkin_manifests')
@@ -380,10 +418,12 @@ export default function Ics207Form() {
     loadPersonnel()
   }, [incidentId, user, searchParams, formType, loadForm, loadPersonnel])
 
-  const assignPersonToPosition = (positionKey: string, personName: string, agency: string) => {
+  const assignPersonToPosition = (positionKey: string, personName: string, agency: string, userId?: string) => {
     setPositions((prev) =>
       prev.map((p) =>
-        p.position_key === positionKey ? { ...p, person_name: personName, agency } : p
+        p.position_key === positionKey
+          ? { ...p, person_name: personName, agency, user_id: userId || null }
+          : p
       )
     )
     setSelectedPosition(null)
@@ -392,7 +432,7 @@ export default function Ics207Form() {
   const clearPosition = (positionKey: string) => {
     setPositions((prev) =>
       prev.map((p) =>
-        p.position_key === positionKey ? { ...p, person_name: '', agency: '' } : p
+        p.position_key === positionKey ? { ...p, person_name: '', agency: '', user_id: null } : p
       )
     )
   }
@@ -745,6 +785,7 @@ export default function Ics207Form() {
       person_name: p.person_name,
       agency: p.agency,
       parent_key: p.parent_key || '',
+      user_id: p.user_id || null,
       sort_order: i,
     }))
     const { error: posError } = await supabase.from('ics_207_positions').insert(posRows)
@@ -1111,6 +1152,7 @@ export default function Ics207Form() {
           <div className="ics207-layout">
           <div className="ics207-content">
             {error && <div className="error-message">{error}</div>}
+            {sig.enabled && sig.hint && <p className="sig-autofill-hint no-print">{sig.hint}</p>}
             {success && <div className="success-message">{success}</div>}
 
             <div className="form-header-section">
@@ -1501,7 +1543,7 @@ export default function Ics207Form() {
                     onClick={() => {
                       if (isReadonly) return
                       if (selectedPosition && !isAssigned) {
-                        assignPersonToPosition(selectedPosition, person.name, person.agency || '')
+                        assignPersonToPosition(selectedPosition, person.name, person.agency || '', person.user_id || undefined)
                       }
                     }}
                   >

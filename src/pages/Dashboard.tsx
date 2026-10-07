@@ -158,6 +158,12 @@ export default function Dashboard() {
             <h3>View Ongoing Incidents</h3>
             <p>Monitor all active incidents in the municipality</p>
           </button>
+
+          <button className="action-card training" onClick={() => navigate('/training')}>
+            <div className="action-icon">⚑</div>
+            <h3>Training Mode</h3>
+            <p>Run or join a guided training drill with groups and monitoring</p>
+          </button>
         </div>
       </main>
     </div>

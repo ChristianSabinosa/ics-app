@@ -6,6 +6,7 @@ import { completeLeave } from '../lib/leaveIncident'
 import { notifyIncident, getIncidentCommanderName } from '../lib/notifications'
 import Ics221Print from './Ics221Print'
 import { useFormAccess } from '../components/FormAccess'
+import { useTrainingSignature } from '../lib/signatureRules'
 import './Ics221Form.css'
 
 interface UnitSignoff {
@@ -121,6 +122,15 @@ export default function Ics221Form() {
 
   const [preparedByName, setPreparedByName] = useState('')
   const [preparedBySig, setPreparedBySig] = useState('')
+
+  // Training Mode: prepared by DMOB or PSC (ICS 207)
+  const sig = useTrainingSignature('221')
+  useEffect(() => {
+    if (sig.enabled && sig.prepared && !preparedByName && !preparedBySig) {
+      setPreparedByName(sig.prepared)
+      setPreparedBySig(sig.prepared)
+    }
+  }, [sig.enabled, sig.prepared, preparedByName, preparedBySig])
   const [preparedDate, setPreparedDate] = useState('')
   const [preparedTime, setPreparedTime] = useState('')
 
@@ -593,6 +603,7 @@ export default function Ics221Form() {
           </div>
         )}
         {error && <div className="error-message">{error}</div>}
+        {sig.enabled && sig.hint && <p className="sig-autofill-hint no-print">{sig.hint}</p>}
         {success && <div className="success-message">{success}</div>}
 
         <div className="ics221-container">

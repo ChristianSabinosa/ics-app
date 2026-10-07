@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import type { Ics205Channel } from '../lib/types'
 import Ics205Print from './Ics205Print'
 import { useFormAccess } from '../components/FormAccess'
+import { useTrainingSignature } from '../lib/signatureRules'
 import './Ics205Form.css'
 
 const emptyChannel: Omit<Ics205Channel, 'id' | 'form_id'> = {
@@ -28,6 +29,12 @@ export default function Ics205Form() {
   const [channels, setChannels] = useState<Omit<Ics205Channel, 'id' | 'form_id'>[]>([])
   const [coordinatingInstructions, setCoordinatingInstructions] = useState('')
   const [preparedBy, setPreparedBy] = useState('')
+
+  // Training Mode: prepared by COML or LSC (ICS 207)
+  const sig = useTrainingSignature('205')
+  useEffect(() => {
+    if (sig.enabled && sig.prepared && !preparedBy) setPreparedBy(sig.prepared)
+  }, [sig.enabled, sig.prepared, preparedBy])
   const [datePrepared, setDatePrepared] = useState('')
   const [timePrepared, setTimePrepared] = useState('')
   const [status, setStatus] = useState<'Draft' | 'Submitted'>('Draft')
@@ -226,6 +233,7 @@ export default function Ics205Form() {
       <main className="ics205-main no-print">
         <div className="ics205-container">
           {error && <div className="error-message">{error}</div>}
+          {sig.enabled && sig.hint && <p className="sig-autofill-hint no-print">{sig.hint}</p>}
           {success && <div className="success-message">{success}</div>}
 
           <div className="form-header-section">

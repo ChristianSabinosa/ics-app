@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import type { Ics211Resource } from '../lib/types'
 import Ics211Print from './Ics211Print'
 import { useFormAccess } from '../components/FormAccess'
+import { useTrainingSignature } from '../lib/signatureRules'
 import './Ics211Form.css'
 
 const emptyResource: Omit<Ics211Resource, 'id' | 'form_id'> = {
@@ -33,6 +34,12 @@ export default function Ics211Form() {
   const [checkinLocation, setCheckinLocation] = useState<string[]>([])
   const [resources, setResources] = useState<Omit<Ics211Resource, 'id' | 'form_id'>[]>([])
   const [preparedBy, setPreparedBy] = useState('')
+
+  // Training Mode: ICS 211 may be prepared by any trainee
+  const sig = useTrainingSignature('211')
+  useEffect(() => {
+    if (sig.enabled && sig.prepared && !preparedBy) setPreparedBy(sig.prepared)
+  }, [sig.enabled, sig.prepared, preparedBy])
   const [datePrepared, setDatePrepared] = useState('')
   const [timePrepared, setTimePrepared] = useState('')
   const [status, setStatus] = useState<'Draft' | 'Submitted'>('Draft')
@@ -398,6 +405,7 @@ export default function Ics211Form() {
             </div>
           )}
           {error && <div className="error-message">{error}</div>}
+          {sig.enabled && sig.hint && <p className="sig-autofill-hint no-print">{sig.hint}</p>}
           {success && <div className="success-message">{success}</div>}
 
           <div className="form-header-section">

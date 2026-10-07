@@ -5,6 +5,8 @@ export interface Incident {
   location: string
   type: 'Incident' | 'Planned Event' | 'Training'
   status: 'Ongoing' | 'Closed'
+  /** Parent training for group workspaces in Training Mode (null elsewhere). */
+  training_id?: string | null
   created_by: string
   created_by_name: string
   created_by_email: string

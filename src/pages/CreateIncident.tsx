@@ -14,7 +14,7 @@ export default function CreateIncident() {
 
   const [name, setName] = useState('')
   const [location, setLocation] = useState('')
-  const [type, setType] = useState<'Incident' | 'Planned Event' | 'Training'>('Incident')
+  const [type, setType] = useState<'Incident' | 'Planned Event'>('Incident')
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault()
@@ -109,8 +109,8 @@ export default function CreateIncident() {
               >
                 <option value="Incident">Incident</option>
                 <option value="Planned Event">Planned Event</option>
-                <option value="Training">Training</option>
               </select>
+              <small>Looking for a drill? Trainings are created from Training Mode on the dashboard.</small>
             </div>
 
             <div className="form-group">

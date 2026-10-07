@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import Ics209Print from './Ics209Print'
 import { useFormAccess } from '../components/FormAccess'
+import { useTrainingSignature } from '../lib/signatureRules'
 import './Ics209Form.css'
 
 interface ClusterRow {
@@ -98,6 +99,15 @@ export default function Ics209Form() {
 
   const [preparedByName, setPreparedByName] = useState('')
   const [preparedBySig, setPreparedBySig] = useState('')
+
+  // Training Mode: ICS 209 may be prepared by any trainee
+  const sig = useTrainingSignature('209')
+  useEffect(() => {
+    if (sig.enabled && sig.prepared && !preparedByName && !preparedBySig) {
+      setPreparedByName(sig.prepared)
+      setPreparedBySig(sig.prepared)
+    }
+  }, [sig.enabled, sig.prepared, preparedByName, preparedBySig])
   const [preparedDate, setPreparedDate] = useState('')
   const [preparedTime, setPreparedTime] = useState('')
   const [approvedByName, setApprovedByName] = useState('')
@@ -479,6 +489,7 @@ export default function Ics209Form() {
       <main className="ics209-main no-print">
         <div className="ics209-container">
           {error && <div className="error-message">{error}</div>}
+          {sig.enabled && sig.hint && <p className="sig-autofill-hint no-print">{sig.hint}</p>}
           {success && <div className="success-message">{success}</div>}
 
           <div className="form-header-section">

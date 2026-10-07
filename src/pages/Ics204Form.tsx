@@ -15,6 +15,7 @@ import type { Ics204RowInput } from '../lib/ics204'
 import type { Ics204CommsRow, Ics204OpsPerson } from '../lib/types'
 import Ics204Print from './Ics204Print'
 import { useFormAccess } from '../components/FormAccess'
+import { useTrainingSignature } from '../lib/signatureRules'
 import './Ics204Form.css'
 
 export default function Ics204Form() {
@@ -45,6 +46,15 @@ export default function Ics204Form() {
 
   const [preparedByName, setPreparedByName] = useState('')
   const [preparedBySig, setPreparedBySig] = useState('')
+
+  // Training Mode: prepared by RESL or PSC (ICS 207)
+  const sig = useTrainingSignature('204')
+  useEffect(() => {
+    if (sig.enabled && sig.prepared && !preparedByName && !preparedBySig) {
+      setPreparedByName(sig.prepared)
+      setPreparedBySig(sig.prepared)
+    }
+  }, [sig.enabled, sig.prepared, preparedByName, preparedBySig])
   const [preparedDate, setPreparedDate] = useState('')
   const [preparedTime, setPreparedTime] = useState('')
 
@@ -331,6 +341,7 @@ export default function Ics204Form() {
       <main className="ics204-main no-print">
         <div className="ics204-container">
           {error && <div className="error-message">{error}</div>}
+          {sig.enabled && sig.hint && <p className="sig-autofill-hint no-print">{sig.hint}</p>}
           {success && <div className="success-message">{success}</div>}
 
           <div className="form-header-section">

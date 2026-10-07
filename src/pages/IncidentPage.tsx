@@ -7,6 +7,8 @@ import { generateRoleId, formatMilitaryTime } from '../lib/utils'
 import type { Incident, IncidentParticipant, CheckinManifest, CheckinPersonnel } from '../lib/types'
 import { getFormAccess, type FormKey } from '../lib/permissions'
 import { notifyIncident } from '../lib/notifications'
+import { fetchMyMembership, userDisplayName } from '../lib/training'
+import { loadPositionHolders, canPrepareWith, SIGNATURE_RULES } from '../lib/signatureRules'
 import ConfirmModal from '../components/ConfirmModal'
 import IapCoverModal, { type IapStatus } from '../components/IapCoverModal'
 import './IncidentPage.css'
@@ -83,6 +85,8 @@ export default function IncidentPage() {
   const [publicStatus, setPublicStatus] = useState<{ description: string; totalCases: string }[]>([])
   const [manifestsLoaded, setManifestsLoaded] = useState(false)
   const [detailsLoaded, setDetailsLoaded] = useState(false)
+  /** Training Mode: per-form edit/view per the ICS 207 signature rules. */
+  const [trainingAccess, setTrainingAccess] = useState<Record<string, 'edit' | 'view'> | null>(null)
 
   const fetchGen = useRef(0)
   const userId = user?.id
@@ -298,6 +302,64 @@ export default function IncidentPage() {
     if (id) fetchData()
   }, [id, fetchData])
 
+  // Training Mode: a group's workspace only belongs to ITS trainees. Anyone
+  // else landing here (wrong link, another group) is sent to the training.
+  useEffect(() => {
+    const trainingId = incident?.training_id
+    if (!trainingId || !user?.id || !id) return
+    let cancelled = false
+
+    ;(async () => {
+      const member = await fetchMyMembership(trainingId, user.id)
+      if (cancelled) return
+      if (!member) {
+        // A system admin keeps read-only oversight instead of being bounced.
+        if (isAdmin) {
+          setTrainingAccess(Object.fromEntries(ICS_FORMS.map((f) => [f.num, 'view' as const])))
+        } else {
+          navigate(`/training/${trainingId}`, { replace: true })
+        }
+        return
+      }
+      if (member.role === 'trainor') {
+        // The trainer observes every group.
+        setTrainingAccess(Object.fromEntries(ICS_FORMS.map((f) => [f.num, 'view' as const])))
+        return
+      }
+
+      if (!member.group_id) {
+        navigate(`/training/${trainingId}`, { replace: true })
+        return
+      }
+      const { data: group } = await supabase
+        .from('training_groups')
+        .select('incident_id')
+        .eq('id', member.group_id)
+        .maybeSingle()
+      if (cancelled) return
+      if (group?.incident_id !== id) {
+        navigate(`/training/${trainingId}`, { replace: true })
+        return
+      }
+
+      // Trainee of THIS group: edit rights follow the ICS 207 signature rules.
+      const holders = await loadPositionHolders(id)
+      if (cancelled) return
+      const myName = userDisplayName(user)
+      const myKeys = [...holders.values()]
+        .filter((h) => h.user_id === user.id || (!!myName && h.person_name === myName))
+        .map((h) => h.position_key)
+      const map: Record<string, 'edit' | 'view'> = {}
+      ICS_FORMS.forEach((f) => {
+        const rule = SIGNATURE_RULES[f.num as keyof typeof SIGNATURE_RULES]
+        map[f.num] = rule && canPrepareWith(rule, holders, myKeys) ? 'edit' : 'view'
+      })
+      setTrainingAccess(map)
+    })()
+
+    return () => { cancelled = true }
+  }, [incident?.training_id, user?.id, id, navigate, isAdmin])
+
   // Leaving is a two-step form flow, not a single update: after the password confirm the
   // user is sent to ICS 211 (skipped when it is already Submitted) and then to ICS 221.
   // The membership only ends when that check-out is submitted (Ics221Form -> completeLeave).
@@ -501,9 +563,22 @@ export default function IncidentPage() {
 
       <div className="incident-topbar">
         <div className="topbar-left">
-          <button className="topbar-btn back" onClick={() => navigate('/join-incident')}>&larr; Back</button>
+          <button
+            className="topbar-btn back"
+            onClick={() => navigate(incident.training_id ? `/training/${incident.training_id}` : '/join-incident')}
+          >
+            &larr; {incident.training_id ? 'Training' : 'Back'}
+          </button>
           <div className="topbar-info">
             <span className="incident-code-badge">{incident.incident_id}</span>
+            {incident.training_id && (
+              <span
+                className="incident-code-badge training-badge"
+                title="Training Mode workspace — your group's ICS package, guided by the window walkthrough"
+              >
+                Training · group workspace
+              </span>
+            )}
             <span className={`role-badge ${role.toLowerCase().replace(/\s/g, '-')}`}>{role}</span>
             {roleId && <span className="role-id-badge">{roleId}</span>}
             {adminReadOnly && (
@@ -513,12 +588,14 @@ export default function IncidentPage() {
             )}
           </div>
         </div>
-        <div className="topbar-actions">
-          <button className="topbar-btn change-role" disabled={processing} onClick={() => setShowRolePicker(true)}>Change Role</button>
-          <button className="topbar-btn leave" disabled={processing} onClick={() => setShowLeaveModal(true)}>
-            {incident.created_by === user?.id ? 'Switch to Observer' : 'Leave Incident'}
-          </button>
-        </div>
+        {!incident.training_id && (
+          <div className="topbar-actions">
+            <button className="topbar-btn change-role" disabled={processing} onClick={() => setShowRolePicker(true)}>Change Role</button>
+            <button className="topbar-btn leave" disabled={processing} onClick={() => setShowLeaveModal(true)}>
+              {incident.created_by === user?.id ? 'Switch to Observer' : 'Leave Incident'}
+            </button>
+          </div>
+        )}
       </div>
 
       <main className="incident-main">
@@ -770,16 +847,20 @@ export default function IncidentPage() {
             </div>
             <div className="ics-sidebar-list">
               {ICS_FORMS.map((form) => {
-                const access = getFormAccess(role, form.num as FormKey, { restrictToView: adminReadOnly })
+                const access = trainingAccess
+                  ? (trainingAccess[form.num] ?? 'view')
+                  : getFormAccess(role, form.num as FormKey, { restrictToView: adminReadOnly })
                 const locked = access === 'none'
                 const status = locked ? '' : getFormStatus(form.num)
                 const isActive = form.num === '211' && !locked
                 const hint = locked
                   ? `Restricted — your role (${role}) cannot open this form`
                   : access === 'view'
-                    ? adminReadOnly
-                      ? 'System admin oversight — readable, but only the incident\'s own members may change it'
-                      : `View only — your role (${role}) cannot change this form`
+                    ? trainingAccess
+                      ? 'Training Mode — only the designated ICS 207 position (or the IC) can prepare this form'
+                      : adminReadOnly
+                        ? 'System admin oversight — readable, but only the incident\'s own members may change it'
+                        : `View only — your role (${role}) cannot change this form`
                     : undefined
                 return (
                   <div

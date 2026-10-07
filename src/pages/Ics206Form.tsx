@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import type { Ics206AidStation, Ics206Ambulance, Ics206Hospital } from '../lib/types'
 import Ics206Print from './Ics206Print'
 import { useFormAccess } from '../components/FormAccess'
+import { useTrainingSignature } from '../lib/signatureRules'
 import './Ics206Form.css'
 
 const emptyAidStation: Omit<Ics206AidStation, 'id' | 'form_id'> = {
@@ -42,6 +43,12 @@ export default function Ics206Form() {
   const [aviationAssetsUsed, setAviationAssetsUsed] = useState(false)
 
   const [preparedBy, setPreparedBy] = useState('')
+
+  // Training Mode: prepared by MEDL or SOFR (ICS 207)
+  const sig = useTrainingSignature('206')
+  useEffect(() => {
+    if (sig.enabled && sig.prepared && !preparedBy) setPreparedBy(sig.prepared)
+  }, [sig.enabled, sig.prepared, preparedBy])
   const [datePrepared, setDatePrepared] = useState('')
   const [timePrepared, setTimePrepared] = useState('')
   const [reviewedBy, setReviewedBy] = useState('')
@@ -299,6 +306,7 @@ export default function Ics206Form() {
       <main className="ics206-main no-print">
         <div className="ics206-container">
           {error && <div className="error-message">{error}</div>}
+          {sig.enabled && sig.hint && <p className="sig-autofill-hint no-print">{sig.hint}</p>}
           {success && <div className="success-message">{success}</div>}
 
           <div className="form-header-section">
