@@ -93,6 +93,24 @@ export async function offDeleteWhere(table: string, incidentId: string): Promise
   await offlineDb.rows.where('table').equals(table).and(r => r.incident_id === incidentId).delete()
 }
 
+/**
+ * Submitted check-in manifests for an incident (oldest first), each with its
+ * personnel rows attached — the local twin of the `checkin_manifests` +
+ * `checkin_personnel` queries the 201/211 "copy from check-in" code runs online.
+ * Drafts are ignored.
+ */
+export async function offSubmittedManifests(
+  incidentId: string,
+): Promise<{ manifest: OfflineRow; personnel: OfflineRow[] }[]> {
+  const manifests = (await offAll('checkin_manifests', incidentId)).filter(m => m.status === 'Submitted')
+  manifests.sort((a, b) => (a.created_at ?? '').localeCompare(b.created_at ?? ''))
+  const personnel = await offAll('checkin_personnel', incidentId)
+  return manifests.map(manifest => ({
+    manifest,
+    personnel: personnel.filter(p => p.manifest_id === manifest.id),
+  }))
+}
+
 // ---------------------------------------------------------------------------
 // Incidents
 // ---------------------------------------------------------------------------

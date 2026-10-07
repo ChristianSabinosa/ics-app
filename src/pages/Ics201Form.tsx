@@ -11,6 +11,7 @@ import { isOfflinePath, getOperatorName } from '../lib/offline/mode'
 import {
   getOfflineIncident,
   offAll,
+  offSubmittedManifests,
   offLatest,
   offGet,
   offInsert,
@@ -132,7 +133,36 @@ export default function Ics201Form() {
   const pullFromCheckins = useCallback(async (current: Ics201ResourceRow[], manual: boolean) => {
     if (!incidentId) return
     if (offMode) {
-      if (manual) setError('Check-in import needs an online incident — add rows manually offline.')
+      const submitted = await offSubmittedManifests(incidentId)
+      if (submitted.length === 0) {
+        if (manual) setError('No submitted check-ins found for this incident.')
+        return
+      }
+      const existing = new Set(current.map(r => r.identifier).filter(Boolean))
+      const pad = (n: number) => String(n).padStart(2, '0')
+      const fmt = (iso: string) => {
+        if (!iso) return ''
+        const d = new Date(iso)
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+      }
+      const rows: Ics201ResourceRow[] = []
+      for (const { manifest: m } of submitted) {
+        if (existing.has(m.checkin_id as string)) continue
+        rows.push({
+          resource: (m.agency_name as string) || '',
+          identifier: (m.checkin_id as string) || '',
+          requested: '',
+          eta: '',
+          arrived: fmt((m.prepared_by_timestamp as string | null) || (m.created_at as string)),
+          remarks: m.total_personnel ? `${m.total_personnel} personnel` : '',
+        })
+      }
+      if (rows.length === 0) {
+        if (manual) setSuccess('All checked-in resources are already listed.')
+        return
+      }
+      setResources(prev => [...prev, ...rows])
+      if (manual) setSuccess(`${rows.length} resource(s) loaded from check-in manifests.`)
       return
     }
 
@@ -175,7 +205,7 @@ export default function Ics201Form() {
     }
     setResources((prev) => [...prev, ...rows])
     if (manual) setSuccess(`${rows.length} resource(s) loaded from check-in manifests.`)
-  }, [incidentId])
+  }, [incidentId, offMode])
 
   const loadForm = useCallback(async () => {
     if (!incidentId) return
@@ -204,6 +234,11 @@ export default function Ics201Form() {
         setPreparedDate(formToLoad.prepared_date as string)
         setPreparedTime(formToLoad.prepared_time as string)
         setStatus(formToLoad.status as 'Draft' | 'Submitted')
+      }
+
+      // Same rule as online: pre-fill the resource summary from check-ins when it is empty.
+      if (!formToLoad || !Array.isArray(formToLoad.resources) || (formToLoad.resources as unknown[]).length === 0) {
+        await pullFromCheckins([], false)
       }
 
       const mapData = await offGetMap(incidentId)
@@ -272,7 +307,7 @@ export default function Ics201Form() {
     setMapImage(mapData?.map_image || '')
 
     setLoading(false)
-  }, [incidentId, searchParams, pullFromCheckins])
+  }, [incidentId, searchParams, pullFromCheckins, offMode])
 
   useEffect(() => {
     if (!user && !offMode) return

@@ -8,6 +8,7 @@ import {
   getOfflineIncident,
   offAll,
   offGet,
+  offSubmittedManifests,
   offChildren,
   offInsert,
   offUpdate,
@@ -398,8 +399,31 @@ export default function Ics207Form() {
   }, [incidentId, searchParams, formType, offMode])
 
   const loadPersonnel = useCallback(async () => {
-    // Offline: no accounts, check-ins or training roster — free-text names only.
-    if (!incidentId || offMode) return
+    if (!incidentId) return
+
+    // Offline: no accounts or training roster — the pool is the personnel on
+    // this device's SUBMITTED check-in manifests (drafts are ignored).
+    if (offMode) {
+      const submitted = await offSubmittedManifests(incidentId)
+      const pool: PersonnelWithAgency[] = []
+      for (const { manifest, personnel } of submitted) {
+        personnel.forEach((p, i) => {
+          pool.push({
+            // Check-in personnel rows have no id of their own — build a stable key.
+            id: `${manifest.id as string}:${i}`,
+            manifest_id: manifest.id as string,
+            role: (p.role as string) || '',
+            name: (p.name as string) || '',
+            agency: (manifest.agency_name as string) || '',
+            capabilities: (p.capabilities as string) || '',
+            participant_role: '',
+            user_id: '',
+          })
+        })
+      }
+      setAllPersonnel(pool.filter((p) => p.name))
+      return
+    }
 
     // Training Mode: the pool is the group's own accounts — positions must
     // link to real users so the signature rules can resolve them later.
@@ -1662,7 +1686,7 @@ export default function Ics207Form() {
                   >
                     <div className="person-info">
                       <span className="person-name">{person.name}</span>
-                      <span className="person-role">{person.participant_role} - {person.role}</span>
+                      <span className="person-role">{person.participant_role ? `${person.participant_role} - ` : ''}{person.role}</span>
                       {person.agency && <span className="person-agency">{person.agency}</span>}
                       {person.capabilities && <span className="person-caps">{person.capabilities}</span>}
                     </div>
@@ -1674,7 +1698,9 @@ export default function Ics207Form() {
                 <div className="no-personnel">
                   {selectedPosition
                     ? 'No available personnel to assign.'
-                    : 'No checked-in personnel found.'}
+                    : offMode
+                      ? 'No checked-in personnel yet. Submit a check-in manifest to build the pool.'
+                      : 'No checked-in personnel found.'}
                 </div>
               )}
             </div>

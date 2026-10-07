@@ -11,6 +11,7 @@ import {
   getOfflineIncident,
   offLatest,
   offGet,
+  offSubmittedManifests,
   offChildren,
   offInsert,
   offUpdate,
@@ -70,7 +71,39 @@ export default function Ics211Form() {
   const isReadonly = (status === 'Submitted' && !isEditing) || !canEdit
 
   const loadFromManifests = useCallback(async () => {
-    if (!incidentId || offMode) return
+    if (!incidentId) return
+
+    if (offMode) {
+      const submitted = await offSubmittedManifests(incidentId)
+      if (submitted.length === 0) return
+      const rows: Omit<Ics211Resource, 'id' | 'form_id'>[] = submitted.map(({ manifest, personnel }, i) => {
+        const leader = personnel.find(p => p.role === 'Leader')
+        const ts = (manifest.prepared_by_timestamp as string | null) || manifest.created_at
+        return {
+          order_request_no: manifest.checkin_id as string,
+          checkin_datetime: ts ? new Date(ts).toISOString().slice(0, 16) : '',
+          kind: '',
+          type: '',
+          resource_identifier_single: true,
+          resource_identifier_st: false,
+          resource_identifier_tf: false,
+          agency_name: manifest.agency_name as string,
+          leader_name: (leader?.name as string) || '',
+          contact_details: (leader?.contact_details as string) || '',
+          total_personnel: manifest.total_personnel as number,
+          departure_point_of_origin: '',
+          departure_datetime: '',
+          departure_method_of_travel: '',
+          with_manifest: true,
+          incident_assignment: 'Waiting for assignment',
+          other_qualifications: (leader?.capabilities as string) || '',
+          data_sent_to_resl: '',
+          sort_order: i,
+        }
+      })
+      setResources(rows)
+      return
+    }
 
     const { data: manifests } = await supabase
       .from('checkin_manifests')
@@ -122,7 +155,7 @@ export default function Ics211Form() {
     if (loadedResources.length > 0) {
       setResources(loadedResources)
     }
-  }, [incidentId])
+  }, [incidentId, offMode])
 
   const loadForm = useCallback(async () => {
     if (!incidentId) return
@@ -155,6 +188,8 @@ export default function Ics211Form() {
             rest as unknown as Omit<Ics211Resource, 'id' | 'form_id'>,
           ),
         )
+      } else {
+        await loadFromManifests()
       }
 
       setLoading(false)
@@ -224,7 +259,7 @@ export default function Ics211Form() {
     }
 
     setLoading(false)
-  }, [incidentId, searchParams, loadFromManifests, navigate])
+  }, [incidentId, searchParams, loadFromManifests, navigate, offMode])
 
   useEffect(() => {
     if (!user && !offMode) return
@@ -240,7 +275,45 @@ export default function Ics211Form() {
   const fetchFromCheckins = async () => {
     if (!incidentId) return
     if (offMode) {
-      setError('Check-in import needs an online incident — add rows manually offline.')
+      const submitted = await offSubmittedManifests(incidentId)
+      if (submitted.length === 0) {
+        setError('No submitted check-ins found for this incident.')
+        return
+      }
+      const existing = new Set(resources.map(r => r.order_request_no).filter(Boolean))
+      const added: Omit<Ics211Resource, 'id' | 'form_id'>[] = []
+      for (const { manifest, personnel } of submitted) {
+        if (existing.has(manifest.checkin_id as string)) continue
+        const leader = personnel.find(p => p.role === 'Leader')
+        const ts = (manifest.prepared_by_timestamp as string | null) || manifest.created_at
+        added.push({
+          order_request_no: manifest.checkin_id as string,
+          checkin_datetime: ts ? new Date(ts).toISOString().slice(0, 16) : '',
+          kind: '',
+          type: '',
+          resource_identifier_single: true,
+          resource_identifier_st: false,
+          resource_identifier_tf: false,
+          agency_name: manifest.agency_name as string,
+          leader_name: (leader?.name as string) || '',
+          contact_details: (leader?.contact_details as string) || '',
+          total_personnel: manifest.total_personnel as number,
+          departure_point_of_origin: '',
+          departure_datetime: '',
+          departure_method_of_travel: '',
+          with_manifest: true,
+          incident_assignment: 'Waiting for assignment',
+          other_qualifications: (leader?.capabilities as string) || '',
+          data_sent_to_resl: '',
+          sort_order: resources.length + added.length,
+        })
+      }
+      if (added.length > 0) {
+        setResources([...resources, ...added])
+        setSuccess(`Fetched ${added.length} new check-in(s).`)
+      } else {
+        setSuccess('All check-ins are already included in the form.')
+      }
       return
     }
 
