@@ -58,6 +58,7 @@ export default function Ics205Print({
                         <h1>COMMUNICATIONS PLAN</h1>
                         <h2>ICS 205</h2>
                       </td>
+                      <td className="logo-cell spacer" />
                     </tr>
                   </tbody>
                 </table>

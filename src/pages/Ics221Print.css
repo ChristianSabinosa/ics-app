@@ -207,36 +207,73 @@
   padding: 4px 0;
 }
 
-/* ── Signature Row ── */
-.sig-cell-content {
-  padding: 6px 10px;
+/* ── Signature Row (scoped: .sig-* names also exist unscoped in 202 print) ── */
+.ics221-print-page .sig-cell-content {
+  padding: 4px 10px;
   vertical-align: top;
 }
 
-.sig-num {
+.ics221-print-page .sig-num {
   font-weight: 700;
   font-size: 9pt;
   margin-bottom: 4px;
 }
 
-.sig-field-print {
+.ics221-print-page .sig-field-print {
   display: flex;
   flex-direction: column;
   padding: 2px 0;
   justify-content: center;
 }
 
-.sig-label {
+.ics221-print-page .sig-label {
   font-size: 7.5pt;
   font-weight: 600;
   color: #333;
 }
 
-.sig-value {
+.ics221-print-page .sig-value {
   font-size: 9pt;
   min-height: 14pt;
   border-bottom: 1px solid #999;
   margin-top: 2px;
+}
+
+/* First footer cell: two-line label up top, open writing space below. */
+.ics221-print-page .sig-name-value {
+  font-size: 9pt;
+  min-height: 14pt;
+}
+
+/* Section 8: single-line inline cells, like 206 footer. */
+.ics221-print-page .sig-inline-cell {
+  font-size: 0.65rem;
+  vertical-align: middle;
+}
+
+/* ── Remarks + Reassignment stacked (left) / Travel info (right) ── */
+.ics221-print-page .left-stack-cell {
+  padding: 0;
+  vertical-align: top;
+}
+
+.ics221-print-page .remarks-box {
+  padding: 6px 10px;
+  min-height: 70pt;
+}
+
+.ics221-print-page .reassign-box {
+  padding: 6px 10px;
+  border-top: 1px solid #000;
+}
+
+.ics221-print-page .travel-box-cell {
+  padding: 6px 10px;
+  vertical-align: top;
+}
+
+.ics221-print-page .travel-box-cell .field-value {
+  line-height: 1.6;
 }
 
 @media print {

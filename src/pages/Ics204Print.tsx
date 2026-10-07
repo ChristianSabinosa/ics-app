@@ -41,8 +41,8 @@ const rowHasContent = (r: Ics204RowInput) =>
 const commsHasContent = (c: Ics204CommsRow) =>
   c.function || c.system || c.channel || c.frequency || c.others
 
-const MIN_RESOURCE_ROWS = 10
-const MIN_COMMS_ROWS = 4
+const MIN_RESOURCE_ROWS = 5
+const MIN_COMMS_ROWS = 5
 
 export default function Ics204Print(props: Ics204PrintProps) {
   const handlePrint = () => window.print()

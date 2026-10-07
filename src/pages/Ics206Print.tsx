@@ -82,6 +82,7 @@ export default function Ics206Print({
                         <h1>MEDICAL PLAN</h1>
                         <h2>ICS 206</h2>
                       </td>
+                      <td className="logo-cell spacer" />
                     </tr>
                   </tbody>
                 </table>
@@ -179,7 +180,7 @@ export default function Ics206Print({
                 </table>
 
                 <div className="section-title"><strong>5. HOSPITALS</strong></div>
-                <table className="data-grid">
+                <table className="data-grid hosp-table">
                   <thead>
                     <tr>
                       <th>Name</th>

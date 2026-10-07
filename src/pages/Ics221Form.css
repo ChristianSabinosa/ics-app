@@ -304,7 +304,7 @@
 
 .clearance-table-header {
   display: grid;
-  grid-template-columns: 40px 180px 1fr 1fr 1fr;
+  grid-template-columns: 40px 180px 1fr 1fr 1fr 28px;
   gap: 0;
   font-weight: 700;
   font-size: 0.8rem;
@@ -318,7 +318,7 @@
 
 .clearance-row {
   display: grid;
-  grid-template-columns: 40px 180px 1fr 1fr 1fr;
+  grid-template-columns: 40px 180px 1fr 1fr 1fr 28px;
   gap: 0;
   border: 1px solid #ddd;
   border-top: none;
@@ -372,6 +372,36 @@
 .clearance-row input[type="text"]:focus {
   outline: none;
   background: #f0f7ff;
+}
+
+.clearance-row .col-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clearance-row .remove-row-btn {
+  border: none;
+  background: transparent;
+  color: #950606;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 2px 6px;
+  line-height: 1;
+}
+
+.clearance-section .add-row-btn {
+  margin-top: 8px;
+  border: 1px dashed #999;
+  background: white;
+  color: #333;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
 }
 
 /* ── Travel Grid ── */

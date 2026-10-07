@@ -67,6 +67,7 @@ export default function Ics211Print({
                           <h1>INCIDENT CHECK-IN LIST</h1>
                           <h2>ICS 211</h2>
                         </td>
+                        <td className="logo-cell spacer" />
                       </tr>
                     </tbody>
                   </table>
@@ -84,7 +85,7 @@ export default function Ics211Print({
                           <div className="field-data">Time: {formatMilitaryTimeShort(startTime)}</div>
                         </td>
                         <td className="field-box">
-                          <span className="field-num">3.</span> <strong>CHECK-IN LOCATION</strong>
+                          <span className="field-num">3.</span> <strong>CHECK-IN LOCATION (Please check)</strong>
                           <div className="checkbox-print-row">
                             {['Base', 'Camp', 'Staging Area', 'ICP', 'Others'].map((loc) => (
                               <span key={loc} className="print-checkbox">

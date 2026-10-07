@@ -26,23 +26,41 @@ interface Position203 {
 
 const LOGISTICS_UNITS = [
   'Chief', 'Supply Unit', 'Communications Unit',
-  'Facilities Unit', 'Ground Support', 'Security Unit',
+  'Facilities Unit',
 ]
 
 const FINANCE_UNITS = [
   'Chief', 'Time Unit', 'Procurement Unit',
-  'Cost Unit', 'Compensation/Claims Unit',
+  'Cost Unit',
 ]
 
 const PLANNING_UNITS = [
   'Chief', 'Resources Unit', 'Situation Unit',
-  'Documentation Unit', 'Demobilization Unit',
+  'Documentation Unit',
 ]
 
 const OPERATIONS_UNITS = [
-  'Chief', 'Air Operations Branch', 'Staging Area Manager',
-  'Communications Unit', 'Medical Unit', 'Safety Officer',
+  'Chief',
 ]
+
+/**
+ * Unit names the 207 auto-fill recognises — includes names retired from the
+ * fresh-form defaults so legacy saved rows keep resolving.
+ */
+const KNOWN_UNIT_NAMES = new Set<string>([
+  ...LOGISTICS_UNITS, ...FINANCE_UNITS, ...PLANNING_UNITS, ...OPERATIONS_UNITS,
+  'Ground Support', 'Security Unit', 'Compensation/Claims Unit',
+  'Demobilization Unit', 'Air Operations Branch', 'Staging Area Manager',
+  'Communications Unit', 'Medical Unit', 'Safety Officer',
+])
+
+const blankUnit = (): UnitSignoff => ({
+  unit_name: '',
+  checked: false,
+  remarks: '',
+  name: '',
+  signature: '',
+})
 
 const UNIT_TO_POSITION_KEY: Record<string, string[]> = {
   'Logistics Section': ['lsc'],
@@ -100,10 +118,10 @@ export default function Ics221Form() {
   const [plannedReleaseDate, setPlannedReleaseDate] = useState('')
   const [plannedReleaseTime, setPlannedReleaseTime] = useState('')
 
-  const [logisticsUnits, setLogisticsUnits] = useState<UnitSignoff[]>(makeUnits(LOGISTICS_UNITS))
-  const [financeUnits, setFinanceUnits] = useState<UnitSignoff[]>(makeUnits(FINANCE_UNITS))
-  const [planningUnits, setPlanningUnits] = useState<UnitSignoff[]>(makeUnits(PLANNING_UNITS))
-  const [operationsUnits, setOperationsUnits] = useState<UnitSignoff[]>(makeUnits(OPERATIONS_UNITS))
+  const [logisticsUnits, setLogisticsUnits] = useState<UnitSignoff[]>([...makeUnits(['Chief']), blankUnit()])
+  const [financeUnits, setFinanceUnits] = useState<UnitSignoff[]>([...makeUnits(['Chief']), blankUnit()])
+  const [planningUnits, setPlanningUnits] = useState<UnitSignoff[]>([...makeUnits(['Chief']), blankUnit()])
+  const [operationsUnits, setOperationsUnits] = useState<UnitSignoff[]>([...makeUnits(OPERATIONS_UNITS), blankUnit()])
 
   const [remarks, setRemarks] = useState('')
   const [forReassignment, setForReassignment] = useState(false)
@@ -321,22 +339,17 @@ export default function Ics221Form() {
   useEffect(() => {
     if (positions203.length === 0) return
 
-    const updatedLogistics = logisticsUnits.map(u => ({
-      ...u,
-      name: u.name || lookupName(u.unit_name, 'LOGISTICS SECTION'),
-    }))
-    const updatedFinance = financeUnits.map(u => ({
-      ...u,
-      name: u.name || lookupName(u.unit_name, 'FINANCE/ADMINISTRATION SECTION'),
-    }))
-    const updatedPlanning = planningUnits.map(u => ({
-      ...u,
-      name: u.name || lookupName(u.unit_name, 'PLANNING SECTION'),
-    }))
-    const updatedOperations = operationsUnits.map(u => ({
-      ...u,
-      name: u.name || lookupName(u.unit_name, 'OPERATIONS SECTION'),
-    }))
+    const fillNames = (units: UnitSignoff[], sectionKey: string) =>
+      units.map(u => ({
+        ...u,
+        // Renamed/custom rows keep whatever the user typed — no 207 auto-fill.
+        name: u.name || (KNOWN_UNIT_NAMES.has(u.unit_name) ? lookupName(u.unit_name, sectionKey) : ''),
+      }))
+
+    const updatedLogistics = fillNames(logisticsUnits, 'LOGISTICS SECTION')
+    const updatedFinance = fillNames(financeUnits, 'FINANCE/ADMINISTRATION SECTION')
+    const updatedPlanning = fillNames(planningUnits, 'PLANNING SECTION')
+    const updatedOperations = fillNames(operationsUnits, 'OPERATIONS SECTION')
 
     const hasChanges =
       JSON.stringify(updatedLogistics) !== JSON.stringify(logisticsUnits) ||
@@ -501,6 +514,7 @@ export default function Ics221Form() {
     title: string,
     units: UnitSignoff[],
     setter: React.Dispatch<React.SetStateAction<UnitSignoff[]>>,
+    minRows: number,
   ) => (
     <div className="clearance-section">
       <h3 className="section-title">{title}</h3>
@@ -510,8 +524,11 @@ export default function Ics221Form() {
         <div className="col-remarks">Remarks</div>
         <div className="col-name">Name</div>
         <div className="col-sig">Signature</div>
+        <div className="col-remove"></div>
       </div>
-      {units.map((unit, i) => (
+      {units.map((unit, i) => {
+        const canRemove = !isReadonly && units.length > minRows
+        return (
         <div key={i} className="clearance-row">
           <div className="col-check">
             <input
@@ -521,7 +538,15 @@ export default function Ics221Form() {
               disabled={isReadonly}
             />
           </div>
-          <div className="col-unit">{unit.unit_name}</div>
+          <div className="col-unit">
+            <input
+              type="text"
+              value={unit.unit_name}
+              placeholder="Unit name"
+              onChange={e => updateUnit(setter, i, 'unit_name', e.target.value)}
+              disabled={isReadonly}
+            />
+          </div>
           <div className="col-remarks">
             <input
               type="text"
@@ -546,8 +571,25 @@ export default function Ics221Form() {
               disabled={isReadonly}
             />
           </div>
+          <div className="col-remove">
+            {canRemove && (
+              <button
+                className="remove-row-btn"
+                title="Remove row"
+                onClick={() => setter(prev => prev.filter((_, j) => j !== i))}
+              >
+                &times;
+              </button>
+            )}
+          </div>
         </div>
-      ))}
+        )
+      })}
+      {!isReadonly && (
+        <button className="add-row-btn" onClick={() => setter(prev => [...prev, blankUnit()])}>
+          + Add Row
+        </button>
+      )}
     </div>
   )
 
@@ -651,10 +693,10 @@ export default function Ics221Form() {
               You and your resources are in the process of being released. Resources are not released until the checked boxes below have been signed off by the appropriate overhead and the Demobilization Unit Leader (or Planning Section representative).
             </p>
 
-            {renderClearanceSection('LOGISTICS SECTION', logisticsUnits, setLogisticsUnits)}
-            {renderClearanceSection('FINANCE/ADMINISTRATION SECTION', financeUnits, setFinanceUnits)}
-            {renderClearanceSection('PLANNING SECTION', planningUnits, setPlanningUnits)}
-            {renderClearanceSection('OPERATIONS SECTION', operationsUnits, setOperationsUnits)}
+            {renderClearanceSection('LOGISTICS SECTION', logisticsUnits, setLogisticsUnits, 1)}
+            {renderClearanceSection('FINANCE/ADMINISTRATION SECTION', financeUnits, setFinanceUnits, 1)}
+            {renderClearanceSection('PLANNING SECTION', planningUnits, setPlanningUnits, 1)}
+            {renderClearanceSection('OPERATIONS SECTION', operationsUnits, setOperationsUnits, 1)}
           </div>
 
           <div className="form-row two-col">

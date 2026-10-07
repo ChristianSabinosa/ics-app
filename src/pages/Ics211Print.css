@@ -70,24 +70,34 @@
 }
 
 .ics211-print-page .ndrrmc-logo {
-  width: 65px;
+  display: block;
+  width: 70px;
   height: auto;
 }
 
 .ics211-print-page .form-frame td.title-cell {
+  display: table-cell;
   text-align: center;
-  padding: 10px;
+  padding: 6px 10px;
 }
 
 .ics211-print-page .title-cell h1 {
-  font-size: 1.4rem;
-  letter-spacing: 3px;
+  display: block;
+  width: 100%;
+  font-size: 17pt;
+  font-weight: 700;
+  letter-spacing: 1px;
+  line-height: 1.15;
   margin: 0;
   color: #000;
 }
 
 .ics211-print-page .title-cell h2 {
-  font-size: 1rem;
+  display: block;
+  width: 100%;
+  font-size: 14pt;
+  font-weight: 700;
+  line-height: 1.15;
   margin: 2px 0 0;
   color: #000;
 }
@@ -99,13 +109,18 @@
 
 .ics211-print-page .top-fields td {
   border: 1px solid #000;
-  padding: 6px 8px;
+  padding: 4px 6px;
   vertical-align: top;
   font-size: 0.75rem;
+  line-height: 1.2;
+}
+
+.ics211-print-page .field-box {
+  width: 33.33%;
 }
 
 .ics211-print-page .field-box.wide {
-  width: 40%;
+  width: 33.33%;
 }
 
 .ics211-print-page .field-num {
@@ -113,20 +128,20 @@
 }
 
 .ics211-print-page .field-data {
-  margin-top: 4px;
+  margin-top: 2px;
   font-weight: 400;
-  min-height: 14px;
+  min-height: 12px;
 }
 
 .ics211-print-page .checkbox-print-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 70px;
-  margin-top: 6px;
+  flex-wrap: nowrap;
+  gap: 6px;
+  margin-top: 4px;
 }
 
 .ics211-print-page .print-checkbox {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   white-space: nowrap;
 }
 

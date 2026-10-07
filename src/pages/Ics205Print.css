@@ -70,24 +70,34 @@
 }
 
 .ics205-print-page .ndrrmc-logo {
-  width: 65px;
+  display: block;
+  width: 70px;
   height: auto;
 }
 
 .ics205-print-page .form-frame td.title-cell {
+  display: table-cell;
   text-align: center;
-  padding: 10px;
+  padding: 6px 10px;
 }
 
 .ics205-print-page .title-cell h1 {
-  font-size: 1.4rem;
-  letter-spacing: 3px;
+  display: block;
+  width: 100%;
+  font-size: 17pt;
+  font-weight: 700;
+  letter-spacing: 1px;
+  line-height: 1.15;
   margin: 0;
   color: #000;
 }
 
 .ics205-print-page .title-cell h2 {
-  font-size: 1rem;
+  display: block;
+  width: 100%;
+  font-size: 14pt;
+  font-weight: 700;
+  line-height: 1.15;
   margin: 2px 0 0;
   color: #000;
 }

@@ -65,31 +65,41 @@
 }
 
 .ics206-print-page .form-frame td.logo-cell {
-  width: 110px;
+  width: 80px;
   padding: 8px 10px;
   vertical-align: middle;
 }
 
 .ics206-print-page .ndrrmc-logo {
-  width: 98px;
+  display: block;
+  width: 70px;
   height: auto;
 }
 
 .ics206-print-page .form-frame td.title-cell {
+  display: table-cell;
   text-align: center;
-  padding: 10px;
+  padding: 6px 10px;
   vertical-align: middle;
 }
 
 .ics206-print-page .title-cell h1 {
-  font-size: 1.4rem;
-  letter-spacing: 3px;
+  display: block;
+  width: 100%;
+  font-size: 17pt;
+  font-weight: 700;
+  letter-spacing: 1px;
+  line-height: 1.15;
   margin: 0;
   color: #000;
 }
 
 .ics206-print-page .title-cell h2 {
-  font-size: 1rem;
+  display: block;
+  width: 100%;
+  font-size: 14pt;
+  font-weight: 700;
+  line-height: 1.15;
   margin: 2px 0 0;
   color: #000;
 }
@@ -168,8 +178,34 @@
 }
 
 .ics206-print-page .data-grid .check-cell {
+  display: table-cell;
   text-align: center;
   vertical-align: middle;
+}
+
+/* Hospitals grid: 12 columns must fit a 210mm portrait page — fixed layout
+   with proportional widths so the check columns can't be pushed off-page. */
+.ics206-print-page .data-grid.hosp-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.ics206-print-page .data-grid.hosp-table th,
+.ics206-print-page .data-grid.hosp-table td {
+  padding: 2px 3px;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.ics206-print-page .data-grid.hosp-table thead tr:first-child th:nth-child(1),
+.ics206-print-page .data-grid.hosp-table thead tr:first-child th:nth-child(2),
+.ics206-print-page .data-grid.hosp-table thead tr:first-child th:nth-child(3),
+.ics206-print-page .data-grid.hosp-table thead tr:first-child th:nth-child(4) {
+  width: 12%;
+}
+
+.ics206-print-page .data-grid.hosp-table thead tr:first-child th:nth-child(n+5) {
+  width: 6.5%;
 }
 
 /* Procedures box */
