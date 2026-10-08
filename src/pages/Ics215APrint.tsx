@@ -12,6 +12,7 @@ interface Hazard {
 interface Division {
   id: string
   division_group: string
+  mitigating_measures: string
   hazards: Hazard[]
 }
 
@@ -50,7 +51,7 @@ export default function Ics215APrint({
   const divList = divisions.length > 0
     ? divisions
     : Array.from({ length: EMPTY_DIV }, (_, i) => ({
-        id: `empty-${i}`, division_group: '', hazards: [] as Hazard[],
+        id: `empty-${i}`, division_group: '', mitigating_measures: '', hazards: [] as Hazard[],
       }))
   const divCount = divList.length
 
@@ -178,7 +179,7 @@ export default function Ics215APrint({
                   </div>
                 ))}
                 <div className="g-cell measures-cell" style={{ gridColumn: `${4 + hazardCount} / ${endCol}`, gridRow: R(row) }}>
-                  {getHazardMeasures(div, hazards[0])}
+                  {div.mitigating_measures || getHazardMeasures(div, hazards[0])}
                 </div>
               </React.Fragment>
             )
