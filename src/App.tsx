@@ -114,12 +114,35 @@ function RouteFallback() {
   )
 }
 
+/**
+ * Landing route: while the session loads show the same placeholder as the
+ * fallback (avoids flashing login on cold open), then send signed-in users
+ * to the dashboard and everyone else to the sign-in screen.
+ */
+function RootRedirect() {
+  const { user, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: '#950606' }}>
+        Loading...
+      </div>
+    )
+  }
+
+  return <Navigate to={user ? '/dashboard' : '/login'} replace />
+}
+
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <AdminProvider>
           <Routes>
+            {/* Bare domain: signed-in users land on the dashboard, everyone
+                else on login. Without this, a persisted session on `/` fell
+                into RouteFallback's "Page not found". */}
+            <Route path="/" element={<RootRedirect />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/create-incident" element={<ProtectedRoute><CreateIncident /></ProtectedRoute>} />
