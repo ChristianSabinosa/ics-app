@@ -46,6 +46,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
       options: {
         data: metadata,
+        // Confirmation links must return to whatever origin the user signed up
+        // from; without this Supabase falls back to the project Site URL (which
+        // pointed at localhost:3000 and broke prod signups).
+        emailRedirectTo: `${window.location.origin}/login`,
       },
     })
     return { error }
