@@ -225,3 +225,59 @@
   .view-table th,
   .view-table td { padding: 6px 8px; }
 }
+
+/* Phones: personnel, vehicle and equipment rows become labeled cards. */
+@media (max-width: 600px) {
+  .checkin-view-main { padding: 16px 12px; }
+
+  .manifest-header,
+  .view-section { padding: 16px; }
+
+  /* Topbar Edit/Print go full-width. */
+  .checkin-topbar .topbar-actions { width: 100%; }
+
+  .checkin-topbar .topbar-actions .action-btn {
+    flex: 1 1 auto;
+    min-height: 44px;
+    text-align: center;
+  }
+
+  .view-table thead { display: none; }
+
+  .view-table,
+  .view-table tbody,
+  .view-table tr,
+  .view-table td {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .view-table tbody tr {
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    padding: 4px 12px 10px;
+  }
+
+  .view-table tr:hover td { background: none; }
+
+  .view-table td {
+    border-bottom: 1px solid #f0f0f0;
+    padding: 8px 0;
+    font-size: 0.85rem;
+  }
+
+  .view-table td:last-child { border-bottom: none; }
+
+  .view-table td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #888;
+    margin-bottom: 2px;
+  }
+}

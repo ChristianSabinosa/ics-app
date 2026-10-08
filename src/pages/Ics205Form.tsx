@@ -340,8 +340,8 @@ export default function Ics205Form() {
             <div className="form-field">
               <label>2. OPERATIONAL PERIOD</label>
               <div className="op-period-grid">
-                <div><label>From:</label><input type="date" value={opFromDate} onChange={(e) => setOpFromDate(e.target.value)} /><input type="time" value={opFromTime} onChange={(e) => setOpFromTime(e.target.value)} /></div>
-                <div><label>To:</label><input type="date" value={opToDate} onChange={(e) => setOpToDate(e.target.value)} /><input type="time" value={opToTime} onChange={(e) => setOpToTime(e.target.value)} /></div>
+                <div className="op-period-row"><span>From:</span><input type="date" value={opFromDate} onChange={(e) => setOpFromDate(e.target.value)} /><input type="time" value={opFromTime} onChange={(e) => setOpFromTime(e.target.value)} /></div>
+                <div className="op-period-row"><span>To:</span><input type="date" value={opToDate} onChange={(e) => setOpToDate(e.target.value)} /><input type="time" value={opToTime} onChange={(e) => setOpToTime(e.target.value)} /></div>
               </div>
             </div>
           </div>

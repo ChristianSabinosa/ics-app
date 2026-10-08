@@ -236,6 +236,17 @@
   margin-bottom: 6px;
 }
 
+/* Copied from the 203 form: the Operational Period grey-box treatment, so
+   both forms read as one design. Phone stacking for these boxes lives in the
+   600px block below. */
+.op-period-display {
+  padding: 6px 10px;
+  background: #f9f9f9;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
 .op-period-row span {
   font-weight: 600;
   font-size: 0.85rem;
@@ -381,6 +392,44 @@
   border-radius: 4px;
   margin-bottom: 16px;
   font-size: 0.9rem;
+}
+
+@media (max-width: 600px) {
+  /* Header fields and signature block stack. */
+  .form-row.two-col { grid-template-columns: 1fr; }
+  .sig-row { grid-template-columns: 1fr; }
+
+  /* Attachment checklist: one column; full-row touch targets. */
+  .attachments-grid { grid-template-columns: 1fr; }
+  .others-col { grid-column: auto; }
+
+  .attach-item {
+    padding: 6px 0;
+    min-height: 44px;
+    box-sizing: border-box;
+  }
+
+  .attach-item input[type="checkbox"] {
+    min-width: 24px;
+    min-height: 24px;
+  }
+
+  /* Operational Period: each From/To becomes its own stacked card, keeping
+     the 203 grey-box treatment copied above. */
+  .op-period-row {
+    flex-direction: column;
+    align-items: stretch;
+    margin-bottom: 10px;
+  }
+
+  .op-period-row span { min-width: 0; }
+
+  .op-period-row input[type="date"],
+  .op-period-row input[type="time"] {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 44px;
+  }
 }
 
 @media print {

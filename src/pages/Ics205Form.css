@@ -220,24 +220,29 @@
   gap: 8px;
 }
 
-.op-period-grid > div {
+/* Copied from the 208 form so the Operational Period rows read as one design
+   across forms. Phone stacking for these rows lives in the 600px block. */
+.op-period-row {
   display: flex;
-  gap: 8px;
   align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
 }
 
-.op-period-grid > div > label {
+.op-period-row span {
   font-weight: 600;
-  font-size: 0.8rem;
-  min-width: 35px;
+  font-size: 0.85rem;
+  min-width: 40px;
 }
 
-.op-period-grid > div > input[type="date"] {
-  flex: 1;
-}
-
-.op-period-grid > div > input[type="time"] {
-  width: 100px;
+.op-period-row input[type="date"],
+.op-period-row input[type="time"] {
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .form-section {
@@ -484,5 +489,33 @@
     flex-direction: column;
     gap: 8px;
     align-items: flex-start;
+  }
+
+  /* Channel grid keeps its columns inside the swipe area. */
+  .channels-table-wrapper table { min-width: 700px; }
+
+  /* Operational Period: each From/To stacks full-width, like the 208. */
+  .op-period-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .op-period-row span { min-width: 0; }
+
+  .op-period-row input[type="date"],
+  .op-period-row input[type="time"] {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 44px;
+  }
+
+  .add-row-buttons {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .add-row-buttons .add-row-btn {
+    flex: 1 1 auto;
+    min-height: 44px;
   }
 }

@@ -492,6 +492,7 @@ export default function Ics204Form() {
             </div>
           )}
 
+          <div className="form-section">
           <div className="form-row two-col">
             <div className="form-field">
               <label>1. INCIDENT/EVENT NAME</label>
@@ -500,18 +501,19 @@ export default function Ics204Form() {
             <div className="form-field">
               <label>2. OPERATIONAL PERIOD</label>
               <div className="op-period-grid">
-                <div>
-                  <label>From:</label>
+                <div className="op-period-row">
+                  <span>From:</span>
                   <input type="date" value={opFromDate} onChange={(e) => setOpFromDate(e.target.value)} disabled={isReadonly} />
                   <input type="time" value={opFromTime} onChange={(e) => setOpFromTime(e.target.value)} disabled={isReadonly} />
                 </div>
-                <div>
-                  <label>To:</label>
+                <div className="op-period-row">
+                  <span>To:</span>
                   <input type="date" value={opToDate} onChange={(e) => setOpToDate(e.target.value)} disabled={isReadonly} />
                   <input type="time" value={opToTime} onChange={(e) => setOpToTime(e.target.value)} disabled={isReadonly} />
                 </div>
               </div>
             </div>
+          </div>
           </div>
 
           <div className="form-section">
@@ -519,19 +521,19 @@ export default function Ics204Form() {
             <div className="bvd-grid">
               <div className="form-field">
                 <label>Branch</label>
-                <input type="text" value={branch} onChange={(e) => setBranch(e.target.value)} disabled={isReadonly} placeholder="Branch" />
+                <input type="text" value={branch} onChange={(e) => setBranch(e.target.value)} disabled={isReadonly} placeholder="Branch" data-label="Branch" />
               </div>
               <div className="form-field">
                 <label>Group</label>
-                <input type="text" value={groupName} onChange={(e) => setGroupName(e.target.value)} disabled={isReadonly} placeholder="Group" />
+                <input type="text" value={groupName} onChange={(e) => setGroupName(e.target.value)} disabled={isReadonly} placeholder="Group" data-label="Group" />
               </div>
               <div className="form-field">
                 <label>Division</label>
-                <input type="text" value={division} onChange={(e) => setDivision(e.target.value)} disabled={isReadonly} placeholder="Division" />
+                <input type="text" value={division} onChange={(e) => setDivision(e.target.value)} disabled={isReadonly} placeholder="Division" data-label="Division" />
               </div>
               <div className="form-field">
                 <label>Staging Area</label>
-                <input type="text" value={stagingArea} onChange={(e) => setStagingArea(e.target.value)} disabled={isReadonly} placeholder="Staging Area" />
+                <input type="text" value={stagingArea} onChange={(e) => setStagingArea(e.target.value)} disabled={isReadonly} placeholder="Staging Area" data-label="Staging Area" />
               </div>
             </div>
           </div>
@@ -546,12 +548,13 @@ export default function Ics204Form() {
               </div>
               {opsPersonnel.map((p) => (
                 <div className="ops-row" key={p.position}>
-                  <span className="ops-position">{p.position}</span>
+                  <span className="ops-position" data-label="Position">{p.position}</span>
                   <input
                     type="text"
                     value={p.name}
                     placeholder="Name"
                     disabled={isReadonly}
+                    data-label="Name"
                     onChange={(e) => updateOpsPerson(p.position, 'name', e.target.value)}
                   />
                   <input
@@ -559,6 +562,7 @@ export default function Ics204Form() {
                     value={p.contact}
                     placeholder="Contact Number(s)"
                     disabled={isReadonly}
+                    data-label="Contact Number(s)"
                     onChange={(e) => updateOpsPerson(p.position, 'contact', e.target.value)}
                   />
                 </div>
@@ -586,19 +590,19 @@ export default function Ics204Form() {
                 <tbody>
                   {resourceRows.map((r, i) => (
                     <tr key={i}>
-                      <td>
+                      <td data-label="Resource Identifier">
                         <input value={r.resource_identifier} disabled={isReadonly} onChange={(e) => updateResourceRow(i, 'resource_identifier', e.target.value)} />
                       </td>
-                      <td>
+                      <td data-label="Name of Leader">
                         <input value={r.leader_name} disabled={isReadonly} onChange={(e) => updateResourceRow(i, 'leader_name', e.target.value)} />
                       </td>
-                      <td>
+                      <td data-label="Contact Numbers">
                         <input value={r.contact_numbers} disabled={isReadonly} onChange={(e) => updateResourceRow(i, 'contact_numbers', e.target.value)} />
                       </td>
-                      <td>
+                      <td data-label="No. of Personnel">
                         <input type="number" min="0" value={r.personnel} disabled={isReadonly} onChange={(e) => updateResourceRow(i, 'personnel', e.target.value)} />
                       </td>
-                      <td className="trans-cell">
+                      <td className="trans-cell" data-label="Trans. Needed?">
                         <input
                           type="checkbox"
                           checked={r.trans_needed}
@@ -607,17 +611,17 @@ export default function Ics204Form() {
                           title="Transportation needed"
                         />
                       </td>
-                      <td>
+                      <td data-label="Drop-off Point & Time">
                         <input value={r.drop_off} disabled={isReadonly} onChange={(e) => updateResourceRow(i, 'drop_off', e.target.value)} />
                       </td>
-                      <td>
+                      <td data-label="Pick-up Time">
                         <input value={r.pick_up_time} disabled={isReadonly} onChange={(e) => updateResourceRow(i, 'pick_up_time', e.target.value)} />
                       </td>
-                      <td>
+                      <td data-label="Remarks">
                         <input value={r.remarks} disabled={isReadonly} onChange={(e) => updateResourceRow(i, 'remarks', e.target.value)} />
                       </td>
                       {!isReadonly && (
-                        <td className="actions-cell">
+                        <td className="actions-cell" data-label="">
                           <button className="remove-row-btn" onClick={() => removeResourceRow(i)} disabled={isReadonly}>&times;</button>
                         </td>
                       )}
@@ -681,13 +685,13 @@ export default function Ics204Form() {
                 <tbody>
                   {comms.map((c, i) => (
                     <tr key={i}>
-                      <td><input value={c.function} disabled={isReadonly} onChange={(e) => updateCommsRow(i, 'function', e.target.value)} /></td>
-                      <td><input value={c.system} disabled={isReadonly} onChange={(e) => updateCommsRow(i, 'system', e.target.value)} /></td>
-                      <td><input value={c.channel} disabled={isReadonly} onChange={(e) => updateCommsRow(i, 'channel', e.target.value)} /></td>
-                      <td><input value={c.frequency} disabled={isReadonly} onChange={(e) => updateCommsRow(i, 'frequency', e.target.value)} /></td>
-                      <td><input value={c.others} disabled={isReadonly} onChange={(e) => updateCommsRow(i, 'others', e.target.value)} /></td>
+                      <td data-label="Function"><input value={c.function} disabled={isReadonly} onChange={(e) => updateCommsRow(i, 'function', e.target.value)} /></td>
+                      <td data-label="System"><input value={c.system} disabled={isReadonly} onChange={(e) => updateCommsRow(i, 'system', e.target.value)} /></td>
+                      <td data-label="Channel"><input value={c.channel} disabled={isReadonly} onChange={(e) => updateCommsRow(i, 'channel', e.target.value)} /></td>
+                      <td data-label="Frequency"><input value={c.frequency} disabled={isReadonly} onChange={(e) => updateCommsRow(i, 'frequency', e.target.value)} /></td>
+                      <td data-label="Others"><input value={c.others} disabled={isReadonly} onChange={(e) => updateCommsRow(i, 'others', e.target.value)} /></td>
                       {!isReadonly && (
-                        <td className="actions-cell">
+                        <td className="actions-cell" data-label="">
                           <button className="remove-row-btn" onClick={() => removeCommsRow(i)} disabled={isReadonly}>&times;</button>
                         </td>
                       )}

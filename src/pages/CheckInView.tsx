@@ -187,7 +187,7 @@ export default function CheckInView() {
                     <tr><th>Name</th><th>Age</th><th>Gender</th><th>Weight</th><th>Contact</th><th>Capabilities</th><th>Others</th></tr>
                   </thead>
                   <tbody>
-                    <tr><td>{leader.name}</td><td>{leader.age}</td><td>{leader.gender}</td><td>{leader.weight}</td><td>{leader.contact_details}</td><td>{leader.capabilities}</td><td>{leader.others}</td></tr>
+                    <tr><td data-label="Name">{leader.name}</td><td data-label="Age">{leader.age}</td><td data-label="Gender">{leader.gender}</td><td data-label="Weight">{leader.weight}</td><td data-label="Contact">{leader.contact_details}</td><td data-label="Capabilities">{leader.capabilities}</td><td data-label="Others">{leader.others}</td></tr>
                   </tbody>
                 </table>
               </>
@@ -202,7 +202,7 @@ export default function CheckInView() {
                   </thead>
                   <tbody>
                     {members.map((m) => (
-                      <tr key={m.id}><td>{m.name}</td><td>{m.age}</td><td>{m.gender}</td><td>{m.weight}</td><td>{m.contact_details}</td><td>{m.capabilities}</td><td>{m.others}</td></tr>
+                      <tr key={m.id}><td data-label="Name">{m.name}</td><td data-label="Age">{m.age}</td><td data-label="Gender">{m.gender}</td><td data-label="Weight">{m.weight}</td><td data-label="Contact">{m.contact_details}</td><td data-label="Capabilities">{m.capabilities}</td><td data-label="Others">{m.others}</td></tr>
                     ))}
                   </tbody>
                 </table>
@@ -223,7 +223,7 @@ export default function CheckInView() {
                 </thead>
                 <tbody>
                   {vehicles.map((v) => (
-                    <tr key={v.id}><td>{v.vehicle_id}</td><td>{v.operator_name}</td><td>{v.kind}</td><td>{v.type}</td><td>{v.plate_number}</td><td>{v.fuel_type}</td><td>{v.weight}</td><td>{v.contact_details}</td><td>{v.capabilities}</td><td>{v.others}</td></tr>
+                    <tr key={v.id}><td data-label="ID">{v.vehicle_id}</td><td data-label="Operator">{v.operator_name}</td><td data-label="Kind">{v.kind}</td><td data-label="Type">{v.type}</td><td data-label="Plate">{v.plate_number}</td><td data-label="Fuel">{v.fuel_type}</td><td data-label="Weight">{v.weight}</td><td data-label="Contact">{v.contact_details}</td><td data-label="Capabilities">{v.capabilities}</td><td data-label="Others">{v.others}</td></tr>
                   ))}
                 </tbody>
               </table>
@@ -240,7 +240,7 @@ export default function CheckInView() {
                 </thead>
                 <tbody>
                   {equipment.map((eq) => (
-                    <tr key={eq.id}><td>{eq.equipment_id}</td><td>{eq.operator_name}</td><td>{eq.kind}</td><td>{eq.type}</td><td>{eq.source_of_power}</td><td>{eq.fuel_type}</td><td>{eq.weight}</td><td>{eq.contact_details}</td><td>{eq.capabilities}</td><td>{eq.others}</td></tr>
+                    <tr key={eq.id}><td data-label="ID">{eq.equipment_id}</td><td data-label="Operator">{eq.operator_name}</td><td data-label="Kind">{eq.kind}</td><td data-label="Type">{eq.type}</td><td data-label="Power">{eq.source_of_power}</td><td data-label="Fuel">{eq.fuel_type}</td><td data-label="Weight">{eq.weight}</td><td data-label="Contact">{eq.contact_details}</td><td data-label="Capabilities">{eq.capabilities}</td><td data-label="Others">{eq.others}</td></tr>
                   ))}
                 </tbody>
               </table>

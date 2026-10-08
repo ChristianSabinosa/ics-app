@@ -367,6 +367,19 @@
   color: white;
 }
 
+@media (max-width: 600px) {
+  /* Header fields and signature block stack. */
+  .form-row.two-col { grid-template-columns: 1fr; }
+  .sig-row { grid-template-columns: 1fr; }
+
+  .form-actions { flex-wrap: wrap; }
+
+  .form-actions .action-btn {
+    flex: 1 1 auto;
+    min-height: 44px;
+  }
+}
+
 @media print {
   .no-print { display: none !important; }
   .ics208-page { min-height: 0; }

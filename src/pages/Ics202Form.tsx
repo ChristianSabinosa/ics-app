@@ -380,12 +380,12 @@ export default function Ics202Form() {
               </div>
               <div className="form-field">
                 <label>2. OPERATIONAL PERIOD</label>
-                <div className="op-period-row">
+                <div className="op-period-row op-period-display">
                   <span>From:</span>
                   <input type="date" value={opFromDate} onChange={e => setOpFromDate(e.target.value)} disabled={isReadonly} />
                   <input type="time" value={opFromTime} onChange={e => setOpFromTime(e.target.value)} disabled={isReadonly} step="3600" />
                 </div>
-                <div className="op-period-row">
+                <div className="op-period-row op-period-display">
                   <span>To:</span>
                   <input type="date" value={opToDate} onChange={e => setOpToDate(e.target.value)} disabled={isReadonly} />
                   <input type="time" value={opToTime} onChange={e => setOpToTime(e.target.value)} disabled={isReadonly} step="3600" />

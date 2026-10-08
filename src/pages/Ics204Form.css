@@ -145,6 +145,11 @@
   margin-bottom: 16px;
 }
 
+/* Grid children must be allowed to shrink, or the date/time inputs force
+   their column wider than its box and bleed (copied approach: 208 wraps
+   both columns in one bordered section, same as here now). */
+.form-row.two-col > * { min-width: 0; }
+
 .form-field { display: flex; flex-direction: column; gap: 4px; }
 .form-field label { font-weight: 600; font-size: 0.85rem; text-transform: uppercase; }
 
@@ -167,20 +172,30 @@
   gap: 8px;
 }
 
-.op-period-grid > div {
+/* Copied from the 208 form so the Operational Period rows read as one design
+   across forms. Phone stacking for these rows lives in the 600px block. */
+.op-period-row {
   display: flex;
-  gap: 8px;
   align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
 }
 
-.op-period-grid > div > label {
+.op-period-row span {
   font-weight: 600;
-  font-size: 0.8rem;
-  min-width: 42px;
+  font-size: 0.85rem;
+  min-width: 40px;
 }
 
-.op-period-grid > div > input[type="date"] { flex: 1; }
-.op-period-grid > div > input[type="time"] { width: 100px; }
+.op-period-row input[type="date"],
+.op-period-row input[type="time"] {
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  min-width: 0;
+  box-sizing: border-box;
+}
 
 /* Section 3: Branch / Group / Division / Staging Area */
 .bvd-grid {
@@ -394,6 +409,149 @@
   .ops-row.ops-head { display: none; }
   .sig-row { grid-template-columns: 1fr; }
   .sig-field { border-right: none; border-bottom: 1px solid #ccc; }
+}
+
+@media (max-width: 600px) {
+  .bvd-grid { grid-template-columns: 1fr; }
+
+  /* Header row (outside .form-section, so the shared rule misses it). */
+  .form-row.two-col { grid-template-columns: 1fr; }
+
+  /* Operational Period: each From/To stacks full-width, like the 208. */
+  .op-period-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .op-period-row span { min-width: 0; }
+
+  .op-period-row input[type="date"],
+  .op-period-row input[type="time"] {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 44px;
+  }
+
+  /* Branch/Group/Division/Staging Area: one labeled card per field. */
+  .bvd-grid { grid-template-columns: 1fr; }
+
+  .bvd-grid .form-field {
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+  }
+
+  .bvd-grid .form-field input {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  /* Operations Personnel rows become labeled cards. */
+  .ops-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+  }
+
+  .ops-row.ops-head { display: none; }
+
+  .ops-row .ops-position {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #333;
+  }
+
+  .ops-row input {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  /* Resource/comms grids become labeled cards — every field visible without
+     panning right. */
+  .ics204-resources-table,
+  .ics204-comms-table { min-width: 0; }
+
+  .ics204-resources-table thead,
+  .ics204-comms-table thead { display: none; }
+
+  .ics204-resources-table,
+  .ics204-resources-table tbody,
+  .ics204-resources-table tr,
+  .ics204-resources-table td,
+  .ics204-comms-table,
+  .ics204-comms-table tbody,
+  .ics204-comms-table tr,
+  .ics204-comms-table td {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .ics204-resources-table tbody tr,
+  .ics204-comms-table tbody tr {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    padding: 4px 12px 10px;
+  }
+
+  .ics204-resources-table td,
+  .ics204-comms-table td {
+    border-bottom: 1px solid #eee;
+    padding: 8px 0;
+  }
+
+  .ics204-resources-table td:last-child,
+  .ics204-comms-table td:last-child { border-bottom: none; }
+
+  .ics204-resources-table td::before,
+  .ics204-comms-table td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #555;
+    margin-bottom: 2px;
+  }
+
+  .ics204-resources-table td.actions-cell::before,
+  .ics204-comms-table td.actions-cell::before { content: none; }
+
+  .ics204-resources-table td.actions-cell .remove-row-btn,
+  .ics204-comms-table td.actions-cell .remove-row-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  /* Trans. Needed checkbox: label above, box below, full-row tap target. */
+  .ics204-resources-table td.trans-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .ics204-resources-table td.trans-cell input[type="checkbox"] {
+    width: 28px;
+    height: 28px;
+  }
+
+  .add-row-buttons {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .add-row-buttons .add-row-btn {
+    flex: 1 1 auto;
+    min-height: 44px;
+  }
+
+  .remove-row-btn { min-width: 44px; min-height: 44px; }
 }
 
 @media print { .no-print { display: none !important; } }
