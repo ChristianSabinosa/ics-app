@@ -1,4 +1,15 @@
 import './Ics203Print.css'
+import {
+  buildOpsFromPositions,
+  padOpsForPrint,
+  formatDivision,
+  isDefaultOps,
+  defaultOpsTemplate,
+  showAirWaterPlaceholders,
+  branchLetter,
+  type OpsData,
+  type OpsPosition,
+} from '../lib/ops203'
 
 interface Position {
   position_key: string
@@ -17,6 +28,8 @@ interface Ics203PrintProps {
   opToDate: string
   opToTime: string
   positions: Position[]
+  /** Manual Operations snapshot; falls back to a 207 import when absent. */
+  ops?: OpsData | null
   preparedByName: string
   preparedBySig: string
   preparedDate: string
@@ -48,7 +61,15 @@ export default function Ics203Print(props: Ics203PrintProps) {
   const pscTechSpec = getBySection('PSC Tech Specialist')
   const lscSub = getBySection('LSC Sub')
   const fascSub = getBySection('FASC Sub')
-  const oscBranches = getBySection('OSC Branch')
+  // Manual snapshot when present; old forms without one fall back to a 207
+  // import. Untouched snapshots print the paper default (blank BRANCH I–III
+  // + Air/Water); customized ones print as built, with D./E. placeholders
+  // only while the structure still fits the template.
+  const opsPos: OpsPosition[] = pos.map(p => ({ ...p, parent_key: p.parent_key ?? null }))
+  const snapshot = props.ops ?? buildOpsFromPositions(opsPos)
+  const effective = isDefaultOps(snapshot) ? defaultOpsTemplate() : snapshot
+  const opsData = padOpsForPrint(effective)
+  const showPlaceholders = showAirWaterPlaceholders(effective)
   const supportIC = getSupport('ic')
   const supportOSC = getSupport('osc')
   const supportPSC = getSupport('psc')
@@ -120,29 +141,24 @@ export default function Ics203Print(props: Ics203PrintProps) {
   // ─── Right Column: Sections 7-8 ───────────────────────────────
   const deputyOSC = supportOSC[0]
 
-  const buildBranchRows = (branchIdx: number, label: string) => {
-    const branch = oscBranches[branchIdx]
-    const kids = branch ? pos.filter(p => p.parent_key === branch.position_key) : []
-    const rows = [
-      { role: label, name: '', bold: true },
-      { role: 'Branch Director', name: branch?.person_name || '', indent: true },
-      { role: 'Deputy', name: '', indent: true },
-    ]
-    for (let i = 0; i < Math.max(kids.length, 3); i++) {
-      const k = kids[i]
-      rows.push({ role: 'Division/Group', name: k?.person_name || k?.position_title || '', indent: true })
-    }
-    return rows
-  }
-
+  // Manual snapshot (padded to paper-form minimums so blanks print as empty
+  // lines); falls back to a 207 import for old forms without one.
   const section7Rows = [
     { role: 'Chief', name: osc?.person_name || '' },
     { role: 'Deputy', name: deputyOSC?.person_name || '' },
-    ...buildBranchRows(0, 'A. BRANCH I'),
-    ...buildBranchRows(1, 'B. BRANCH II'),
-    ...buildBranchRows(2, 'C. BRANCH III'),
-    { role: 'D. AIR OPERATIONS BRANCH', name: '', bold: true },
-    { role: 'E. WATER OPERATIONS BRANCH', name: '', bold: true },
+    ...opsData.branches.flatMap((branch, bi) => [
+      { role: `${branchLetter(bi)}. ${branch.label.trim() || 'BRANCH'}`.toUpperCase(), name: '', bold: true },
+      { role: 'Branch Director', name: branch.director, indent: true },
+      { role: 'Deputy', name: branch.deputy, indent: true },
+      ...branch.divisions.map(div => ({ role: 'Division/Group', name: formatDivision(div), indent: true })),
+    ]),
+    ...opsData.standalone.map(div => ({ role: 'Division/Group', name: formatDivision(div) })),
+    ...(showPlaceholders
+      ? [
+          { role: 'D. AIR OPERATIONS BRANCH', name: '', bold: true },
+          { role: 'E. WATER OPERATIONS BRANCH', name: '', bold: true },
+        ]
+      : []),
   ]
 
   const timeUnit = findSub(fascSub, 'Time')
@@ -329,23 +345,23 @@ export default function Ics203Print(props: Ics203PrintProps) {
                     {renderRightContent(rightItems)}
                   </td>
                 </tr>
+              </tbody>
+            </table>
+            {/* 9. Prepared by — single-row footer table, copied from the 208 print */}
+            <table className="ics203-footer">
+              <tbody>
                 <tr>
-                  <td className="footer-cell" colSpan={2}>
-                    <div className="footer-row">
-                      <div className="footer-num">9. Prepared by RESL</div>
-                      <div className="footer-field">
-                        <span className="footer-label">Name and Signature:</span>
-                        <span className="footer-value">{props.preparedByName || props.preparedBySig || '\u00A0'}</span>
-                      </div>
-                      <div className="footer-field">
-                        <span className="footer-label">Date Prepared:</span>
-                        <span className="footer-value">{props.preparedDate || '\u00A0'}</span>
-                      </div>
-                      <div className="footer-field">
-                        <span className="footer-label">Time Prepared:</span>
-                        <span className="footer-value">{fmtTime(props.preparedTime) || '\u00A0'}</span>
-                      </div>
-                    </div>
+                  <td className="ics203-c1">
+                    <span className="ics203-strong">9. Prepared by RESL</span>
+                  </td>
+                  <td className="ics203-c2">
+                    Name and Signature: <span className="ics203-value">{props.preparedByName || props.preparedBySig || '\u00A0'}</span>
+                  </td>
+                  <td className="ics203-c3">
+                    Date Prepared: <span className="ics203-value">{props.preparedDate || '\u00A0'}</span>
+                  </td>
+                  <td className="ics203-c4">
+                    Time Prepared: <span className="ics203-value">{fmtTime(props.preparedTime) || '\u00A0'}</span>
                   </td>
                 </tr>
               </tbody>

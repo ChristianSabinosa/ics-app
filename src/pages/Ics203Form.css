@@ -168,6 +168,9 @@
 
 .staff-row:last-child { border-bottom: none; }
 
+/* Division/Group rows carry two inputs: unit name + assigned personnel */
+.staff-row.ops-div-row { grid-template-columns: 200px 1fr 1fr auto; align-items: center; }
+
 .staff-role { font-weight: 500; }
 .staff-name { color: #333; }
 .staff-input {
@@ -187,6 +190,34 @@
   grid-template-columns: 1fr;
   margin-top: 8px;
   border-bottom: none;
+}
+
+/* Manual Operations Section (box 7) controls */
+.ops-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.ops-toolbar .action-btn { background: #e5e7eb; color: #374151; }
+.branch-label-input { font-weight: 700; }
+.ops-remove {
+  border: none;
+  background: transparent;
+  color: #b91c1c;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 6px;
+}
+.ops-add-row {
+  border: none;
+  background: transparent;
+  color: #1e3a5f;
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 4px 0;
+  font-family: inherit;
 }
 
 .signature-section { padding: 0; border: none; }

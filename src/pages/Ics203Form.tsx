@@ -9,13 +9,23 @@ import { isOfflinePath, getOperatorName } from '../lib/offline/mode'
 import {
   getOfflineIncident,
   offAll,
+  offChildren,
   offLatest,
   offGet,
   offInsert,
   offUpdate,
   touchOfflineIncident,
 } from '../lib/offline/store'
+import {
+  emptyOps,
+  coerceOpsData,
+  buildOpsFromPositions,
+  emptyBranch,
+  type OpsData,
+  type OpsDivision,
+} from '../lib/ops203'
 import './Ics203Form.css'
+
 
 interface Position {
   position_key: string
@@ -26,6 +36,31 @@ interface Position {
   agency: string
   parent_key: string | null
 }
+
+// 207 Standard and Expanded are separate form records. Merge both so 203
+// reflects the org no matter which tab it was built on. Positions are keyed
+// by position_key (the two tabs use different key spaces for user-added
+// subs); on key conflicts the record with an assigned name wins, else
+// Expanded wins.
+const merge207Positions = (primary: Position[], secondary: Position[]): Position[] => {
+  const merged = new Map(primary.map(p => [p.position_key, p]))
+  for (const p of secondary) {
+    const cur = merged.get(p.position_key)
+    if (!cur) merged.set(p.position_key, p)
+    else if (!cur.person_name && p.person_name) merged.set(p.position_key, p)
+  }
+  return [...merged.values()]
+}
+
+const toPosition = (p: Record<string, unknown>): Position => ({
+  position_key: p.position_key as string,
+  position_title: p.position_title as string,
+  abbreviation: p.abbreviation as string,
+  section: p.section as string,
+  person_name: (p.person_name as string) ?? '',
+  agency: (p.agency as string) ?? '',
+  parent_key: (p.parent_key as string | null) ?? null,
+})
 
 export default function Ics203Form() {
   const { id: incidentId } = useParams<{ id: string }>()
@@ -92,20 +127,20 @@ export default function Ics203Form() {
         setHas202(false)
       }
 
-      const expanded207 = await offLatest('ics_207_forms', incidentId)
-      if (expanded207) {
+      // Load positions from BOTH 207 variants (latest Expanded + latest
+      // Standard) and merge them, so 203 reflects the org no matter which
+      // tab it was built on.
+      const forms207 = (await offAll('ics_207_forms', incidentId))
+        .sort((a, b) => String(b.created_at ?? '').localeCompare(String(a.created_at ?? '')))
+      const expanded207 = forms207.find(f => ((f.form_type as string) || 'standard') === 'expanded')
+      const standard207 = forms207.find(f => ((f.form_type as string) || 'standard') === 'standard')
+      const loadOffPos = async (form: typeof expanded207): Promise<Position[]> => {
+        if (!form) return []
+        return (await offChildren('ics_207_positions', form.id as string)).map(toPosition)
+      }
+      if (expanded207 || standard207) {
         setHas207(true)
-        const posData = await offAll('ics_207_positions', incidentId)
-        const positions = posData.filter(p => p.form_id === expanded207.id)
-        setPositions(positions.map(p => ({
-          position_key: p.position_key as string,
-          position_title: p.position_title as string,
-          abbreviation: p.abbreviation as string,
-          section: p.section as string,
-          person_name: p.person_name as string,
-          agency: p.agency as string,
-          parent_key: (p.parent_key as string | null) ?? null,
-        })))
+        setPositions(merge207Positions(await loadOffPos(expanded207), await loadOffPos(standard207)))
       } else {
         setHas207(false)
       }
@@ -123,6 +158,8 @@ export default function Ics203Form() {
         setPreparedDate(formToLoad.prepared_date as string)
         setPreparedTime(formToLoad.prepared_time as string)
         setStatus(formToLoad.status as 'Draft' | 'Submitted')
+        const coerced = coerceOpsData(formToLoad.ops_data)
+        if (coerced) setOps(coerced)
       }
 
       setLoading(false)
@@ -156,8 +193,18 @@ export default function Ics203Form() {
       setHas202(false)
     }
 
-    // Load positions from 207 (prefer expanded, fall back to standard)
-    let form207 = null
+    // Load positions from BOTH 207 variants (latest Expanded + latest
+    // Standard, standard included even when form_type is null from old rows)
+    // and merge them, so 203 reflects the org no matter which tab it was
+    // built on.
+    const loadPos = async (formId: string): Promise<Position[]> => {
+      const { data: posData } = await supabase
+        .from('ics_207_positions')
+        .select('position_key, position_title, abbreviation, section, person_name, agency, parent_key')
+        .eq('form_id', formId)
+        .order('sort_order')
+      return (posData ?? []).map(p => ({ ...p, parent_key: p.parent_key ?? null }))
+    }
     const { data: expanded207 } = await supabase
       .from('ics_207_forms')
       .select('id')
@@ -166,29 +213,21 @@ export default function Ics203Form() {
       .order('created_at', { ascending: false })
       .limit(1)
       .single()
+    const { data: standard207 } = await supabase
+      .from('ics_207_forms')
+      .select('id')
+      .eq('incident_id', incidentId)
+      .or('form_type.eq.standard,form_type.is.null')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
 
-    if (expanded207) {
-      form207 = expanded207
-    } else {
-      const { data: standard207 } = await supabase
-        .from('ics_207_forms')
-        .select('id')
-        .eq('incident_id', incidentId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
-      form207 = standard207
-    }
-
-    if (form207) {
+    if (expanded207 || standard207) {
       setHas207(true)
-      const { data: posData } = await supabase
-        .from('ics_207_positions')
-        .select('position_key, position_title, abbreviation, section, person_name, agency, parent_key')
-        .eq('form_id', form207.id)
-        .order('sort_order')
-
-      if (posData) setPositions(posData)
+      setPositions(merge207Positions(
+        expanded207 ? await loadPos(expanded207.id) : [],
+        standard207 ? await loadPos(standard207.id) : [],
+      ))
     } else {
       setHas207(false)
     }
@@ -223,6 +262,8 @@ export default function Ics203Form() {
       setPreparedDate(formToLoad.prepared_date)
       setPreparedTime(formToLoad.prepared_time)
       setStatus(formToLoad.status)
+      const coercedOnline = coerceOpsData(formToLoad.ops_data)
+      if (coercedOnline) setOps(coercedOnline)
     }
 
     setLoading(false)
@@ -246,7 +287,10 @@ export default function Ics203Form() {
     setSuccess('')
 
     const now = new Date()
-    const formData = {
+    // ops_data holds the manual Operations Section snapshot. If the column
+    // does not exist yet in Supabase (migration not run), the save falls back
+    // to storing the rest of the form and warns instead of failing.
+    const formData: Record<string, unknown> = {
       incident_id: incidentId,
       incident_name: incidentName,
       op_period_from_date: opFromDate,
@@ -259,9 +303,17 @@ export default function Ics203Form() {
       prepared_time: formStatus === 'Submitted' ? now.toTimeString().slice(0, 5) : preparedTime,
       status: formStatus,
       updated_at: now.toISOString(),
+      ops_data: ops,
     }
+    const withoutOps = () => {
+      const rest = { ...formData }
+      delete rest.ops_data
+      return rest
+    }
+    const missingOpsColumn = (message: string) => /ops_data/i.test(message)
 
     let fId = formId
+    let opsWarning = ''
 
     if (offMode) {
       try {
@@ -287,22 +339,45 @@ export default function Ics203Form() {
 
     if (fId) {
       const { error: updateError } = await supabase.from('ics_203_forms').update(formData).eq('id', fId)
-      if (updateError) { setError(updateError.message); setSaving(false); return }
+      if (updateError) {
+        if (missingOpsColumn(updateError.message)) {
+          const { error: retryError } = await supabase.from('ics_203_forms').update(withoutOps()).eq('id', fId)
+          if (retryError) { setError(retryError.message); setSaving(false); return }
+          opsWarning = 'Saved, but the Operations structure was not stored — the database is missing the ops_data column.'
+        } else {
+          setError(updateError.message); setSaving(false); return
+        }
+      }
     } else {
       const { data: inserted, error: insertError } = await supabase
         .from('ics_203_forms')
         .insert(formData)
         .select()
         .single()
-      if (insertError) { setError(insertError.message); setSaving(false); return }
-      fId = inserted.id
-      setFormId(fId)
+      if (insertError) {
+        if (missingOpsColumn(insertError.message)) {
+          const { data: retryInserted, error: retryError } = await supabase
+            .from('ics_203_forms')
+            .insert(withoutOps())
+            .select()
+            .single()
+          if (retryError) { setError(retryError.message); setSaving(false); return }
+          fId = retryInserted.id
+          setFormId(fId)
+          opsWarning = 'Saved, but the Operations structure was not stored — the database is missing the ops_data column.'
+        } else {
+          setError(insertError.message); setSaving(false); return
+        }
+      } else {
+        fId = inserted.id
+        setFormId(fId)
+      }
     }
 
     setSaving(false)
     setStatus(formStatus)
     setIsEditing(false)
-    setSuccess(formStatus === 'Draft' ? 'Progress saved as draft.' : 'ICS Form 203 submitted successfully!')
+    setSuccess((formStatus === 'Draft' ? 'Progress saved as draft.' : 'ICS Form 203 submitted successfully!') + (opsWarning ? ` ${opsWarning}` : ''))
   }
 
   const fmtTime = (t: string) => t ? t.replace(':', '') + 'H' : ''
@@ -327,9 +402,61 @@ export default function Ics203Form() {
   const pscTechSpec = getPositionsBySection('PSC Tech Specialist')
   const lscSub = getPositionsBySection('LSC Sub')
   const fascSub = getPositionsBySection('FASC Sub')
-  const oscBranches = getPositionsBySection('OSC Branch')
-  const oscDivisions = getPositionsBySection('OSC Division')
-  const oscGroups = getPositionsBySection('OSC Group')
+
+  // Manual Operations Section (box 7): the preparer owns this structure.
+  // "Import from 207" snapshots the 207 org chart once; after that it is a
+  // free snapshot saved with the form (ops_data).
+  const [ops, setOps] = useState<OpsData>(() => emptyOps())
+  const [opsImported, setOpsImported] = useState(false)
+
+  const importFrom207 = useCallback(() => {
+    setOps(buildOpsFromPositions(positions))
+    setOpsImported(true)
+  }, [positions])
+
+  const addOpsBranch = () =>
+    setOps(prev => ({ ...prev, branches: [...prev.branches, emptyBranch(prev.branches.length)] }))
+
+  const removeOpsBranch = (bi: number) =>
+    setOps(prev => ({ ...prev, branches: prev.branches.filter((_, i) => i !== bi) }))
+
+  const setOpsBranchField = (bi: number, field: 'label' | 'director' | 'deputy', value: string) =>
+    setOps(prev => ({
+      ...prev,
+      branches: prev.branches.map((b, i) => (i === bi ? { ...b, [field]: value } : b)),
+    }))
+
+  const addOpsDivision = (bi: number) =>
+    setOps(prev => ({
+      ...prev,
+      branches: prev.branches.map((b, i) =>
+        i === bi ? { ...b, divisions: [...b.divisions, { name: '', personnel: '' }] } : b,
+      ),
+    }))
+
+  const removeOpsDivision = (bi: number, di: number) =>
+    setOps(prev => ({
+      ...prev,
+      branches: prev.branches.map((b, i) =>
+        i === bi ? { ...b, divisions: b.divisions.filter((_, j) => j !== di) } : b,
+      ),
+    }))
+
+  const setOpsDivision = (bi: number, di: number, field: keyof OpsDivision, value: string) =>
+    setOps(prev => ({
+      ...prev,
+      branches: prev.branches.map((b, i) =>
+        i === bi ? { ...b, divisions: b.divisions.map((d, j) => (j === di ? { ...d, [field]: value } : d)) } : b,
+      ),
+    }))
+
+  const addOpsStandalone = () => setOps(prev => ({ ...prev, standalone: [...prev.standalone, { name: '', personnel: '' }] }))
+
+  const removeOpsStandalone = (si: number) =>
+    setOps(prev => ({ ...prev, standalone: prev.standalone.filter((_, i) => i !== si) }))
+
+  const setOpsStandalone = (si: number, field: keyof OpsDivision, value: string) =>
+    setOps(prev => ({ ...prev, standalone: prev.standalone.map((s, i) => (i === si ? { ...s, [field]: value } : s)) }))
 
   const getSupport = (key: string) => positions.filter(p => p.section === `${key} Support`)
 
@@ -552,6 +679,30 @@ export default function Ics203Form() {
 
           <div className="form-section">
             <label>7. OPERATIONS SECTION</label>
+            {!isReadonly && (
+              <div className="ops-toolbar no-print">
+                <button
+                  type="button"
+                  className="action-btn"
+                  onClick={importFrom207}
+                  disabled={positions.length === 0}
+                  title="Fill the structure below once from the 207 org chart; you can edit it freely after"
+                >
+                  Import from 207
+                </button>
+                <button type="button" className="action-btn" onClick={addOpsBranch}>
+                  + Add Branch
+                </button>
+                <button type="button" className="action-btn" onClick={addOpsStandalone}>
+                  + Add Division/Group
+                </button>
+              </div>
+            )}
+            {opsImported && !isReadonly && (
+              <p className="sig-autofill-hint no-print">
+                Filled from 207 — adjust the structure and names below as needed.
+              </p>
+            )}
             <div className="staff-grid">
               <div className="staff-row">
                 <span className="staff-role">Chief</span>
@@ -563,35 +714,130 @@ export default function Ics203Form() {
                   <span className="staff-name">{s.person_name || '\u00A0'}</span>
                 </div>
               ))}
-              {oscBranches.map(branch => (
-                <div key={branch.position_key}>
+              {ops.branches.map((branch, bi) => (
+                <div key={bi}>
                   <div className="staff-row branch-label">
-                    <span className="staff-role"><strong>{branch.position_title}</strong></span>
+                    {isReadonly ? (
+                      <span className="staff-role"><strong>{branch.label || '\u00A0'}</strong></span>
+                    ) : (
+                      <>
+                        <input
+                          type="text"
+                          className="staff-input branch-label-input"
+                          value={branch.label}
+                          placeholder="BRANCH I"
+                          onChange={e => setOpsBranchField(bi, 'label', e.target.value)}
+                        />
+                        <button type="button" className="ops-remove" onClick={() => removeOpsBranch(bi)} title="Remove branch">
+                          &times;
+                        </button>
+                      </>
+                    )}
                   </div>
                   <div className="staff-row">
                     <span className="staff-role">Branch Director</span>
-                    <span className="staff-name">{branch.person_name || '\u00A0'}</span>
+                    {isReadonly ? (
+                      <span className="staff-name">{branch.director || '\u00A0'}</span>
+                    ) : (
+                      <input
+                        type="text"
+                        className="staff-input"
+                        value={branch.director}
+                        placeholder="Name"
+                        onChange={e => setOpsBranchField(bi, 'director', e.target.value)}
+                      />
+                    )}
                   </div>
-                  {positions.filter(p => p.parent_key === branch.position_key).map(div => (
-                    <div key={div.position_key} className="staff-row">
+                  <div className="staff-row">
+                    <span className="staff-role">Deputy</span>
+                    {isReadonly ? (
+                      <span className="staff-name">{branch.deputy || '\u00A0'}</span>
+                    ) : (
+                      <input
+                        type="text"
+                        className="staff-input"
+                        value={branch.deputy}
+                        placeholder="Name"
+                        onChange={e => setOpsBranchField(bi, 'deputy', e.target.value)}
+                      />
+                    )}
+                  </div>
+                  {branch.divisions.map((div, di) => (
+                    <div key={di} className="staff-row ops-div-row">
                       <span className="staff-role">Division/Group</span>
-                      <span className="staff-name">{div.person_name || div.position_title || '\u00A0'}</span>
+                      {isReadonly ? (
+                        <span className="staff-name">{div.name || '\u00A0'}</span>
+                      ) : (
+                        <input
+                          type="text"
+                          className="staff-input"
+                          value={div.name}
+                          placeholder="Division/Group name"
+                          onChange={e => setOpsDivision(bi, di, 'name', e.target.value)}
+                        />
+                      )}
+                      {isReadonly ? (
+                        <span className="staff-name">{div.personnel || '\u00A0'}</span>
+                      ) : (
+                        <>
+                          <input
+                            type="text"
+                            className="staff-input"
+                            value={div.personnel}
+                            placeholder="Personnel"
+                            onChange={e => setOpsDivision(bi, di, 'personnel', e.target.value)}
+                          />
+                          <button type="button" className="ops-remove" onClick={() => removeOpsDivision(bi, di)} title="Remove row">
+                            &times;
+                          </button>
+                        </>
+                      )}
                     </div>
                   ))}
+                  {!isReadonly && (
+                    <button type="button" className="ops-add-row no-print" onClick={() => addOpsDivision(bi)}>
+                      + Division/Group row
+                    </button>
+                  )}
                 </div>
               ))}
-              {oscDivisions.filter(d => !oscBranches.some(b => d.parent_key === b.position_key)).map(div => (
-                <div key={div.position_key} className="staff-row">
+              {ops.standalone.map((div, si) => (
+                <div key={`s-${si}`} className="staff-row ops-div-row">
                   <span className="staff-role">Division/Group</span>
-                  <span className="staff-name">{div.person_name || div.position_title || '\u00A0'}</span>
+                  {isReadonly ? (
+                    <span className="staff-name">{div.name || '\u00A0'}</span>
+                  ) : (
+                    <input
+                      type="text"
+                      className="staff-input"
+                      value={div.name}
+                      placeholder="Division/Group name"
+                      onChange={e => setOpsStandalone(si, 'name', e.target.value)}
+                    />
+                  )}
+                  {isReadonly ? (
+                    <span className="staff-name">{div.personnel || '\u00A0'}</span>
+                  ) : (
+                    <>
+                      <input
+                        type="text"
+                        className="staff-input"
+                        value={div.personnel}
+                        placeholder="Personnel"
+                        onChange={e => setOpsStandalone(si, 'personnel', e.target.value)}
+                      />
+                      <button type="button" className="ops-remove" onClick={() => removeOpsStandalone(si)} title="Remove row">
+                        &times;
+                      </button>
+                    </>
+                  )}
                 </div>
               ))}
-              {oscGroups.filter(g => !oscBranches.some(b => g.parent_key === b.position_key)).map(grp => (
-                <div key={grp.position_key} className="staff-row">
-                  <span className="staff-role">Division/Group</span>
-                  <span className="staff-name">{grp.person_name || grp.position_title || '\u00A0'}</span>
-                </div>
-              ))}
+              {!isReadonly && ops.branches.length === 0 && ops.standalone.length === 0 && (
+                <p className="sig-autofill-hint no-print">
+                  No branches or divisions/groups yet — use Import from 207 or add them manually.
+                </p>
+              )}
             </div>
           </div>
 
@@ -646,6 +892,7 @@ export default function Ics203Form() {
           opToDate={opToDate}
           opToTime={opToTime}
           positions={positions}
+          ops={ops}
           preparedByName={preparedByName}
           preparedBySig={preparedBySig}
           preparedDate={preparedDate}

@@ -107,42 +107,49 @@
 .bold-row .role-cell { font-weight: 700; }
 .bold-row .name-cell { font-weight: 700; }
 
-.ics203-form td.footer-cell { padding: 0; }
-
-/* Scoped under the page so unscoped .footer-* rules from other forms
-   (e.g. 2-col/1-col responsive grids) can't collapse this into 2 rows. */
-.ics203-print-page .footer-row {
-  display: grid;
-  grid-template-columns: 130px 1.6fr 1fr 1fr;
-  min-height: 30pt;
-}
-
-.ics203-print-page .footer-num {
+/* ---------- 9. prepared by — single-row footer, copied from the 208 print ---------- */
+.ics203-print-page .ics203-strong {
   font-weight: 700;
-  font-size: 8.5pt;
-  display: flex;
-  align-items: center;
-  padding: 4px 6px;
-  border-right: 1px solid #000;
 }
 
-.ics203-print-page .footer-field {
-  display: flex;
-  flex-direction: column;
-  padding: 3px 6px;
-  border-right: 1px solid #000;
-  justify-content: center;
+.ics203-print-page .ics203-footer {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  border: 2px solid #000;
+  border-top: none;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
-.ics203-print-page .footer-field:last-child { border-right: none; }
+.ics203-print-page .ics203-footer td {
+  padding: 7px 8px;
+  font-size: 9pt;
+  line-height: 1.35;
+  vertical-align: middle;
+  overflow-wrap: anywhere;
+}
 
-.ics203-print-page .footer-label { font-size: 7pt; font-weight: 600; color: #333; }
+.ics203-print-page .ics203-footer td.ics203-c1 {
+  width: 22%;
+}
 
-.ics203-print-page .footer-value {
-  font-size: 8.5pt;
-  min-height: 12pt;
-  border-bottom: 1px solid #999;
-  margin-top: 2px;
+.ics203-print-page .ics203-footer td.ics203-c2 {
+  width: 32%;
+  border-left: 1px solid #000;
+}
+
+.ics203-print-page .ics203-footer td.ics203-c3 {
+  width: 23%;
+  border-left: 1px solid #000;
+}
+
+.ics203-print-page .ics203-footer td.ics203-c4 {
+  width: 23%;
+  border-left: 1px solid #000;
+}
+
+.ics203-print-page .ics203-value {
+  font-weight: 400;
 }
 
 .page-number {
