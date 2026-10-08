@@ -139,6 +139,32 @@
   color: #222;
 }
 
+/* Tappable incident name — same destination as the row's View/Check-in button. */
+.incident-name-link {
+  background: none;
+  border: none;
+  padding: 6px 0;
+  margin: 0;
+  font: inherit;
+  font-weight: 600;
+  color: #950606;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  text-align: left;
+  min-height: 44px;
+}
+
+.incident-name-link:hover {
+  color: #7a0505;
+}
+
+.incident-name-link:focus-visible {
+  outline: 2px solid #950606;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 .date-cell {
   white-space: nowrap;
   color: #888;
@@ -438,5 +464,115 @@
   .ongoing-header {
     flex-direction: column;
     gap: 12px;
+  }
+}
+
+/* Phones: stacked cards instead of a sideways-scrolling table. */
+@media (max-width: 600px) {
+  .ongoing-main {
+    padding: 20px 12px;
+  }
+
+  .btn-create-new {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .incidents-table-wrapper {
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .incidents-table {
+    min-width: 0;
+  }
+
+  .incidents-table thead {
+    display: none;
+  }
+
+  .incidents-table,
+  .incidents-table tbody,
+  .incidents-table tr,
+  .incidents-table td {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .incidents-table tbody tr {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    margin-bottom: 12px;
+    padding: 6px 16px 12px;
+  }
+
+  .incidents-table tbody tr:hover {
+    background: white;
+  }
+
+  .incidents-table td {
+    border-bottom: 1px solid #f0f0f0;
+    padding: 8px 0;
+  }
+
+  .incidents-table td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #888;
+    margin-bottom: 2px;
+  }
+
+  /* Name leads the card: no label needed. */
+  .incidents-table td.name-cell::before {
+    content: none;
+  }
+
+  .incidents-table td.name-cell {
+    border-bottom: 2px solid #f0f0f0;
+  }
+
+  /* ID becomes a small subtitle under the name. */
+  .incidents-table td.code-cell {
+    border-bottom: none;
+    padding-top: 0;
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: #888;
+  }
+
+  .incidents-table td.code-cell::before {
+    content: none;
+  }
+
+  .incidents-table td.actions-cell {
+    border-bottom: none;
+  }
+
+  .incidents-table td.actions-cell::before {
+    content: none;
+  }
+
+  .actions-cell {
+    flex-direction: column;
+    align-items: stretch;
+    white-space: normal;
+  }
+
+  .actions-cell .btn-view,
+  .actions-cell .btn-checkin,
+  .actions-cell .btn-edit,
+  .actions-cell .btn-delete {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 44px;
+    margin: 0;
+    font-size: 0.9rem;
   }
 }

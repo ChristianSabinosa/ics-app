@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { generateIncidentId } from '../lib/utils'
+import { generateIncidentId, generateRoleId } from '../lib/utils'
 import { notifySelfIncident } from '../lib/notifications'
 import './CreateIncident.css'
 
@@ -37,11 +37,33 @@ export default function CreateIncident() {
       created_by_email: user?.email || '',
     })
 
-    setLoading(false)
-
     if (insertError) {
       setError(insertError.message)
-    } else {
+      setLoading(false)
+      return
+    }
+
+    // The creator joins their own incident as IMT immediately — without this
+    // row every list treats them as a stranger (join-role prompt, Check-in
+    // instead of View, check-in flag that can never flip).
+    const { error: participantError } = await supabase.from('incident_participants').insert({
+      incident_id: incidentId,
+      user_id: user?.id,
+      user_name: createdBy,
+      user_email: user?.email || '',
+      role: 'IMT',
+      role_id: generateRoleId('IMT'),
+      status: 'Active',
+    })
+
+    setLoading(false)
+
+    if (participantError) {
+      setError(`Incident ${incidentId} was created, but you were not joined as IMT: ${participantError.message} Open Join Incident and join as IMT.`)
+      return
+    }
+
+    {
       // Confirmation addressed to the creator: they are the initial IC and
       // still need to complete the form and designate the IMT. Fire-and-forget
       // (and deliberately linkless) so a notification problem never blocks the

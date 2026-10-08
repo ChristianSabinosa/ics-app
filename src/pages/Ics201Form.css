@@ -600,3 +600,98 @@
 @media print {
   .no-print { display: none !important; }
 }
+
+/* ── Smartphones ── */
+@media (max-width: 600px) {
+  /* Header fields stack; paper-style dividers become horizontal. */
+  .sheet-row.three-col { grid-template-columns: 1fr; }
+
+  .sheet-row .form-field {
+    border-right: none;
+    border-bottom: 1px solid #000;
+  }
+
+  .sheet-row .form-field:last-child { border-bottom: none; }
+
+  .sheet-block { padding: 12px; }
+
+  /* Prepared-by footers stack. */
+  .sheet-footer,
+  .sheet-footer.with-datetime { grid-template-columns: 1fr; }
+
+  .footer-field { border-right: none; border-bottom: 1px solid #000; }
+  .footer-field:last-child { border-bottom: none; }
+  .footer-num { border-right: none; border-bottom: 1px solid #000; }
+
+  /* Map buttons go full-width. */
+  .map-actions { flex-direction: column; align-items: stretch; }
+
+  .map-btn {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 44px;
+  }
+
+  /* Wide content (org chart) scrolls inside the block. Resource rows are
+     cards below, so the grid needs no sideways scroll. */
+  .sheet-block { overflow-x: auto; }
+
+  /* Actions table (2 fields per row) and resources table (6 fields per row)
+     both become stacked cards — every input visible without panning. */
+  .actions-table thead,
+  .resources-table thead { display: none; }
+
+  .actions-table,
+  .actions-table tbody,
+  .actions-table tr,
+  .actions-table td,
+  .resources-table,
+  .resources-table tbody,
+  .resources-table tr,
+  .resources-table td {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .actions-table tbody tr,
+  .resources-table tbody tr {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    padding: 4px 12px 10px;
+  }
+
+  .actions-table td::before,
+  .resources-table td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #555;
+    margin: 6px 0 2px;
+  }
+
+  .actions-table td.remove-cell::before,
+  .resources-table td.remove-cell::before,
+  .resources-table tr.empty-row td::before { content: none; }
+
+  .actions-table td.remove-cell .remove-row,
+  .resources-table td.remove-cell .remove-row {
+    width: 100%;
+    min-height: 44px;
+    margin-top: 6px;
+  }
+
+  /* Touch-size row controls. */
+  .bullet-row .remove-row { min-width: 44px; min-height: 44px; }
+
+  .add-row-buttons { flex-wrap: wrap; }
+
+  .add-row-buttons .add-row-btn {
+    flex: 1 1 auto;
+    min-height: 44px;
+  }
+}

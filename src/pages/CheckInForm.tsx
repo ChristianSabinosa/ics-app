@@ -292,7 +292,21 @@ export default function CheckInForm() {
     }
 
     if (status === 'Submitted') {
-      await supabase.from('incident_participants').update({ checked_in: true }).eq('incident_id', incidentId).eq('user_id', user!.id).eq('status', 'Active')
+      // Flip the roster flag too (the lists treat a manifest as checked-in
+      // even without it, but keep the flag truthful). Surfaced instead of
+      // silent: if this fails the user would otherwise be nagged to check in
+      // again despite a submitted manifest.
+      const { error: flagError } = await supabase
+        .from('incident_participants')
+        .update({ checked_in: true })
+        .eq('incident_id', incidentId)
+        .eq('user_id', user!.id)
+        .eq('status', 'Active')
+      if (flagError) {
+        setError(`Manifest submitted, but your roster check-in flag could not be set: ${flagError.message}`)
+        setSaving(false)
+        return
+      }
     }
 
     setSaving(false)

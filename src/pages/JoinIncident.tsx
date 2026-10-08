@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { generateRoleId } from '../lib/utils'
 import { notifyIncident } from '../lib/notifications'
+import { displayUserName, ensureCreatorParticipation, fetchParticipation } from '../lib/participation'
 import type { Incident, IncidentParticipant } from '../lib/types'
 import './JoinIncident.css'
 
@@ -17,6 +18,7 @@ export default function JoinIncident() {
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null)
   const [joining, setJoining] = useState<string | null>(null)
   const [userParticipants, setUserParticipants] = useState<Map<string, IncidentParticipant>>(new Map())
+  const [checkedInIds, setCheckedInIds] = useState<Set<string>>(new Set())
 
   const fetchIncidents = useCallback(async () => {
     setLoading(true)
@@ -39,18 +41,15 @@ export default function JoinIncident() {
 
     if (user && incidentList.length > 0) {
       const incidentIds = incidentList.map((i) => i.incident_id)
-      const { data: participants } = await supabase
-        .from('incident_participants')
-        .select('*')
-        .in('incident_id', incidentIds)
-        .eq('user_id', user.id)
-        .eq('status', 'Active')
-
-      if (participants) {
-        const map = new Map<string, IncidentParticipant>()
-        participants.forEach((p) => map.set(p.incident_id, p))
-        setUserParticipants(map)
-      }
+      await ensureCreatorParticipation(
+        incidentList,
+        user.id,
+        displayUserName(user),
+        user.email || '',
+      )
+      const { participants, checkedIn } = await fetchParticipation(incidentIds, user.id)
+      setUserParticipants(participants)
+      setCheckedInIds(checkedIn)
     }
 
     setLoading(false)
@@ -161,7 +160,8 @@ export default function JoinIncident() {
                 {incidents.map((incident) => {
                   const participant = userParticipants.get(incident.incident_id)
                   const isJoined = !!participant
-                  const isCheckedIn = participant?.checked_in === true
+                  const isCheckedIn =
+                    checkedInIds.has(incident.incident_id) || participant?.checked_in === true
 
                   return (
                     <div key={incident.id} className={`incident-card ${expandedCardId === incident.id ? 'expanded' : ''}`}>

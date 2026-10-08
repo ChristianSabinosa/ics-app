@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import './styles/tokens.css'
 import './styles/forms.css'
+import './styles/responsive.css'
 import App from './App.tsx'
 
 // Offline app shell — production only, so dev hot-reload is never cached.

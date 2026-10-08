@@ -760,6 +760,118 @@
   .topbar-actions { width: 100%; }
   .topbar-btn { flex: 1; text-align: center; }
   .incident-meta-row { flex-direction: column; gap: 4px; }
+
+  /* ── Phone card order: details → check-in → forms → resources → IAP ──
+     .incident-content goes display:contents so every panel and the sidebar
+     become items of one column stack. Overrides the ≤1024px sidebar-first
+     rule below by coming later in the file. */
+  .incident-main { padding: 16px 12px; }
+
+  .incident-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .incident-content { display: contents; }
+
+  .incident-layout .access-denied-notice { order: 0; }
+  .incident-layout .incident-info-bar { order: 1; }
+  .incident-layout .public-status-card { order: 2; }
+  .incident-layout .checkin-proceed-section { order: 3; }
+  .incident-layout .ics-sidebar {
+    order: 4;
+    position: static;
+    width: 100%;
+  }
+  .incident-layout .resource-section { order: 5; }
+  .incident-layout .iap-card { order: 6; }
+
+  /* Check-in card: full-width stacked buttons. */
+  .checkin-proceed-btn {
+    width: 100%;
+    min-height: 44px;
+    box-sizing: border-box;
+  }
+
+  .checked-in-status .manifest-btn {
+    flex: 1 1 auto;
+    min-height: 44px;
+    text-align: center;
+  }
+
+  /* Sidebar form rows are tap targets. */
+  .ics-sidebar-item {
+    min-height: 44px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  /* Resource + approved-IAP tables become stacked cards. */
+  .resource-table-wrapper { overflow: visible; }
+
+  .resource-table thead { display: none; }
+
+  .resource-table,
+  .resource-table tbody,
+  .resource-table tr,
+  .resource-table td {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .resource-table tbody tr {
+    background: white;
+    border: 1px solid #f0f0f0;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    padding: 4px 14px 10px;
+  }
+
+  .resource-table tbody tr:hover { background: white; }
+
+  .resource-table td {
+    border-bottom: 1px solid #f0f0f0;
+    padding: 8px 0;
+  }
+
+  .resource-table td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #888;
+    margin-bottom: 2px;
+  }
+
+  /* Check-in ID leads each resource card as a subtitle. */
+  .resource-table td.code-cell {
+    border-bottom: none;
+    padding-top: 0;
+    padding-bottom: 0;
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: #888;
+  }
+
+  .resource-table td.code-cell::before { content: none; }
+
+  /* Desktop centers numeric cells — on cards everything aligns left. */
+  .resource-table td.number-cell { text-align: left; }
+
+  .resource-table td.actions-cell { border-bottom: none; }
+  .resource-table td.actions-cell::before { content: none; }
+
+  .resource-table td.actions-cell .manifest-btn {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 44px;
+    text-align: center;
+  }
 }
 
 /* System admin oversight (authority E): shown instead of an editable role when

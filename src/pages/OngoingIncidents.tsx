@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import { deleteIncidentData, countOtherActiveImts } from '../lib/leaveIncident'
+import { displayUserName, ensureCreatorParticipation, fetchParticipation } from '../lib/participation'
 import { notifyIncident } from '../lib/notifications'
 import ConfirmModal from '../components/ConfirmModal'
 import type { Incident, IncidentParticipant } from '../lib/types'
@@ -17,6 +18,7 @@ export default function OngoingIncidents() {
   // Incident waiting for the credential-confirmed destructive delete.
   const [deleting, setDeleting] = useState<Incident | null>(null)
   const [userParticipants, setUserParticipants] = useState<Map<string, IncidentParticipant>>(new Map())
+  const [checkedInIds, setCheckedInIds] = useState<Set<string>>(new Set())
 
   const [editing, setEditing] = useState<Incident | null>(null)
   const [editName, setEditName] = useState('')
@@ -45,18 +47,17 @@ export default function OngoingIncidents() {
 
     if (user && incidentList.length > 0) {
       const incidentIds = incidentList.map((i) => i.incident_id)
-      const { data: participants } = await supabase
-        .from('incident_participants')
-        .select('*')
-        .in('incident_id', incidentIds)
-        .eq('user_id', user.id)
-        .eq('status', 'Active')
-
-      if (participants) {
-        const map = new Map<string, IncidentParticipant>()
-        participants.forEach((p) => map.set(p.incident_id, p))
-        setUserParticipants(map)
-      }
+      // Repair legacy incidents whose creator was never given a row (creation
+      // only started inserting one recently), then read participation.
+      await ensureCreatorParticipation(
+        incidentList,
+        user.id,
+        displayUserName(user),
+        user.email || '',
+      )
+      const { participants, checkedIn } = await fetchParticipation(incidentIds, user.id)
+      setUserParticipants(participants)
+      setCheckedInIds(checkedIn)
     }
 
     setLoading(false)
@@ -210,24 +211,32 @@ export default function OngoingIncidents() {
                   {incidents.map((incident) => {
                     const participant = userParticipants.get(incident.incident_id)
                     const isJoined = !!participant
-                    const isCheckedIn = participant?.checked_in === true
+                    const isCheckedIn =
+                      checkedInIds.has(incident.incident_id) || participant?.checked_in === true
+                    const openIncident = () => navigate(
+                      isJoined ? `/incident/${incident.incident_id}` : `/incident/${incident.incident_id}/checkin`,
+                    )
 
                     return (
                       <tr key={incident.id}>
-                        <td className="code-cell">{incident.incident_id}</td>
-                        <td className="name-cell">{incident.name}</td>
-                        <td>{incident.location}</td>
-                        <td>
+                        <td className="code-cell" data-label="ID">{incident.incident_id}</td>
+                        <td className="name-cell" data-label="Name">
+                          <button type="button" className="incident-name-link" onClick={openIncident}>
+                            {incident.name}
+                          </button>
+                        </td>
+                        <td data-label="Location">{incident.location}</td>
+                        <td data-label="Type">
                           <span className={`type-badge ${incident.type.toLowerCase().replace(/\s/g, '-')}`}>
                             {incident.type}
                           </span>
                         </td>
-                        <td>
+                        <td data-label="Status">
                           <span className={`status-badge ${incident.status.toLowerCase()}`}>
                             {incident.status}
                           </span>
                         </td>
-                        <td>
+                        <td data-label="Your Role">
                           {isJoined ? (
                             <span className={`role-cell-badge ${participant!.role.toLowerCase().replace(/\s/g, '-')}`}>
                               {participant!.role}
@@ -236,7 +245,7 @@ export default function OngoingIncidents() {
                             <span className="role-cell-none">-</span>
                           )}
                         </td>
-                        <td>
+                        <td data-label="Check-in">
                           {isCheckedIn ? (
                             <span className="checkin-cell-badge">Checked-in</span>
                           ) : isJoined ? (
@@ -245,7 +254,7 @@ export default function OngoingIncidents() {
                             <span className="role-cell-none">-</span>
                           )}
                         </td>
-                        <td className="actions-cell">
+                        <td className="actions-cell" data-label="Actions">
                           {isJoined ? (
                             <button className="btn-view" onClick={() => navigate(`/incident/${incident.incident_id}`)}>
                               View

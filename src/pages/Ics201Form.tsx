@@ -236,10 +236,8 @@ export default function Ics201Form() {
         setStatus(formToLoad.status as 'Draft' | 'Submitted')
       }
 
-      // Same rule as online: pre-fill the resource summary from check-ins when it is empty.
-      if (!formToLoad || !Array.isArray(formToLoad.resources) || (formToLoad.resources as unknown[]).length === 0) {
-        await pullFromCheckins([], false)
-      }
+      // Section 12 stays exactly as stored: blank for new forms until the user
+      // presses "Load from Check-in Manifest". No auto-pull on open.
 
       const mapData = await offGetMap(incidentId)
       setMapImage(mapData?.map_image || '')
@@ -289,14 +287,10 @@ export default function Ics201Form() {
       setPreparedDate(formToLoad.prepared_date)
       setPreparedTime(formToLoad.prepared_time)
       setStatus(formToLoad.status)
-
-      if (!Array.isArray(formToLoad.resources) || formToLoad.resources.length === 0) {
-        await pullFromCheckins([], false)
-      }
-    } else {
-      // First load: pre-fill the resource summary from check-in manifests
-      await pullFromCheckins([], false)
     }
+
+    // Section 12 stays exactly as stored (blank for new forms) until the user
+    // presses "Load from Check-in Manifest". No auto-pull on open.
 
     // Incident map (uploaded/cropped in the Incident Map menu)
     const { data: mapData } = await supabase
@@ -599,8 +593,8 @@ export default function Ics201Form() {
                 <tbody>
                   {actions.map((a, i) => (
                     <tr key={i}>
-                      <td><input type="text" value={a.date_time} onChange={(e) => updateAction(i, 'date_time', e.target.value)} placeholder="MM/DD/YYYY 0000H" disabled={isReadonly} /></td>
-                      <td><input type="text" value={a.action} onChange={(e) => updateAction(i, 'action', e.target.value)} disabled={isReadonly} /></td>
+                      <td data-label="DATE AND TIME"><input type="text" value={a.date_time} onChange={(e) => updateAction(i, 'date_time', e.target.value)} placeholder="MM/DD/YYYY 0000H" disabled={isReadonly} /></td>
+                      <td data-label="ACTIONS"><input type="text" value={a.action} onChange={(e) => updateAction(i, 'action', e.target.value)} disabled={isReadonly} /></td>
                       <td className="remove-cell"><button className="remove-row" onClick={() => removeAction(i)} disabled={isReadonly}>&times;</button></td>
                     </tr>
                   ))}
@@ -669,12 +663,12 @@ export default function Ics201Form() {
                 <tbody>
                   {resources.map((r, i) => (
                     <tr key={i}>
-                      <td><input type="text" value={r.resource} onChange={(e) => updateResource(i, 'resource', e.target.value)} disabled={isReadonly} /></td>
-                      <td><input type="text" value={r.identifier} onChange={(e) => updateResource(i, 'identifier', e.target.value)} disabled={isReadonly} /></td>
-                      <td><input type="text" value={r.requested} onChange={(e) => updateResource(i, 'requested', e.target.value)} disabled={isReadonly} /></td>
-                      <td><input type="text" value={r.eta} onChange={(e) => updateResource(i, 'eta', e.target.value)} disabled={isReadonly} /></td>
-                      <td><input type="text" value={r.arrived} onChange={(e) => updateResource(i, 'arrived', e.target.value)} disabled={isReadonly} /></td>
-                      <td><input type="text" value={r.remarks} onChange={(e) => updateResource(i, 'remarks', e.target.value)} disabled={isReadonly} /></td>
+                      <td data-label="RESOURCE"><input type="text" value={r.resource} onChange={(e) => updateResource(i, 'resource', e.target.value)} disabled={isReadonly} /></td>
+                      <td data-label="RESOURCE IDENTIFIER"><input type="text" value={r.identifier} onChange={(e) => updateResource(i, 'identifier', e.target.value)} disabled={isReadonly} /></td>
+                      <td data-label="DATE AND TIME REQUESTED"><input type="text" value={r.requested} onChange={(e) => updateResource(i, 'requested', e.target.value)} disabled={isReadonly} /></td>
+                      <td data-label="ETA (DATE AND TIME)"><input type="text" value={r.eta} onChange={(e) => updateResource(i, 'eta', e.target.value)} disabled={isReadonly} /></td>
+                      <td data-label="ARRIVED / ON SCENE"><input type="text" value={r.arrived} onChange={(e) => updateResource(i, 'arrived', e.target.value)} disabled={isReadonly} /></td>
+                      <td data-label="REMARKS"><input type="text" value={r.remarks} onChange={(e) => updateResource(i, 'remarks', e.target.value)} disabled={isReadonly} /></td>
                       <td className="remove-cell"><button className="remove-row" onClick={() => removeResource(i)} disabled={isReadonly}>&times;</button></td>
                     </tr>
                   ))}

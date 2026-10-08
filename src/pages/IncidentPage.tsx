@@ -776,11 +776,11 @@ export default function IncidentPage() {
                       <tbody>
                         {approvedIaps.map((iap) => (
                           <tr key={iap.id}>
-                            <td className="iap-op-cell">{iap.operational_period || '—'}</td>
-                            <td className="date-cell">
+                            <td className="iap-op-cell" data-label="Operational Period">{iap.operational_period || '—'}</td>
+                            <td className="date-cell" data-label="Approved">
                               {iap.approved_at ? new Date(iap.approved_at).toLocaleDateString() : '—'}
                             </td>
-                            <td className="actions-cell">
+                            <td className="actions-cell" data-label="Action">
                               <Link className="manifest-btn view" to={iapHref(iap.id)}>
                                 View
                               </Link>
@@ -820,13 +820,13 @@ export default function IncidentPage() {
                         const leader = manifestPersonnel.find((p) => p.role === 'Leader')
                         return (
                           <tr key={m.id}>
-                            <td className="code-cell">{m.checkin_id}</td>
-                            <td className="date-cell">{new Date(m.created_at).toLocaleDateString()} {formatMilitaryTime(m.created_at)}</td>
-                            <td>{m.agency_name}</td>
-                            <td>{leader ? leader.name : '-'}</td>
-                            <td className="number-cell">{m.total_personnel}</td>
-                            <td>{leader?.capabilities || '-'}</td>
-                            <td className="actions-cell">
+                            <td className="code-cell" data-label="Check-in ID">{m.checkin_id}</td>
+                            <td className="date-cell" data-label="Timestamp">{new Date(m.created_at).toLocaleDateString()} {formatMilitaryTime(m.created_at)}</td>
+                            <td data-label="Agency">{m.agency_name}</td>
+                            <td data-label="Leader">{leader ? leader.name : '-'}</td>
+                            <td className="number-cell" data-label="Personnel">{m.total_personnel}</td>
+                            <td data-label="Capabilities">{leader?.capabilities || '-'}</td>
+                            <td className="actions-cell" data-label="Action">
                               <button className="manifest-btn view" onClick={() => navigate(`/incident/${incident.incident_id}/checkin/view?manifest=${m.id}`)}>
                                 View
                               </button>

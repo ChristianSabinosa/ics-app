@@ -1,0 +1,115 @@
+/* ────────────────────────────────────────────────────────────────────────────
+   Shared smartphone pass (screen only).
+
+   Imported from main.tsx after forms.css but before any page stylesheet, so
+   page rules win ties — every override below therefore uses either a more
+   specific selector or a narrowly-scoped !important. Nothing in here applies
+   to print: all rules live inside max-width media queries, and every print
+   stylesheet is isolated under @media print, so paper output is untouched.
+
+   Covers the layout patterns every form repeats:
+     • topbars (Save/Submit/Edit/Print rows) that overflow on narrow screens
+     • two-column field rows and signature blocks
+     • .staff-row label columns (203) incl. the 4-column division rows
+     • wide data tables (scroll instead of breaking the page)
+     • iOS auto-zoom (inputs below 16px trigger it on focus)
+   ──────────────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 1024px) {
+  /* Tablets: keep two columns, but never let a wide table push the page. */
+  [class*="table-wrapper"],
+  [class*="table-scroll"],
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 600px) {
+  /* ── Topbars stack: identity row, then full-width wrapped actions ── */
+  [class*="-topbar"] {
+    padding: 10px 12px !important;
+  }
+
+  .topbar-left {
+    flex-wrap: wrap;
+  }
+
+  .topbar-actions {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .topbar-actions .action-btn,
+  .topbar-actions .topbar-btn,
+  .topbar-actions button {
+    flex: 1 1 auto;
+    min-height: 44px;
+    text-align: center;
+  }
+
+  /* ── Field grids collapse to one column ── */
+  .form-section > .form-row.two-col,
+  .form-section > .sig-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Signature blocks: one field per line. */
+  .signature-section .sig-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .sig-row .sig-field {
+    min-width: 0;
+  }
+
+  /* ── 203 staff rows: label above value instead of a 200px gutter ── */
+  .staff-grid > .staff-row {
+    grid-template-columns: 1fr !important;
+    gap: 2px;
+  }
+
+  .staff-grid > .staff-row.branch-label {
+    margin-top: 12px;
+  }
+
+  /* Division/Group rows (unit + personnel): stack both inputs full-width,
+     remove button tucked to the end. */
+  .staff-grid > .staff-row.ops-div-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .staff-row.ops-div-row .ops-remove {
+    justify-self: end;
+  }
+
+  /* ── iOS zooms on focus when inputs are under 16px — the single biggest
+       phone annoyance. Scoped !important so page font rules can't undo it. ── */
+  .form-field input,
+  .form-field textarea,
+  .form-field select,
+  .staff-input,
+  input.measures-input {
+    font-size: 16px !important;
+  }
+
+  /* Touch-size rows for checkboxes/radios in matrices. */
+  .cell-check input[type="checkbox"] {
+    min-width: 28px;
+    min-height: 28px;
+  }
+
+  /* Wide data tables keep desktop structure inside a swipeable area. */
+  [class*="table-wrapper"],
+  [class*="table-scroll"],
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Modal dialogs fit the viewport. */
+  .modal-content,
+  [class*="modal-body"] {
+    max-width: calc(100vw - 24px);
+  }
+}
