@@ -147,7 +147,7 @@
 .ics204-print-page .footer-row {
   display: grid;
   grid-template-columns: 130px 1.6fr 1fr 1fr;
-  min-height: 30pt;
+  min-height: 0;
 }
 
 .ics204-print-page .footer-num {
@@ -161,21 +161,22 @@
 
 .ics204-print-page .footer-field {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
   padding: 3px 6px;
   border-right: 1px solid #000;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .ics204-print-page .footer-field:last-child { border-right: none; }
 
-.ics204-print-page .footer-label { font-size: 7pt; font-weight: 600; color: #333; }
+.ics204-print-page .footer-label { font-size: 7pt; font-weight: 600; color: #333; white-space: nowrap; }
 
 .ics204-print-page .footer-value {
   font-size: 8.5pt;
-  min-height: 12pt;
-  border-bottom: 1px solid #999;
-  margin-top: 2px;
+  min-height: 0;
+  margin-top: 0;
 }
 
 @media print {

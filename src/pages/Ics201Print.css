@@ -129,10 +129,10 @@
 }
 
 /* ── 4. Map sketch ── */
-.ics201-form .map-cell { height: 430pt; }
+.ics201-form .map-cell { height: 387pt; }
 
 .ics201-form .map-body {
-  height: calc(430pt - 52pt);
+  height: calc(387pt - 52pt);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -146,7 +146,15 @@
 }
 
 /* ── 5. Situation summary ── */
-.ics201-form .situation-cell { height: 300pt; }
+.ics201-form .situation-cell { height: 280pt; }
+
+/* Clamp the summary text to the fixed section height so a long write-up can't
+   push the footer off the A4 sheet. */
+.ics201-form .situation-cell .field-textarea {
+  height: calc(280pt - 52pt);
+  box-sizing: border-box;
+  overflow: hidden;
+}
 
 /* ── 7. Objectives ── */
 .ics201-form .objectives-cell { height: 380pt; }
@@ -228,7 +236,7 @@
 .ics201-form .footer-row {
   display: grid;
   grid-template-columns: 150px 1fr;
-  min-height: 25px;
+  min-height: 0;
 }
 
 .ics201-form .footer-row.with-datetime {
@@ -240,27 +248,28 @@
   font-size: 9pt;
   display: flex;
   align-items: center;
-  padding: 6px 8px;
+  padding: 4px 8px;
   border-right: 1px solid #000;
 }
 
 .ics201-form .footer-field {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
   padding: 4px 8px;
   border-right: 1px solid #000;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .ics201-form .footer-field:last-child { border-right: none; }
 
-.ics201-form .footer-label { font-size: 7.5pt; font-weight: 600; color: #333; }
+.ics201-form .footer-label { font-size: 7.5pt; font-weight: 600; color: #333; white-space: nowrap; }
 
 .ics201-form .footer-value {
   font-size: 9pt;
-  min-height: 14pt;
-  border-bottom: 1px solid #999;
-  margin-top: 2px;
+  min-height: 0;
+  margin-top: 0;
 }
 
 @media print {
