@@ -321,6 +321,44 @@ textarea.medium {
   font-size: 0.9rem;
 }
 
+/* ── Smartphone pass ─────────────────────────────────────────────────────────
+   The ICS 213 form is reused by the Messages mailbox (reading pane .msg-doc)
+   and the compose page (.ics213-container), so these rules are scoped to those
+   roots. All rules live in a max-width query, so print output is untouched. */
+@media (max-width: 600px) {
+  .ics213-header { padding: 10px 14px; }
+  .ics213-main { padding: 16px 10px; }
+  .ics213-container { padding: 14px; }
+
+  /* Two-column field rows stack to one column. */
+  .ics213-container .form-row.two-col,
+  .msg-doc .form-row.two-col { grid-template-columns: 1fr; }
+
+  /* Signature row becomes a one-column card: bottom rules, not side rules. */
+  .ics213-container .sig-row,
+  .msg-doc .sig-row { grid-template-columns: 1fr; }
+
+  .ics213-container .sig-field,
+  .msg-doc .sig-field {
+    border-right: none;
+    border-bottom: 1px solid #ccc;
+  }
+
+  .ics213-container .sig-field:last-child,
+  .msg-doc .sig-field:last-child { border-bottom: none; }
+
+  /* 16px stops iOS zooming the viewport on focus; 44px is thumb size. */
+  .ics213-container input,
+  .ics213-container textarea,
+  .ics213-container select,
+  .msg-doc input,
+  .msg-doc textarea,
+  .msg-doc select { font-size: 16px; }
+
+  .ics213-container .sig-field input,
+  .msg-doc .sig-field input { min-height: 44px; }
+}
+
 @media print {
   .no-print { display: none !important; }
 }

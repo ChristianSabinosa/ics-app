@@ -99,14 +99,13 @@ function MessageDocument({ message, canEditSign, onSaved }: DocumentProps) {
           </div>
           <div className="form-field">
             <label>2. DATE / TIME</label>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input type="text" value={m.msg_date} readOnly className="readonly" style={{ flex: 1 }} />
+            <div className="msg-datetime-row">
+              <input type="text" value={m.msg_date} readOnly className="readonly" />
               <input
                 type="text"
                 value={m.msg_time ? `${m.msg_time.replace(':', '')}H` : ''}
                 readOnly
                 className="readonly"
-                style={{ flex: 1 }}
               />
             </div>
           </div>

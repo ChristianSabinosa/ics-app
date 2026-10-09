@@ -569,6 +569,17 @@
   margin-top: 10px;
 }
 
+/* Date / Time pair in the ICS 213 document (read-only) and compose form. */
+.msg-datetime-row {
+  display: flex;
+  gap: 8px;
+}
+
+.msg-datetime-row input {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
 .msg-sign-hint {
   font-size: 0.8rem;
   color: #9ca3af;
@@ -617,13 +628,65 @@
 }
 
 @media (max-width: 760px) {
+  .msg-header { padding: 10px 14px; }
+  .msg-main { padding: 16px 10px; }
+
   .msg-layout {
     grid-template-columns: minmax(0, 1fr);
+    /* Rail → list → reader stack on a naturally scrolling page instead of
+       being squeezed into the desktop calc(100vh - 150px) box. */
+    height: auto;
+    min-height: 0;
+    grid-template-rows: none;
+    gap: 12px;
   }
 
   .msg-rail {
     grid-row: auto;
+    padding: 8px;
   }
+
+  /* Folder rail becomes a compact chip strip. */
+  .msg-rail > .msg-folder-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .msg-rail > .msg-folder-list > li { flex: 0 0 auto; }
+
+  .msg-rail > .msg-folder-list .msg-folder {
+    width: auto;
+    white-space: nowrap;
+  }
+
+  /* Let the page scroll rather than a 320px nested list. */
+  .msg-list { max-height: none; }
+  .msg-reader { min-height: 0; }
+
+  .msg-reader-bar-left .action-btn,
+  .msg-move-select { min-height: 44px; }
+
+  .msg-doc-scroll { padding: 12px 10px; }
+  .msg-doc { padding: 14px; }
+
+  /* The embedded ICS 213 document stacks like the standalone form. */
+  .msg-doc .sig-field input { min-height: 44px; }
+  .msg-doc input,
+  .msg-doc textarea { font-size: 16px; }
+
+  .msg-sign-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .msg-sign-actions .action-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .msg-datetime-row { flex-wrap: wrap; }
+  .msg-datetime-row input { flex: 1 1 130px; }
 
   .msg-search {
     min-width: 0;

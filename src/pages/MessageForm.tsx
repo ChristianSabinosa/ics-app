@@ -282,9 +282,9 @@ export default function MessageForm() {
               </div>
               <div className="form-field">
                 <label>2. DATE / TIME</label>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <input type="date" value={msgDate} onChange={(e) => setMsgDate(e.target.value)} style={{ flex: 1 }} />
-                  <input type="time" value={msgTime} onChange={(e) => setMsgTime(e.target.value)} style={{ flex: 1 }} />
+                <div className="msg-datetime-row">
+                  <input type="date" value={msgDate} onChange={(e) => setMsgDate(e.target.value)} />
+                  <input type="time" value={msgTime} onChange={(e) => setMsgTime(e.target.value)} />
                 </div>
               </div>
             </div>
