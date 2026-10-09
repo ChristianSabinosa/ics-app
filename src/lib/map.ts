@@ -404,10 +404,11 @@ export async function drawSketchSnapshot(
   return canvas.toDataURL('image/jpeg', 0.88)
 }
 
-/** Capture the live Leaflet view (tiles + pins + polygons) as a PNG data URL. */
+/** Capture the live Leaflet view (tiles + pins + polygons) as a PNG data URL.
+ *  pixelRatio 2 so the saved image stays sharp when scaled up on printed A4. */
 export async function snapshotLiveMap(node: HTMLElement): Promise<string> {
   const { toPng } = await import('html-to-image')
-  return toPng(node, { pixelRatio: 1, cacheBust: true })
+  return toPng(node, { pixelRatio: 2, cacheBust: true })
 }
 
 /* ── Persistence ─────────────────────────────────────────── */
