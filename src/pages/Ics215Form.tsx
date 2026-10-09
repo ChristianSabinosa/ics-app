@@ -425,39 +425,39 @@ export default function Ics215Form() {
                     <th className="col-action"></th>
                   </tr>
                 </thead>
-                <tbody>
-                  {workAssignments.map(wa => (
-                    ['required', 'have', 'need'].map((field, fi) => {
+                {workAssignments.map(wa => (
+                  <tbody key={wa.id}>
+                    {['required', 'have', 'need'].map((field, fi) => {
                       const isFirst = fi === 0
                       return (
                         <tr key={`${wa.id}-${field}`}>
-                          {isFirst && <td rowSpan={3} className="cell-text"><input type="text" value={wa.branch} onChange={e => updateWa(wa.id, 'branch', e.target.value)} disabled={isReadonly} placeholder="Branch" /></td>}
-                          {isFirst && <td rowSpan={3} className="cell-text"><input type="text" value={wa.division_group} onChange={e => updateWa(wa.id, 'division_group', e.target.value)} disabled={isReadonly} placeholder="Div/Group" /></td>}
-                          {isFirst && <td rowSpan={3} className="cell-text"><input type="text" value={wa.work_assignment} onChange={e => updateWa(wa.id, 'work_assignment', e.target.value)} disabled={isReadonly} placeholder="Work assignment" /></td>}
+                          {isFirst && <td rowSpan={3} className="cell-text" data-label="Branch"><input type="text" value={wa.branch} onChange={e => updateWa(wa.id, 'branch', e.target.value)} disabled={isReadonly} placeholder="Branch" /></td>}
+                          {isFirst && <td rowSpan={3} className="cell-text" data-label="Div/Group"><input type="text" value={wa.division_group} onChange={e => updateWa(wa.id, 'division_group', e.target.value)} disabled={isReadonly} placeholder="Div/Group" /></td>}
+                          {isFirst && <td rowSpan={3} className="cell-text" data-label="Work Assignment"><input type="text" value={wa.work_assignment} onChange={e => updateWa(wa.id, 'work_assignment', e.target.value)} disabled={isReadonly} placeholder="Work assignment" /></td>}
                           <td className="cell-label">{field === 'required' ? 'Required' : field === 'have' ? 'Have' : 'Need'}</td>
                           {resourceIdentifiers.map((rid, ri) => (
-                            <td key={ri} className="cell-num">
+                            <td key={ri} className="cell-num" data-label={rid || `Res ${ri + 1}`}>
                               <input type="number" min="0" value={getResVal(wa.id, rid, field as any) || ''} onChange={e => setResVal(wa.id, rid, field as any, parseInt(e.target.value) || 0)} disabled={isReadonly} />
                             </td>
                           ))}
                           {!isReadonly && resourceIdentifiers.length < MAX_RESOURCES && <td className="cell-num"></td>}
-                          {isFirst && <td rowSpan={3} className="cell-text"><input type="text" list={`overhead-${wa.id}`} value={wa.overhead_position} onChange={e => updateWa(wa.id, 'overhead_position', e.target.value)} disabled={isReadonly} placeholder="Position" />
+                          {isFirst && <td rowSpan={3} className="cell-text" data-label="Overhead"><input type="text" list={`overhead-${wa.id}`} value={wa.overhead_position} onChange={e => updateWa(wa.id, 'overhead_position', e.target.value)} disabled={isReadonly} placeholder="Position" />
                             <datalist id={`overhead-${wa.id}`}>{overheadSuggestions.map(s => <option key={s} value={s} />)}</datalist>
                           </td>}
-                          {isFirst && <td rowSpan={3} className="cell-text"><input type="text" value={wa.special_equipment} onChange={e => updateWa(wa.id, 'special_equipment', e.target.value)} disabled={isReadonly} placeholder="Equipment" /></td>}
-                          {isFirst && <td rowSpan={3} className="cell-text"><input type="text" list={`location-${wa.id}`} value={wa.reporting_location} onChange={e => updateWa(wa.id, 'reporting_location', e.target.value)} disabled={isReadonly} placeholder="Location" />
+                          {isFirst && <td rowSpan={3} className="cell-text" data-label="Equipment"><input type="text" value={wa.special_equipment} onChange={e => updateWa(wa.id, 'special_equipment', e.target.value)} disabled={isReadonly} placeholder="Equipment" /></td>}
+                          {isFirst && <td rowSpan={3} className="cell-text" data-label="Location"><input type="text" list={`location-${wa.id}`} value={wa.reporting_location} onChange={e => updateWa(wa.id, 'reporting_location', e.target.value)} disabled={isReadonly} placeholder="Location" />
                             <datalist id={`location-${wa.id}`}>{LOCATION_SUGGESTIONS.map(s => <option key={s} value={s} />)}</datalist>
                           </td>}
-                          {isFirst && <td rowSpan={3} className="cell-time"><input type="time" value={wa.requested_arrival_time} onChange={e => updateWa(wa.id, 'requested_arrival_time', e.target.value)} disabled={isReadonly} /></td>}
+                          {isFirst && <td rowSpan={3} className="cell-time" data-label="Arrival"><input type="time" value={wa.requested_arrival_time} onChange={e => updateWa(wa.id, 'requested_arrival_time', e.target.value)} disabled={isReadonly} /></td>}
                           {isFirst && <td rowSpan={3} className="col-action">{!isReadonly && <button className="wa-remove-btn" onClick={() => removeWorkAssignment(wa.id)}>&times;</button>}</td>}
                         </tr>
                       )
-                    })
-                  ))}
-                  {workAssignments.length === 0 && (
-                    <tr><td colSpan={4 + Math.max(resourceIdentifiers.length, 1) + 5} className="wa-empty-cell">No work assignments yet. Click "+add entry" below.</td></tr>
-                  )}
-                </tbody>
+                    })}
+                  </tbody>
+                ))}
+                {workAssignments.length === 0 && (
+                  <tbody><tr><td colSpan={4 + Math.max(resourceIdentifiers.length, 1) + 5} className="wa-empty-cell">No work assignments yet. Click "+add entry" below.</td></tr></tbody>
+                )}
               </table>
             </div>
             {!isReadonly && (

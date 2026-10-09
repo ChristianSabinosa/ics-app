@@ -586,7 +586,7 @@ export default function Ics221Form() {
         const canRemove = !isReadonly && units.length > minRows
         return (
         <div key={i} className="clearance-row">
-          <div className="col-check">
+          <div className="col-check" data-label="Signed off">
             <input
               type="checkbox"
               checked={unit.checked}
@@ -594,7 +594,7 @@ export default function Ics221Form() {
               disabled={isReadonly}
             />
           </div>
-          <div className="col-unit">
+          <div className="col-unit" data-label="Unit/Manager">
             <input
               type="text"
               value={unit.unit_name}
@@ -603,7 +603,7 @@ export default function Ics221Form() {
               disabled={isReadonly}
             />
           </div>
-          <div className="col-remarks">
+          <div className="col-remarks" data-label="Remarks">
             <input
               type="text"
               value={unit.remarks}
@@ -611,7 +611,7 @@ export default function Ics221Form() {
               disabled={isReadonly}
             />
           </div>
-          <div className="col-name">
+          <div className="col-name" data-label="Name">
             <input
               type="text"
               value={unit.name}
@@ -619,7 +619,7 @@ export default function Ics221Form() {
               disabled={isReadonly}
             />
           </div>
-          <div className="col-sig">
+          <div className="col-sig" data-label="Signature">
             <input
               type="text"
               value={unit.signature}
@@ -627,7 +627,7 @@ export default function Ics221Form() {
               disabled={isReadonly}
             />
           </div>
-          <div className="col-remove">
+          <div className="col-remove" data-label="">
             {canRemove && (
               <button
                 className="remove-row-btn"

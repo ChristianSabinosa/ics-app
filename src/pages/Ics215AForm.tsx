@@ -553,7 +553,7 @@ export default function Ics215AForm() {
                 <tbody>
                   {divisions.map(div => (
                     <tr key={div.id}>
-                        <td className="cell-text">
+                        <td className="cell-text" data-label="Division/Group/Others">
                           <input
                             type="text"
                             value={div.division_group}
@@ -563,7 +563,7 @@ export default function Ics215AForm() {
                           />
                         </td>
                         {hazardIdentifiers.map((hid, hi) => (
-                          <td key={hi} className="cell-check">
+                          <td key={hi} className="cell-check" data-hz={hid || `Hazard ${hi + 1}`}>
                             <input
                               type="checkbox"
                               className="checkbox-lg"
@@ -574,7 +574,7 @@ export default function Ics215AForm() {
                           </td>
                         ))}
                         {!isReadonly && hazardIdentifiers.length < MAX_HAZARDS && <td></td>}
-                        <td className="cell-measures">
+                        <td className="cell-measures" data-label="Mitigating Measures">
                           <input
                             type="text"
                             value={div.mitigating_measures}

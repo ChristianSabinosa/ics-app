@@ -511,6 +511,141 @@
 
 .leave-step-cancel:hover { background: #fff5f5; }
 
+/* ── Smartphone pass ─────────────────────────────────────────────────────────
+   All rules live in a max-width query, so print output is untouched.          */
+@media (max-width: 600px) {
+  .ics221-header { padding: 10px 14px; }
+  .ics221-main { padding: 16px 10px; }
+  .ics221-container { padding: 14px; }
+
+  /* Field grids collapse to one column (these rows sit directly in the
+     container, so the global .form-section > promise doesn't reach them). */
+  .ics221-container > .form-row.three-col,
+  .ics221-container > .form-row.two-col,
+  .travel-grid { grid-template-columns: 1fr; }
+
+  /* Date/Time pairs stay on one compact line (no label span in ICS 221). */
+  .op-period-row { flex-wrap: nowrap; gap: 8px; }
+  .op-period-row input[type="date"],
+  .op-period-row input[type="time"] {
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto;
+    height: 44px;
+    max-height: 44px;
+    padding: 6px 8px;
+    font-size: 16px;
+    box-sizing: border-box;
+  }
+
+  .toggle-row { flex-wrap: wrap; gap: 12px; }
+  .toggle-label { min-height: 44px; }
+  .toggle-label input[type="radio"] { width: 20px; height: 20px; }
+
+  /* ── Clearance sections become stacked cards. The header row carries the
+        column labels on desktop; each card shows them via data-label. ── */
+  .clearance-table-header { display: none; }
+
+  .clearance-row {
+    display: block;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-top: 1px solid #e5e5e5;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    margin-bottom: 12px;
+    padding: 6px 14px 12px;
+    overflow: hidden;
+  }
+
+  .clearance-row .col-check,
+  .clearance-row .col-unit,
+  .clearance-row .col-remarks,
+  .clearance-row .col-name,
+  .clearance-row .col-sig,
+  .clearance-row .col-remove {
+    display: block;
+    border-right: none;
+    padding: 8px 0;
+  }
+
+  .clearance-row .col-check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    order: 1;
+  }
+
+  .clearance-row .col-check::before {
+    content: attr(data-label);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #888;
+  }
+
+  .clearance-row .col-check input[type="checkbox"] {
+    width: 24px;
+    height: 24px;
+    margin-left: auto;
+  }
+
+  .clearance-row .col-unit { order: 2; border-bottom: 1px solid #f0f0f0; }
+  .clearance-row .col-remarks { order: 3; border-bottom: 1px solid #f0f0f0; }
+  .clearance-row .col-name { order: 4; border-bottom: 1px solid #f0f0f0; }
+  .clearance-row .col-sig { order: 5; border-bottom: 1px solid #f0f0f0; }
+  .clearance-row .col-remove { order: 6; padding-top: 10px; }
+
+  .clearance-row .col-unit::before,
+  .clearance-row .col-remarks::before,
+  .clearance-row .col-name::before,
+  .clearance-row .col-sig::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #888;
+    margin-bottom: 4px;
+  }
+
+  .clearance-row input[type="text"] {
+    font-size: 16px;
+    padding: 10px 8px;
+    min-height: 44px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+  }
+
+  .clearance-row .remove-row-btn {
+    width: 100%;
+    min-height: 44px;
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    color: #dc2626;
+    font-size: 1rem;
+  }
+
+  .clearance-section .add-row-btn {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px;
+    font-size: 16px;
+  }
+
+  /* Signature block: one field per line with bottom rules instead of side
+     rules; signed inputs are 16px so iOS never zooms the viewport. */
+  .signature-section .sig-field { border-right: none; border-bottom: 1px solid #ccc; }
+  .signature-section .sig-field:last-child { border-bottom: none; }
+  .signature-section .sig-field input { font-size: 16px; min-height: 44px; }
+
+  .leave-step-cancel { min-height: 44px; font-size: 16px; }
+}
+
 @media print {
   .no-print { display: none !important; }
   .ics221-main { display: none !important; }

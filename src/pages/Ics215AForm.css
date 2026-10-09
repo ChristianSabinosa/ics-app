@@ -848,6 +848,38 @@
 
 @media (max-width: 600px) {
   .ics215a-topbar { flex-direction: column; gap: 8px; align-items: flex-start; }
+  .ics215a-main { padding: 16px 10px; }
+  .ics215a-container { padding: 14px; }
+  .op-period-row { flex-wrap: nowrap; gap: 8px; }
+  .op-period-row span { min-width: 0; flex: 0 0 auto; }
+  .op-period-row input[type="date"],
+  .op-period-row input[type="time"] { flex: 1 1 0; min-width: 0; width: auto; height: 44px; max-height: 44px; padding: 6px 8px; font-size: 16px; box-sizing: border-box; }
+  .table-wrapper { max-height: none; overflow: visible; }
+  .hz-main-table { width: 100%; min-width: 0; white-space: normal; }
+  .hz-main-table thead { display: block; }
+  .hz-main-table thead tr { display: flex; flex-wrap: wrap; gap: 6px; }
+  .hz-main-table thead th { flex: 1 1 auto; width: auto; min-width: 0; border: none; border-bottom: none; padding: 4px; text-align: left; height: auto; position: static; }
+  .hz-main-table thead th:not(.col-hz-id):not(.col-add-hz) { display: none; }
+  .hz-main-table thead .hz-th-input { width: 100%; font-size: 16px; min-height: 44px; }
+  .hz-main-table thead .add-hz-btn { width: 100%; min-height: 44px; }
+  .hz-main-table,
+  .hz-main-table tbody,
+  .hz-main-table tbody tr,
+  .hz-main-table tbody td { display: block; width: 100%; box-sizing: border-box; }
+  .hz-main-table tbody tr { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 12px; padding: 6px 14px 12px; height: auto; }
+  .hz-main-table tbody td { border: none; border-bottom: 1px solid #f0f0f0; border-right: none; padding: 8px 0; height: auto; min-width: 0; width: 100%; }
+  .hz-main-table tbody td:last-child { border-bottom: none; }
+  .hz-main-table td.cell-text::before,
+  .hz-main-table td.cell-measures::before { content: attr(data-label); display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #888; margin-bottom: 4px; }
+  .hz-main-table td.cell-text input,
+  .hz-main-table .measures-input { font-size: 16px; min-height: 44px; height: auto; }
+  .hz-main-table td.cell-check { display: flex; align-items: center; gap: 10px; padding: 8px 0; height: auto; }
+  .hz-main-table td.cell-check::before { content: attr(data-hz); flex: 1 1 auto; font-size: 0.8rem; font-weight: 600; color: #374151; }
+  .hz-main-table td.cell-check input[type="checkbox"] { order: 2; flex: 0 0 auto; margin: 0; min-width: 28px; min-height: 28px; }
+  .hz-main-table td:empty { display: none; }
+  .hz-main-table td.col-action { text-align: left; padding-top: 10px; }
+  .hz-main-table .div-remove-btn { width: 100%; min-height: 44px; background: #fee2e2; border: 1px solid #fecaca; border-radius: 6px; color: #dc2626; font-size: 1rem; }
+  .hz-main-table td.div-empty-cell { display: block; width: 100%; }
 }
 
 @media print {
