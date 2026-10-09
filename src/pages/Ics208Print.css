@@ -65,6 +65,18 @@
   flex-direction: column;
 }
 
+/* On phones the fixed A4 box is wider/taller than the screen — let the
+   preview fit the viewport (screen only; paper rules live under @media print). */
+@media screen and (max-width: 600px) {
+  .ics208-print-page {
+    width: 100%;
+    height: auto;
+    min-height: 120vw;
+    margin: 12px;
+    padding: 4mm;
+  }
+}
+
 /* outer frame - grows to fill the whole page */
 .ics208-print-page .ics208-frame {
   flex: 1 1 auto;
@@ -246,6 +258,14 @@
   font-weight: 400;
 }
 
+/* Let the printer own the paper margins. Without this the phone browser adds
+   its own margins plus header/footer lines (URL + date), which shrank the
+   printable area enough to push a fixed-height page onto a second sheet. */
+@page {
+  size: A4 portrait;
+  margin: 8mm;
+}
+
 @media print {
   .no-print { display: none !important; }
   .ics208-print-controls { display: none !important; }
@@ -257,16 +277,23 @@
     overflow: visible;
   }
 
+  /* Fill ~one A4 sheet (printable height ≈ 281mm at 8mm margins) so the form
+     still looks full-page, but leave enough slack that a short/empty safety
+     message never spills onto a second sheet. Length is content-driven, not
+     100vh, so a genuinely long message still paginates. */
   .ics208-print-page {
-    width: 100%;
-    height: calc(100vh - 1mm);
+    width: auto;
+    height: auto;
+    min-height: 265mm;
     margin: 0;
-    padding: 6mm;
+    padding: 0;
     box-shadow: none;
   }
 
+  .ics208-print-page .ics208-frame { flex: 1 1 auto; }
+
   .ics208-print-page .ics208-message-box {
-    overflow: hidden;
+    overflow: visible;
   }
 
   * {
