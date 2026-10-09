@@ -567,8 +567,100 @@
     align-items: flex-start;
   }
 
-  /* Aid/ambulance/hospital grids keep columns inside the swipe area. */
-  .channels-table-wrapper table { min-width: 700px; }
+  /* Cards instead of a sideways-scrolling table — every field visible
+     without panning right. */
+  .channels-table-wrapper { overflow: visible; border: none; background: transparent; }
+  .channels-table-wrapper table,
+  .channels-table { min-width: 0; }
+
+  .channels-table thead { display: none; }
+
+  .channels-table,
+  .channels-table tbody,
+  .channels-table tr,
+  .channels-table td {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Card heading: "Aid Station 1", "Ambulance 2", "Hospital 3" — reset per table. */
+  .channels-table tbody { counter-reset: ics-row; }
+  .channels-table tbody tr { counter-increment: ics-row; }
+  .channels-table tbody tr::before {
+    content: "Row " counter(ics-row);
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #1e3a5f;
+    padding-top: 10px;
+    margin-bottom: 6px;
+    border-bottom: 2px solid #f0f0f0;
+  }
+  .channels-table--aid       tbody tr::before { content: "Aid Station " counter(ics-row); }
+  .channels-table--ambulance tbody tr::before { content: "Ambulance "   counter(ics-row); }
+  .channels-table--hospital  tbody tr::before { content: "Hospital "    counter(ics-row); }
+
+  /* :nth-child(even) has higher specificity — override it explicitly. */
+  .channels-table tbody tr,
+  .channels-table tbody tr:nth-child(even) {
+    background: white;
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    margin-bottom: 12px;
+    padding: 4px 14px 12px;
+  }
+
+  .channels-table td {
+    border: none;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 8px 0;
+  }
+  .channels-table td:last-child { border-bottom: none; }
+
+  .channels-table td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #888;
+    margin-bottom: 4px;
+  }
+
+  .channels-table td.actions-cell { text-align: left; padding-top: 10px; }
+  .channels-table td.actions-cell::before { content: none; }
+  .channels-table .actions-cell .remove-row-btn {
+    width: 100%;
+    height: 44px;
+    background: #fee2e2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+    font-size: 1rem;
+  }
+
+  /* 16px stops iOS zooming the viewport on focus; 44px is thumb size. */
+  .channels-table td input,
+  .channels-table td select {
+    min-height: 44px;
+    font-size: 16px;
+    background: white;
+    border-color: #e5e7eb;
+  }
+
+  /* Radio pairs stay side by side with thumb-sized tap targets. */
+  .channels-table td.radio-cell { white-space: normal; }
+  .channels-table .radio-label { min-height: 44px; padding: 4px 8px; margin-right: 4px; }
+  .channels-table td input[type="radio"] { min-height: 0; width: 22px; height: 22px; }
+
+  /* Travel Time: stack the Air/Land inputs full-width. */
+  .channels-table td.travel-time-cell { padding: 8px 0; }
+  .channels-table .travel-time-row { flex-wrap: wrap; }
+  .channels-table .travel-time-row input { flex: 1 1 140px; min-height: 44px; font-size: 16px; }
 
   /* Operational Period: each From/To stacks full-width, like the 208. */
   .op-period-row {

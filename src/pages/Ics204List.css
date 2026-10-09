@@ -177,4 +177,89 @@
   font-size: 0.9rem;
 }
 
+/* Tablet: tighten gutters so the list gets the full width. */
+@media (max-width: 768px) {
+  .ics204list-main { padding: 20px 12px; }
+  .ics204list-container { padding: 14px; }
+  .ics204list-header { padding: 10px 14px; }
+}
+
+/* Phones: stacked cards instead of a sideways-scrolling table, so the
+   View / Edit / Delete actions are always visible without panning right. */
+@media (max-width: 600px) {
+  .ics204list-main { padding: 16px 10px; }
+
+  /* Defeat the global [class*="table-wrapper"] horizontal-scroll rule. */
+  .ics204list-table-wrapper { overflow: visible; }
+  .ics204list-table { min-width: 0; }
+
+  .ics204list-table thead { display: none; }
+
+  .ics204list-table,
+  .ics204list-table tbody,
+  .ics204list-table tr,
+  .ics204list-table td {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .ics204list-table tbody tr {
+    background: white;
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    margin-bottom: 12px;
+    padding: 4px 16px 14px;
+  }
+
+  .ics204list-table tbody tr:hover { background: white; }
+
+  .ics204list-table td {
+    border-bottom: 1px solid #f0f0f0;
+    padding: 8px 0;
+  }
+
+  .ics204list-table td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #888;
+    margin-bottom: 2px;
+  }
+
+  /* Division / Group leads the card — no label needed. */
+  .ics204list-table .label-cell {
+    border-bottom: 2px solid #f0f0f0;
+    padding-top: 12px;
+    font-size: 1rem;
+  }
+
+  .ics204list-table .label-cell::before { content: none; }
+
+  .ics204list-table .date-cell { white-space: normal; }
+
+  /* Actions: full-width stacked buttons, thumb-sized. */
+  .ics204list-table .actions-cell {
+    border-bottom: none;
+    padding-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .ics204list-table .actions-cell::before { content: none; }
+
+  .ics204list-table .actions-cell .list-btn {
+    width: 100%;
+    box-sizing: border-box;
+    margin-right: 0;
+    min-height: 44px;
+    font-size: 0.9rem;
+  }
+}
+
 @media print { .no-print { display: none !important; } }

@@ -142,14 +142,14 @@ export default function Ics204List() {
                 <tbody>
                   {items.map((item) => (
                     <tr key={item.id}>
-                      <td className="label-cell">{instanceLabel(item)}</td>
-                      <td>{item.branch || '—'}</td>
-                      <td>{item.staging_area || '—'}</td>
-                      <td>
+                      <td className="label-cell" data-label="Division / Group">{instanceLabel(item)}</td>
+                      <td data-label="Branch">{item.branch || '—'}</td>
+                      <td data-label="Staging Area">{item.staging_area || '—'}</td>
+                      <td data-label="Status">
                         <span className={`list-status-badge ${item.status.toLowerCase()}`}>{item.status}</span>
                       </td>
-                      <td className="date-cell">{new Date(item.updated_at).toLocaleDateString()}</td>
-                      <td className="actions-cell">
+                      <td className="date-cell" data-label="Updated">{new Date(item.updated_at).toLocaleDateString()}</td>
+                      <td className="actions-cell" data-label="">
                         <button
                           className="list-btn view"
                           onClick={() => navigate(`${homePath}/ics-204/edit?form=${item.id}&view=1`)}

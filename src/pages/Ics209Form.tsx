@@ -777,7 +777,7 @@ export default function Ics209Form() {
               <tbody>
                 {clusterAssessment.map((row, idx) => (
                   <tr key={idx}>
-                    <td>
+                    <td data-label="Cluster">
                       <input
                         type="text"
                         value={row.cluster}
@@ -786,7 +786,7 @@ export default function Ics209Form() {
                         placeholder="Cluster name"
                       />
                     </td>
-                    <td>
+                    <td data-label="Status">
                       <input
                         type="text"
                         value={row.status}
@@ -796,7 +796,7 @@ export default function Ics209Form() {
                       />
                     </td>
                     {!isReadonly && (
-                      <td>
+                      <td data-label="">
                         <button className="remove-row-btn" onClick={() => removeCluster(idx)}>&times;</button>
                       </td>
                     )}
@@ -829,15 +829,15 @@ export default function Ics209Form() {
                 <tbody>
                   {publicStatus.map((row, idx) => (
                     <tr key={idx}>
-                      <td><input type="text" value={row.description} onChange={e => updatePublicStatus(idx, 'description', e.target.value)} disabled={isReadonly} /></td>
-                      <td><input type="text" value={row.opPeriod} onChange={e => updatePublicStatus(idx, 'opPeriod', e.target.value)} disabled={isReadonly} /></td>
-                      <td><input type="text" value={row.totalCases} onChange={e => updatePublicStatus(idx, 'totalCases', e.target.value)} disabled={isReadonly} /></td>
-                      <td><input type="text" value={row.casesResponded} onChange={e => updatePublicStatus(idx, 'casesResponded', e.target.value)} disabled={isReadonly} /></td>
-                      <td><input type="text" value={row.totalResponded} onChange={e => updatePublicStatus(idx, 'totalResponded', e.target.value)} disabled={isReadonly} /></td>
-                      <td><input type="text" value={row.remaining} onChange={e => updatePublicStatus(idx, 'remaining', e.target.value)} disabled={isReadonly} /></td>
-                      <td><input type="text" value={row.remarks} onChange={e => updatePublicStatus(idx, 'remarks', e.target.value)} disabled={isReadonly} /></td>
+                      <td data-label="Description"><input type="text" value={row.description} onChange={e => updatePublicStatus(idx, 'description', e.target.value)} disabled={isReadonly} /></td>
+                      <td data-label="No. of cases for this operational period"><input type="text" value={row.opPeriod} onChange={e => updatePublicStatus(idx, 'opPeriod', e.target.value)} disabled={isReadonly} /></td>
+                      <td data-label="Total Cases"><input type="text" value={row.totalCases} onChange={e => updatePublicStatus(idx, 'totalCases', e.target.value)} disabled={isReadonly} /></td>
+                      <td data-label="No. of cases responded"><input type="text" value={row.casesResponded} onChange={e => updatePublicStatus(idx, 'casesResponded', e.target.value)} disabled={isReadonly} /></td>
+                      <td data-label="Total Cases of Responded"><input type="text" value={row.totalResponded} onChange={e => updatePublicStatus(idx, 'totalResponded', e.target.value)} disabled={isReadonly} /></td>
+                      <td data-label="Remaining Cases"><input type="text" value={row.remaining} onChange={e => updatePublicStatus(idx, 'remaining', e.target.value)} disabled={isReadonly} /></td>
+                      <td data-label="Remarks"><input type="text" value={row.remarks} onChange={e => updatePublicStatus(idx, 'remarks', e.target.value)} disabled={isReadonly} /></td>
                       {!isReadonly && (
-                        <td><button className="remove-row-btn" onClick={() => removePublicStatus(idx)}>&times;</button></td>
+                        <td data-label=""><button className="remove-row-btn" onClick={() => removePublicStatus(idx)}>&times;</button></td>
                       )}
                     </tr>
                   ))}
@@ -869,15 +869,15 @@ export default function Ics209Form() {
                 <tbody>
                   {respondersStatus.map((row, idx) => (
                     <tr key={idx}>
-                      <td><input type="text" value={row.description} onChange={e => updateRespondersStatus(idx, 'description', e.target.value)} disabled={isReadonly} /></td>
-                      <td><input type="text" value={row.opPeriod} onChange={e => updateRespondersStatus(idx, 'opPeriod', e.target.value)} disabled={isReadonly} /></td>
-                      <td><input type="text" value={row.totalCases} onChange={e => updateRespondersStatus(idx, 'totalCases', e.target.value)} disabled={isReadonly} /></td>
-                      <td><input type="text" value={row.casesResponded} onChange={e => updateRespondersStatus(idx, 'casesResponded', e.target.value)} disabled={isReadonly} /></td>
-                      <td><input type="text" value={row.totalResponded} onChange={e => updateRespondersStatus(idx, 'totalResponded', e.target.value)} disabled={isReadonly} /></td>
-                      <td><input type="text" value={row.remaining} onChange={e => updateRespondersStatus(idx, 'remaining', e.target.value)} disabled={isReadonly} /></td>
-                      <td><input type="text" value={row.remarks} onChange={e => updateRespondersStatus(idx, 'remarks', e.target.value)} disabled={isReadonly} /></td>
+                      <td data-label="Description"><input type="text" value={row.description} onChange={e => updateRespondersStatus(idx, 'description', e.target.value)} disabled={isReadonly} /></td>
+                      <td data-label="No. of cases for this operational period"><input type="text" value={row.opPeriod} onChange={e => updateRespondersStatus(idx, 'opPeriod', e.target.value)} disabled={isReadonly} /></td>
+                      <td data-label="Total Cases"><input type="text" value={row.totalCases} onChange={e => updateRespondersStatus(idx, 'totalCases', e.target.value)} disabled={isReadonly} /></td>
+                      <td data-label="No. of cases responded"><input type="text" value={row.casesResponded} onChange={e => updateRespondersStatus(idx, 'casesResponded', e.target.value)} disabled={isReadonly} /></td>
+                      <td data-label="Total Cases of Responded"><input type="text" value={row.totalResponded} onChange={e => updateRespondersStatus(idx, 'totalResponded', e.target.value)} disabled={isReadonly} /></td>
+                      <td data-label="Remaining Cases"><input type="text" value={row.remaining} onChange={e => updateRespondersStatus(idx, 'remaining', e.target.value)} disabled={isReadonly} /></td>
+                      <td data-label="Remarks"><input type="text" value={row.remarks} onChange={e => updateRespondersStatus(idx, 'remarks', e.target.value)} disabled={isReadonly} /></td>
                       {!isReadonly && (
-                        <td><button className="remove-row-btn" onClick={() => removeRespondersStatus(idx)}>&times;</button></td>
+                        <td data-label=""><button className="remove-row-btn" onClick={() => removeRespondersStatus(idx)}>&times;</button></td>
                       )}
                     </tr>
                   ))}
@@ -1043,14 +1043,14 @@ export default function Ics209Form() {
                 <tbody>
                   {resources.map((row, idx) => (
                     <tr key={idx}>
-                      <td><input type="text" value={row.agency} onChange={e => updateResource(idx, 'agency', e.target.value)} disabled={isReadonly} /></td>
-                      <td><input type="text" value={row.kind} onChange={e => updateResource(idx, 'kind', e.target.value)} disabled={isReadonly} /></td>
-                      <td><input type="text" value={row.number} onChange={e => updateResource(idx, 'number', e.target.value)} disabled={isReadonly} /></td>
-                      <td><input type="text" value={row.additionalPersonnel} onChange={e => updateResource(idx, 'additionalPersonnel', e.target.value)} disabled={isReadonly} /></td>
-                      <td><input type="text" value={row.totalPersonnel} readOnly className="readonly" /></td>
-                      <td><input type="text" value={row.remarks} onChange={e => updateResource(idx, 'remarks', e.target.value)} disabled={isReadonly} /></td>
+                      <td data-label="Agency/Office"><input type="text" value={row.agency} onChange={e => updateResource(idx, 'agency', e.target.value)} disabled={isReadonly} /></td>
+                      <td data-label="Kind"><input type="text" value={row.kind} onChange={e => updateResource(idx, 'kind', e.target.value)} disabled={isReadonly} /></td>
+                      <td data-label="Number"><input type="text" value={row.number} onChange={e => updateResource(idx, 'number', e.target.value)} disabled={isReadonly} /></td>
+                      <td data-label="Additional Personnel not assigned to a resource"><input type="text" value={row.additionalPersonnel} onChange={e => updateResource(idx, 'additionalPersonnel', e.target.value)} disabled={isReadonly} /></td>
+                      <td data-label="Total Personnel"><input type="text" value={row.totalPersonnel} readOnly className="readonly" /></td>
+                      <td data-label="Remarks"><input type="text" value={row.remarks} onChange={e => updateResource(idx, 'remarks', e.target.value)} disabled={isReadonly} /></td>
                       {!isReadonly && (
-                        <td><button className="remove-row-btn" onClick={() => removeResource(idx)}>&times;</button></td>
+                        <td data-label=""><button className="remove-row-btn" onClick={() => removeResource(idx)}>&times;</button></td>
                       )}
                     </tr>
                   ))}

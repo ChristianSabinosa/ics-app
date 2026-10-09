@@ -300,7 +300,7 @@
 
 .ics204-resources-table input[type="number"] { text-align: right; }
 
-.trans-cell { text-align: center; }
+.trans-cell { text-align: left; }
 .trans-cell input { width: auto; cursor: pointer; }
 
 .actions-col { width: 36px; }

@@ -580,7 +580,7 @@ export default function Ics204Form() {
                     <th>Name of Leader</th>
                     <th>Contact Numbers</th>
                     <th>No. of Personnel</th>
-                    <th>Trans. Needed?</th>
+                    <th>Transportation Needed?</th>
                     <th>Drop-off Point &amp; Time</th>
                     <th>Pick-up Time</th>
                     <th>Remarks</th>
@@ -602,7 +602,7 @@ export default function Ics204Form() {
                       <td data-label="No. of Personnel">
                         <input type="number" min="0" value={r.personnel} disabled={isReadonly} onChange={(e) => updateResourceRow(i, 'personnel', e.target.value)} />
                       </td>
-                      <td className="trans-cell" data-label="Trans. Needed?">
+                      <td className="trans-cell" data-label="Transportation Needed?">
                         <input
                           type="checkbox"
                           checked={r.trans_needed}

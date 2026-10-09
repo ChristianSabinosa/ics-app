@@ -434,7 +434,7 @@ export default function Ics206Form() {
           <div className="form-section">
             <h4>3. MEDICAL AID STATIONS</h4>
             <div className="channels-table-wrapper">
-              <table className="channels-table">
+              <table className="channels-table channels-table--aid">
                 <thead>
                   <tr>
                     <th>Name</th>
@@ -449,16 +449,16 @@ export default function Ics206Form() {
                 <tbody>
                   {aidStations.map((a, i) => (
                     <tr key={i}>
-                      <td><input value={a.name} onChange={(e) => updateAidStation(i, 'name', e.target.value)} /></td>
-                      <td><input value={a.location} onChange={(e) => updateAidStation(i, 'location', e.target.value)} /></td>
-                      <td><input value={a.contact_person} onChange={(e) => updateAidStation(i, 'contact_person', e.target.value)} /></td>
-                      <td><input value={a.contact_numbers} onChange={(e) => updateAidStation(i, 'contact_numbers', e.target.value)} /></td>
-                      <td className="radio-cell">
+                      <td data-label="Name"><input value={a.name} onChange={(e) => updateAidStation(i, 'name', e.target.value)} /></td>
+                      <td data-label="Location"><input value={a.location} onChange={(e) => updateAidStation(i, 'location', e.target.value)} /></td>
+                      <td data-label="Contact Person"><input value={a.contact_person} onChange={(e) => updateAidStation(i, 'contact_person', e.target.value)} /></td>
+                      <td data-label="Contact Number(s)"><input value={a.contact_numbers} onChange={(e) => updateAidStation(i, 'contact_numbers', e.target.value)} /></td>
+                      <td className="radio-cell" data-label="With Paramedics?">
                         <label className="radio-label"><input type="radio" checked={a.with_paramedics === true} onChange={() => updateAidStation(i, 'with_paramedics', true)} /> Yes</label>
                         <label className="radio-label"><input type="radio" checked={a.with_paramedics === false} onChange={() => updateAidStation(i, 'with_paramedics', false)} /> No</label>
                       </td>
-                      <td><input value={a.remarks} onChange={(e) => updateAidStation(i, 'remarks', e.target.value)} /></td>
-                      <td className="actions-cell"><button className="remove-row-btn" onClick={() => removeAidStation(i)}>&times;</button></td>
+                      <td data-label="Remarks"><input value={a.remarks} onChange={(e) => updateAidStation(i, 'remarks', e.target.value)} /></td>
+                      <td className="actions-cell" data-label=""><button className="remove-row-btn" onClick={() => removeAidStation(i)}>&times;</button></td>
                     </tr>
                   ))}
                 </tbody>
@@ -473,7 +473,7 @@ export default function Ics206Form() {
           <div className="form-section">
             <h4>4. AMBULANCE/MEDICAL TRANSPORTATION SERVICES</h4>
             <div className="channels-table-wrapper">
-              <table className="channels-table">
+              <table className="channels-table channels-table--ambulance">
                 <thead>
                   <tr>
                     <th>Name</th>
@@ -488,16 +488,16 @@ export default function Ics206Form() {
                 <tbody>
                   {ambulances.map((a, i) => (
                     <tr key={i}>
-                      <td><input value={a.name} onChange={(e) => updateAmbulance(i, 'name', e.target.value)} /></td>
-                      <td><input value={a.location} onChange={(e) => updateAmbulance(i, 'location', e.target.value)} /></td>
-                      <td><input value={a.contact_person} onChange={(e) => updateAmbulance(i, 'contact_person', e.target.value)} /></td>
-                      <td><input value={a.contact_numbers} onChange={(e) => updateAmbulance(i, 'contact_numbers', e.target.value)} /></td>
-                      <td className="radio-cell">
+                      <td data-label="Name"><input value={a.name} onChange={(e) => updateAmbulance(i, 'name', e.target.value)} /></td>
+                      <td data-label="Location"><input value={a.location} onChange={(e) => updateAmbulance(i, 'location', e.target.value)} /></td>
+                      <td data-label="Contact Person"><input value={a.contact_person} onChange={(e) => updateAmbulance(i, 'contact_person', e.target.value)} /></td>
+                      <td data-label="Contact Number(s)"><input value={a.contact_numbers} onChange={(e) => updateAmbulance(i, 'contact_numbers', e.target.value)} /></td>
+                      <td className="radio-cell" data-label="Level of Service">
                         <label className="radio-label"><input type="radio" checked={a.level_of_service === 'BLS'} onChange={() => updateAmbulance(i, 'level_of_service', 'BLS')} /> BLS</label>
                         <label className="radio-label"><input type="radio" checked={a.level_of_service === 'ALS'} onChange={() => updateAmbulance(i, 'level_of_service', 'ALS')} /> ALS</label>
                       </td>
-                      <td><input value={a.remarks} onChange={(e) => updateAmbulance(i, 'remarks', e.target.value)} /></td>
-                      <td className="actions-cell"><button className="remove-row-btn" onClick={() => removeAmbulance(i)}>&times;</button></td>
+                      <td data-label="Remarks"><input value={a.remarks} onChange={(e) => updateAmbulance(i, 'remarks', e.target.value)} /></td>
+                      <td className="actions-cell" data-label=""><button className="remove-row-btn" onClick={() => removeAmbulance(i)}>&times;</button></td>
                     </tr>
                   ))}
                 </tbody>
@@ -512,7 +512,7 @@ export default function Ics206Form() {
           <div className="form-section">
             <h4>5. HOSPITALS</h4>
             <div className="channels-table-wrapper">
-              <table className="channels-table">
+              <table className="channels-table channels-table--hospital">
                 <thead>
                   <tr>
                     <th>Name</th>
@@ -529,11 +529,11 @@ export default function Ics206Form() {
                 <tbody>
                   {hospitals.map((h, i) => (
                     <tr key={i}>
-                      <td><input value={h.name} onChange={(e) => updateHospital(i, 'name', e.target.value)} /></td>
-                      <td><input value={h.location} onChange={(e) => updateHospital(i, 'location', e.target.value)} /></td>
-                      <td><input value={h.contact_person} onChange={(e) => updateHospital(i, 'contact_person', e.target.value)} /></td>
-                      <td><input value={h.contact_numbers} onChange={(e) => updateHospital(i, 'contact_numbers', e.target.value)} /></td>
-                      <td className="travel-time-cell">
+                      <td data-label="Name"><input value={h.name} onChange={(e) => updateHospital(i, 'name', e.target.value)} /></td>
+                      <td data-label="Location"><input value={h.location} onChange={(e) => updateHospital(i, 'location', e.target.value)} /></td>
+                      <td data-label="Contact Person"><input value={h.contact_person} onChange={(e) => updateHospital(i, 'contact_person', e.target.value)} /></td>
+                      <td data-label="Contact Number(s)"><input value={h.contact_numbers} onChange={(e) => updateHospital(i, 'contact_numbers', e.target.value)} /></td>
+                      <td className="travel-time-cell" data-label="Travel Time">
                         <div className="travel-time-row">
                           <label>Air:</label><input value={h.travel_time_air} onChange={(e) => updateHospital(i, 'travel_time_air', e.target.value)} />
                         </div>
@@ -541,19 +541,19 @@ export default function Ics206Form() {
                           <label>Land:</label><input value={h.travel_time_land} onChange={(e) => updateHospital(i, 'travel_time_land', e.target.value)} />
                         </div>
                       </td>
-                      <td className="radio-cell">
+                      <td className="radio-cell" data-label="With Trauma Center?">
                         <label className="radio-label"><input type="radio" checked={h.with_trauma_center === true} onChange={() => updateHospital(i, 'with_trauma_center', true)} /> Yes</label>
                         <label className="radio-label"><input type="radio" checked={h.with_trauma_center === false} onChange={() => updateHospital(i, 'with_trauma_center', false)} /> No</label>
                       </td>
-                      <td className="radio-cell">
+                      <td className="radio-cell" data-label="With Burn Center?">
                         <label className="radio-label"><input type="radio" checked={h.with_burn_center === true} onChange={() => updateHospital(i, 'with_burn_center', true)} /> Yes</label>
                         <label className="radio-label"><input type="radio" checked={h.with_burn_center === false} onChange={() => updateHospital(i, 'with_burn_center', false)} /> No</label>
                       </td>
-                      <td className="radio-cell">
+                      <td className="radio-cell" data-label="With Helipad?">
                         <label className="radio-label"><input type="radio" checked={h.with_helipad === true} onChange={() => updateHospital(i, 'with_helipad', true)} /> Yes</label>
                         <label className="radio-label"><input type="radio" checked={h.with_helipad === false} onChange={() => updateHospital(i, 'with_helipad', false)} /> No</label>
                       </td>
-                      <td className="actions-cell"><button className="remove-row-btn" onClick={() => removeHospital(i)}>&times;</button></td>
+                      <td className="actions-cell" data-label=""><button className="remove-row-btn" onClick={() => removeHospital(i)}>&times;</button></td>
                     </tr>
                   ))}
                 </tbody>

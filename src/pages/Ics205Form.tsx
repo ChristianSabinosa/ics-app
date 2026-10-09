@@ -349,7 +349,7 @@ export default function Ics205Form() {
           <div className="form-section">
             <h4>3. BASIC RADIO CHANNEL UTILIZATION</h4>
             <div className="channels-table-wrapper">
-              <table className="channels-table">
+              <table className="channels-table channels-table--channel">
                 <thead>
                   <tr>
                     <th>Radio Type</th>
@@ -367,7 +367,7 @@ export default function Ics205Form() {
                 <tbody>
                   {channels.map((c, i) => (
                     <tr key={i}>
-                      <td>
+                      <td data-label="Radio Type">
                         <select value={c.radio_type} onChange={(e) => updateChannel(i, 'radio_type', e.target.value)}>
                           <option value="">-</option>
                           <option value="VHF">VHF</option>
@@ -376,9 +376,9 @@ export default function Ics205Form() {
                           <option value="Others">Others</option>
                         </select>
                       </td>
-                      <td><input value={c.system} onChange={(e) => updateChannel(i, 'system', e.target.value)} /></td>
-                      <td><input value={c.channel} onChange={(e) => updateChannel(i, 'channel', e.target.value)} /></td>
-                      <td>
+                      <td data-label="System"><input value={c.system} onChange={(e) => updateChannel(i, 'system', e.target.value)} /></td>
+                      <td data-label="Channel"><input value={c.channel} onChange={(e) => updateChannel(i, 'channel', e.target.value)} /></td>
+                      <td data-label="Function">
                         <select value={c.function} onChange={(e) => updateChannel(i, 'function', e.target.value)}>
                           <option value="">-</option>
                           <option value="IMT">IMT</option>
@@ -387,12 +387,12 @@ export default function Ics205Form() {
                           <option value="Others">Others</option>
                         </select>
                       </td>
-                      <td><input value={c.tone_offset} onChange={(e) => updateChannel(i, 'tone_offset', e.target.value)} /></td>
-                      <td><input value={c.frequency} onChange={(e) => updateChannel(i, 'frequency', e.target.value)} /></td>
-                      <td><input value={c.others} onChange={(e) => updateChannel(i, 'others', e.target.value)} /></td>
-                      <td><input value={c.assignment} onChange={(e) => updateChannel(i, 'assignment', e.target.value)} /></td>
-                      <td><input value={c.remarks} onChange={(e) => updateChannel(i, 'remarks', e.target.value)} /></td>
-                      <td className="actions-cell">
+                      <td data-label="Tone/Offset"><input value={c.tone_offset} onChange={(e) => updateChannel(i, 'tone_offset', e.target.value)} /></td>
+                      <td data-label="Frequency"><input value={c.frequency} onChange={(e) => updateChannel(i, 'frequency', e.target.value)} /></td>
+                      <td data-label="Others (mobile phone, satellite phone, etc.)"><input value={c.others} onChange={(e) => updateChannel(i, 'others', e.target.value)} /></td>
+                      <td data-label="Assignment"><input value={c.assignment} onChange={(e) => updateChannel(i, 'assignment', e.target.value)} /></td>
+                      <td data-label="Remarks"><input value={c.remarks} onChange={(e) => updateChannel(i, 'remarks', e.target.value)} /></td>
+                      <td className="actions-cell" data-label="">
                         <button className="remove-row-btn" onClick={() => removeChannel(i)}>&times;</button>
                       </td>
                     </tr>
