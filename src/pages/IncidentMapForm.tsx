@@ -178,6 +178,20 @@ function LiveRecenter({ center, nonce }: { center: { lat: number; lng: number };
   return null
 }
 
+/** Re-fits Leaflet when the 4:3 map window resizes (rotation / breakpoint / layout shift). */
+function MapSizeWatcher() {
+  const map = useMap()
+  useEffect(() => {
+    const el = map.getContainer()
+    const ro = new ResizeObserver(() => {
+      map.invalidateSize({ debounceMoveend: true })
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [map])
+  return null
+}
+
 export default function IncidentMapForm() {
   const { id: incidentId } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -1200,6 +1214,7 @@ export default function IncidentMapForm() {
                       <LiveClickHandler disabled={!canEdit} onAdd={onLiveClick} />
                       <LiveViewTracker onMove={onLiveMove} />
                       <LiveRecenter center={center} nonce={locateNonce} />
+                      <MapSizeWatcher />
                       {liveShapes.map((s) => (
                         <Polygon
                           key={s.id}

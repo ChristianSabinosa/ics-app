@@ -544,6 +544,11 @@
 
 /* ── Live map ── */
 .live-shot {
+  box-sizing: border-box;
+  aspect-ratio: 4 / 3;
+  width: 100%;
+  max-width: min(100%, calc(62vh * 4 / 3));
+  margin-inline: auto;
   border: 1px solid #ddd;
   border-radius: 6px;
   overflow: hidden;
@@ -551,8 +556,7 @@
 }
 
 .live-leaflet {
-  height: 62vh;
-  min-height: 420px;
+  height: 100%;
   width: 100%;
   z-index: 1;
 }
