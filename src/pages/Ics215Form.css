@@ -200,6 +200,9 @@
   max-height: 70vh;
 }
 
+/* Mobile-only card branch of Section 3 — hidden on desktop. */
+.wa-mobile { display: none; }
+
 .table-wrapper::-webkit-scrollbar { width: 6px; height: 6px; }
 .table-wrapper::-webkit-scrollbar-track { background: #f3f4f6; }
 .table-wrapper::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 3px; }
@@ -480,34 +483,127 @@
   .op-period-row input[type="date"],
   .op-period-row input[type="time"] { flex: 1 1 0; min-width: 0; width: auto; height: 44px; max-height: 44px; padding: 6px 8px; font-size: 16px; box-sizing: border-box; }
   .table-wrapper { max-height: none; overflow: visible; }
-  .wa-main-table { width: 100%; min-width: 0; white-space: normal; }
-  .wa-main-table thead { display: block; }
-  .wa-main-table thead tr { display: flex; flex-wrap: wrap; gap: 6px; }
-  .wa-main-table thead th { flex: 1 1 auto; width: auto; border: none; padding: 4px; text-align: left; height: auto; position: static; }
-  .wa-main-table thead th:not(.col-res-id):not(.col-add-res) { display: none; }
-  .wa-main-table thead .res-th-input { width: 100%; font-size: 16px; min-height: 44px; text-align: left; }
-  .wa-main-table thead .add-res-btn { width: 100%; min-height: 44px; }
-  .wa-main-table,
-  .wa-main-table tbody,
-  .wa-main-table tbody tr,
-  .wa-main-table tbody td { display: block; width: 100%; box-sizing: border-box; }
-  .wa-main-table tbody { background: #fff; border: 1px solid #d1d5db; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 12px; padding: 6px 12px 10px; overflow: hidden; }
-  .wa-main-table tbody tr { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 6px 0; border-bottom: 1px solid #f0f0f0; }
-  .wa-main-table tbody tr:last-child { border-bottom: none; }
-  .wa-main-table td.cell-text,
-  .wa-main-table td.cell-time { order: 1; flex: 1 1 100%; width: 100%; border: none; padding: 6px 0; }
-  .wa-main-table td.cell-text::before,
-  .wa-main-table td.cell-time::before { content: attr(data-label); display: block; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: #888; margin-bottom: 2px; }
-  .wa-main-table td.cell-text input,
-  .wa-main-table td.cell-time input { width: 100%; font-size: 16px; padding: 10px; min-height: 44px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; background: #fff; }
-  .wa-main-table td.cell-label { order: 2; flex: 0 0 auto; background: none; padding: 6px 8px 6px 0; }
-  .wa-main-table td.cell-num { order: 2; flex: 1 1 auto; width: auto; min-width: 0; max-width: none; border: none; padding: 4px 0; }
-  .wa-main-table td.cell-num::before { content: attr(data-label); display: block; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: #888; margin-bottom: 1px; }
-  .wa-main-table td.cell-num:empty { display: none; }
-  .wa-main-table td.cell-num input { width: 100%; font-size: 16px; min-height: 44px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; text-align: center; }
-  .wa-main-table td.col-action { order: 3; flex: 1 1 100%; width: 100%; border: none; padding: 6px 0 2px; text-align: left; }
-  .wa-main-table .wa-remove-btn { width: 100%; min-height: 44px; background: #fee2e2; border: 1px solid #fecaca; border-radius: 6px; }
-  .wa-main-table td.wa-empty-cell { display: block; width: 100%; }
+  /* Option B: real cards replace the table on phones. */
+  .wa-main-table { display: none; }
+  .wa-mobile { display: block; }
+  .wa-mcard {
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin-bottom: 12px;
+    padding: 10px 12px 12px;
+  }
+  .wa-mfield { margin-bottom: 8px; }
+  .wa-mfield label {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #888;
+    margin-bottom: 2px;
+  }
+  .wa-mfield input {
+    width: 100%;
+    font-size: 16px;
+    padding: 10px;
+    min-height: 44px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    background: #fff;
+    font-family: inherit;
+    color: #1f2937;
+  }
+  .wa-mres {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #f9fafb;
+    padding: 8px;
+    margin-bottom: 8px;
+  }
+  .wa-mres-name {
+    width: 100%;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 8px 10px;
+    min-height: 44px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    background: #fff;
+    font-family: inherit;
+    color: #1f2937;
+    margin-bottom: 6px;
+  }
+  .wa-mres-cap {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #888;
+    margin-bottom: 2px;
+  }
+  .wa-mres-nums {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  .wa-mnum label {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 1px;
+    text-align: center;
+  }
+  .wa-mnum input {
+    width: 100%;
+    font-size: 16px;
+    min-height: 44px;
+    padding: 8px 4px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    text-align: center;
+    box-sizing: border-box;
+    background: #fff;
+    font-family: inherit;
+    color: #1f2937;
+  }
+  .wa-mremove {
+    width: 100%;
+    min-height: 44px;
+    margin-top: 4px;
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    color: #991b1b;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .wa-maddres {
+    width: 100%;
+    min-height: 44px;
+    border: 1px dashed #9ca3af;
+    border-radius: 4px;
+    background: transparent;
+    color: #6b7280;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .wa-mobile input[type="number"]::-webkit-outer-spin-button,
+  .wa-mobile input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .wa-mobile input[type="number"] { -moz-appearance: textfield; }
   .totals-wrapper { overflow-x: visible; }
   .totals-table { white-space: normal; }
   .totals-table td:first-child { white-space: normal; }

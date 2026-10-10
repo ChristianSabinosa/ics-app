@@ -128,7 +128,32 @@
 /* Box (border/padding/shadow) comes from the shared .incident-panel rule below. */
 .incident-info-bar h2 { color: #950606; font-size: 1.3rem; margin-bottom: 6px; }
 .incident-location-text { color: #777; font-size: 0.9rem; margin-bottom: 12px; }
-.incident-meta-row { display: flex; gap: 20px; font-size: 0.8rem; color: #999; flex-wrap: wrap; }
+.incident-meta-row { display: flex; gap: 8px 20px; font-size: 0.8rem; color: #999; flex-wrap: wrap; align-items: center; }
+
+.next-op-btn {
+  padding: 6px 14px;
+  background: #950606;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  min-height: 36px;
+}
+
+.next-op-btn:hover { background: #7a0505; }
+
+.incident-notice {
+  background: #d1fae5;
+  border: 1px solid #6ee7b7;
+  color: #065f46;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-size: 0.88rem;
+}
 
 .public-status-card {
   display: flex;

@@ -7,7 +7,7 @@
  *
  * The app must be opened once while online so its files get cached.
  */
-const CACHE = 'ics-shell-v2'
+const CACHE = 'ics-shell-v3'
 const PRECACHE = ['/', '/index.html', '/alaminos-logo.png', '/ndrrmc-logo.png', '/favicon.svg']
 
 self.addEventListener('install', (event) => {

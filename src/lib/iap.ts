@@ -3,6 +3,12 @@ import { offLatest, offAll, offChildren, offGetMap } from './offline/store'
 import type { OfflineRow } from './offline/db'
 import { OPS_POSITIONS } from './ics204'
 import type { Ics204RowInput } from './ics204'
+import {
+  asCustomSymbols,
+  asLiveMarkers,
+  asLiveShapes,
+} from './map'
+import type { CustomSymbolDef, LiveMarker, LiveShape } from './map'
 import type { Ics204CommsRow, Ics204OpsPerson, Ics204Row } from './types'
 
 /** Operational period of an IAP (entered by the user, prefilled from ICS 202). */
@@ -160,6 +166,10 @@ export interface IapData {
   form206: IapForm206 | null
   form208: IapForm208 | null
   map_image: string
+  map_type: string
+  map_markers: LiveMarker[]
+  map_shapes: LiveShape[]
+  map_custom: CustomSymbolDef[]
 }
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : v == null ? '' : String(v))
@@ -199,7 +209,7 @@ export async function loadIapData(
   let r208: Rec | null
   let r204s: ListRes
   let r207s: ListRes
-  let rMap: { data: { map_image?: string | null } | null }
+  let rMap: { data: { map_image?: string | null; map_type?: string | null; live_markers?: unknown; live_shapes?: unknown; custom_symbols?: unknown } | null }
 
   if (offline) {
     const offLatestRow = async (table: string): Promise<Rec | null> =>
@@ -221,7 +231,17 @@ export async function loadIapData(
         .map((f) => ({ id: f.id, form_type: f.form_type })),
     }
     const localMap = await offGetMap(incidentId)
-    rMap = { data: localMap ? { map_image: localMap.map_image } : null }
+    rMap = {
+      data: localMap
+        ? {
+            map_image: localMap.map_image,
+            map_type: localMap.map_type,
+            live_markers: localMap.live_markers,
+            live_shapes: localMap.live_shapes,
+            custom_symbols: localMap.custom_symbols,
+          }
+        : null,
+    }
   } else {
     const latest = async (table: string): Promise<Record<string, unknown> | null> => {
       const { data } = await supabase
@@ -251,7 +271,7 @@ export async function loadIapData(
         .eq('incident_id', incidentId)
         .order('created_at', { ascending: false })
         .limit(50),
-      supabase.from('incident_maps').select('map_image').eq('incident_id', incidentId).maybeSingle(),
+      supabase.from('incident_maps').select('map_image, map_type, live_markers, live_shapes, custom_symbols').eq('incident_id', incidentId).maybeSingle(),
     ])
   }
 
@@ -447,6 +467,17 @@ export async function loadIapData(
       }
     : null
 
+  const mapRow = (rMap.data ?? {}) as {
+    map_image?: string
+    map_type?: string
+    live_markers?: unknown
+    live_shapes?: unknown
+    custom_symbols?: unknown
+  }
+  const mapMarkers: LiveMarker[] = asLiveMarkers(mapRow.live_markers)
+  const mapShapes: LiveShape[] = asLiveShapes(mapRow.live_shapes)
+  const mapCustom: CustomSymbolDef[] = asCustomSymbols(mapRow.custom_symbols)
+
   return {
     incident_name: incidentName,
     op,
@@ -456,6 +487,10 @@ export async function loadIapData(
     form205,
     form206,
     form208,
-    map_image: str((rMap.data as { map_image?: string } | null)?.map_image),
+    map_image: str(mapRow.map_image),
+    map_type: mapRow.map_type === 'live' ? 'live' : 'sketch',
+    map_markers: mapMarkers,
+    map_shapes: mapShapes,
+    map_custom: mapCustom,
   }
 }

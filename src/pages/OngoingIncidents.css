@@ -293,7 +293,7 @@
 
 .btn-edit {
   padding: 5px 12px;
-  background: #1a5276;
+  background: #f59e0b;
   color: white;
   border: none;
   border-radius: 5px;
@@ -304,7 +304,7 @@
 }
 
 .btn-edit:hover {
-  background: #154360;
+  background: #d97706;
 }
 
 .btn-delete {

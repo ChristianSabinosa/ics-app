@@ -411,6 +411,59 @@ export async function snapshotLiveMap(node: HTMLElement): Promise<string> {
   return toPng(node, { pixelRatio: 2, cacheBust: true })
 }
 
+/* ── Map legend (IAP map sheet) ──────────────────────────────
+   Entries actually placed on the incident's map. When no marker
+   data survives (legacy image-only rows), callers fall back to
+   FULL_MAP_LEGEND so the pane is never empty. */
+
+export interface MapLegendEntry {
+  key: string
+  kind: 'png' | 'badge' | 'custom' | 'shape'
+  /** PNG file under /symbols, badge/custom glyph char, or ShapeColor key. */
+  glyph: string
+  label: string
+}
+
+/** Every registry symbol + shape color, for rows without marker data. */
+export const FULL_MAP_LEGEND: MapLegendEntry[] = [
+  ...PNG_SYMBOLS.map((s) => ({ key: s.key, kind: 'png' as const, glyph: s.file, label: s.label })),
+  ...BADGE_FAMILIES.map((f) => ({ key: f.key, kind: 'badge' as const, glyph: f.prefix, label: f.label })),
+  ...SHAPE_COLORS.map((c) => ({ key: `shape-${c.key}`, kind: 'shape' as const, glyph: c.key, label: c.label })),
+]
+
+/** Legend entries for the symbols/shapes actually used on a map. */
+export function buildMapLegend(
+  markers: StoredMarker[],
+  shapes: (SketchShape | LiveShape)[],
+  customs: CustomSymbolDef[],
+): MapLegendEntry[] {
+  const entries: MapLegendEntry[] = []
+  const seen = new Set<string>()
+  for (const m of markers) {
+    const symbol = typeof m.symbol === 'string' ? m.symbol : ''
+    if (!symbol || seen.has(`m:${symbol}`)) continue
+    seen.add(`m:${symbol}`)
+    const meaning = customs.find((d) => d.char === customChar(symbol))?.meaning
+    const info = symbolInfo(symbol, meaning ?? (typeof m.custom === 'string' ? m.custom : undefined))
+    if (info.kind === 'png') {
+      entries.push({ key: symbol, kind: 'png', glyph: info.file, label: info.label })
+    } else if (info.kind === 'custom') {
+      entries.push({ key: symbol, kind: 'custom', glyph: info.initials || '?', label: info.label })
+    } else if (info.kind === 'badge' || info.kind === 'legacy') {
+      entries.push({ key: symbol, kind: 'badge', glyph: info.initials, label: info.label })
+    }
+    // Generic pins carry no legend meaning — skip them.
+  }
+  for (const s of shapes) {
+    const color = s.color === 'orange' || s.color === 'blue' ? s.color : 'red'
+    if (seen.has(`s:${color}`)) continue
+    seen.add(`s:${color}`)
+    const label = SHAPE_COLORS.find((c) => c.key === color)?.label ?? color
+    entries.push({ key: `shape-${color}`, kind: 'shape', glyph: color, label })
+  }
+  return entries.length > 0 ? entries : FULL_MAP_LEGEND
+}
+
 /* ── Persistence ─────────────────────────────────────────── */
 
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
@@ -436,13 +489,13 @@ function normalizeMarkers<T extends StoredMarker>(list: unknown): T[] {
   return out
 }
 
-const asSketchMarkers = (v: unknown): SketchMarker[] =>
+export const asSketchMarkers = (v: unknown): SketchMarker[] =>
   normalizeMarkers<SketchMarker>(v).filter((m) => isNum(m.x) && isNum(m.y))
 
-const asLiveMarkers = (v: unknown): LiveMarker[] =>
+export const asLiveMarkers = (v: unknown): LiveMarker[] =>
   normalizeMarkers<LiveMarker>(v).filter((m) => isNum(m.lat) && isNum(m.lng))
 
-const asSketchShapes = (v: unknown): SketchShape[] => {
+export const asSketchShapes = (v: unknown): SketchShape[] => {
   if (!Array.isArray(v)) return []
   const out: SketchShape[] = []
   for (const raw of v as Record<string, unknown>[]) {
@@ -461,7 +514,7 @@ const asSketchShapes = (v: unknown): SketchShape[] => {
   return out
 }
 
-const asLiveShapes = (v: unknown): LiveShape[] => {
+export const asLiveShapes = (v: unknown): LiveShape[] => {
   if (!Array.isArray(v)) return []
   const out: LiveShape[] = []
   for (const raw of v as Record<string, unknown>[]) {
@@ -480,7 +533,7 @@ const asLiveShapes = (v: unknown): LiveShape[] => {
   return out
 }
 
-const asCustomSymbols = (v: unknown): CustomSymbolDef[] => {
+export const asCustomSymbols = (v: unknown): CustomSymbolDef[] => {
   if (!Array.isArray(v)) return []
   const out: CustomSymbolDef[] = []
   for (const raw of v as Record<string, unknown>[]) {

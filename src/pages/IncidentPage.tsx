@@ -10,6 +10,9 @@ import { notifyIncident } from '../lib/notifications'
 import { fetchMyMembership, userDisplayName } from '../lib/training'
 import { loadPositionHolders, canPrepareWith, SIGNATURE_RULES } from '../lib/signatureRules'
 import ConfirmModal from '../components/ConfirmModal'
+import NextOpPeriodModal from '../components/NextOpPeriodModal'
+import { rolloverOperationalPeriod, type OpPeriodInput } from '../lib/rollover'
+import { displayUserName } from '../lib/participation'
 import IapCoverModal, { type IapStatus } from '../components/IapCoverModal'
 import './IncidentPage.css'
 
@@ -68,6 +71,8 @@ export default function IncidentPage() {
   const [error, setError] = useState('')
 
   const [showLeaveModal, setShowLeaveModal] = useState(false)
+  const [showNextOp, setShowNextOp] = useState(false)
+  const [rolloverNotice, setRolloverNotice] = useState('')
   const [showRolePicker, setShowRolePicker] = useState(false)
   const [showConfirmChange, setShowConfirmChange] = useState(false)
   const [pendingNewRole, setPendingNewRole] = useState<'IMT' | 'Tactical Resources' | 'Observer' | null>(null)
@@ -81,6 +86,7 @@ export default function IncidentPage() {
   const [iapRows, setIapRows] = useState<IapSummary[]>([])
   const [showIapModal, setShowIapModal] = useState(false)
   const [operationalPeriod, setOperationalPeriod] = useState('')
+  const [opDates, setOpDates] = useState({ from_date: '', from_time: '', to_date: '', to_time: '' })
   const [incidentCommander, setIncidentCommander] = useState('')
   const [publicStatus, setPublicStatus] = useState<{ description: string; totalCases: string }[]>([])
   const [manifestsLoaded, setManifestsLoaded] = useState(false)
@@ -104,6 +110,8 @@ export default function IncidentPage() {
     setFormStatuses({})
     setFormCounts({})
     setOperationalPeriod('')
+    setOpDates({ from_date: '', from_time: '', to_date: '', to_time: '' })
+    setRolloverNotice('')
     setIncidentCommander('')
     setPublicStatus([])
     setIapStatus('')
@@ -143,8 +151,9 @@ export default function IncidentPage() {
 
     // Wave 2: check-in manifests + every form status + operational period + public status
     // (one parallel batch instead of ~19 sequential queries)
+    // Latest row wins everywhere on this page, so status reads need newest-first.
     const fetchFormStatus = async (table: string): Promise<string | null> => {
-      const { data } = await supabase.from(table).select('status').eq('incident_id', id).limit(1).maybeSingle()
+      const { data } = await supabase.from(table).select('status').eq('incident_id', id).order('created_at', { ascending: false }).limit(1).maybeSingle()
       return data?.status ?? null
     }
 
@@ -249,6 +258,12 @@ export default function IncidentPage() {
 
     // Operational period from the latest ICS 202
     const form202Data = form202Result.data
+    setOpDates({
+      from_date: (form202Data?.op_period_from_date as string) || '',
+      from_time: (form202Data?.op_period_from_time as string) || '',
+      to_date: (form202Data?.op_period_to_date as string) || '',
+      to_time: (form202Data?.op_period_to_time as string) || '',
+    })
     if (form202Data && (form202Data.op_period_from_date || form202Data.op_period_to_date)) {
       const fmtMil = (t: string) => (t ? t.replace(':', '') + 'H' : '')
       const from = form202Data.op_period_from_date
@@ -480,6 +495,25 @@ export default function IncidentPage() {
   // talked into offering one.
   const adminReadOnly = isAdmin && !participant && incident.created_by !== user?.id
 
+  // Next operational period: incident creator or the named Incident Commander.
+  const myDisplayName = user ? displayUserName(user) : ''
+  const canStartNextOp =
+    !adminReadOnly &&
+    (incident.created_by === user?.id ||
+      (myDisplayName !== '' && incidentCommander !== '' && incidentCommander === myDisplayName))
+
+  const handleNextOpConfirm = async (op: OpPeriodInput) => {
+    if (!id) return
+    const res = await rolloverOperationalPeriod(id, op)
+    setShowNextOp(false)
+    setRolloverNotice(
+      res.failed.length > 0
+        ? `New period started — ${res.parents} form${res.parents === 1 ? '' : 's'} copied forward as Draft. Could not copy: ${res.failed.join('; ')}`
+        : `New operational period started — ${res.parents} form${res.parents === 1 ? '' : 's'} copied forward as Draft.`,
+    )
+    await fetchData()
+  }
+
   // Role authorities (src/lib/permissions.ts): the sidebar locks every form the
   // current role may not open, and ?denied=<form> explains a blocked deep link.
   const deniedKey = searchParams.get('denied') as FormKey | null
@@ -613,6 +647,9 @@ export default function IncidentPage() {
                 </div>
               </div>
             )}
+            {rolloverNotice && (
+              <div className="incident-notice" role="status">{rolloverNotice}</div>
+            )}
             <div className="incident-panel incident-info-bar">
               <div className="panel-header">
                 <div>
@@ -629,6 +666,11 @@ export default function IncidentPage() {
                 <span>
                   Operational Period: {detailsLoaded ? (operationalPeriod || <em>Please indicate the operational period using ICS form 202</em>) : <em>Loading...</em>}
                 </span>
+                {canStartNextOp && detailsLoaded && (
+                  <button className="next-op-btn" onClick={() => setShowNextOp(true)}>
+                    Next Operational Period
+                  </button>
+                )}
               </div>
               <div className="incident-meta-row">
                 <span>
@@ -901,6 +943,16 @@ export default function IncidentPage() {
             setShowIapModal(false)
             navigate(`/incident/${incident.incident_id}/iap/${iapId}`)
           }}
+        />
+      )}
+
+      {showNextOp && (
+        <NextOpPeriodModal
+          prevFromDate={opDates.from_date}
+          prevToDate={opDates.to_date}
+          prevToTime={opDates.to_time}
+          onConfirm={handleNextOpConfirm}
+          onCancel={() => setShowNextOp(false)}
         />
       )}
 

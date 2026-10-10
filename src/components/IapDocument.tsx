@@ -6,7 +6,51 @@ import Ics206Print from '../pages/Ics206Print'
 import Ics208Print from '../pages/Ics208Print'
 import type { IapData } from '../lib/iap'
 import { formatOpPeriod } from '../lib/iap'
+import { SHAPE_EDGE, SHAPE_FILL, buildMapLegend } from '../lib/map'
+import type { CustomSymbolDef, LiveMarker, LiveShape, MapLegendEntry } from '../lib/map'
 import './IapDocument.css'
+
+function LegendGlyph({ entry }: { entry: MapLegendEntry }) {
+  if (entry.kind === 'png' && entry.glyph) {
+    return <img className="iap-legend-glyph" src={`/symbols/${entry.glyph}`} alt="" />
+  }
+  if (entry.kind === 'shape') {
+    const color = entry.glyph as keyof typeof SHAPE_FILL
+    return (
+      <span
+        className="iap-legend-swatch"
+        style={{ background: SHAPE_FILL[color], borderColor: SHAPE_EDGE[color] }}
+      />
+    )
+  }
+  return <span className="iap-legend-chip">{entry.glyph}</span>
+}
+
+function MapLegend({
+  markers,
+  shapes,
+  customs,
+}: {
+  markers: LiveMarker[]
+  shapes: LiveShape[]
+  customs: CustomSymbolDef[]
+}) {
+  const entries = buildMapLegend(markers, shapes, customs)
+  if (entries.length === 0) return null
+  return (
+    <div className="iap-map-legend">
+      <div className="iap-legend-title">Legend</div>
+      <div className="iap-legend-grid">
+        {entries.map((e) => (
+          <div className="iap-legend-item" key={e.key}>
+            <LegendGlyph entry={e} />
+            <span className="iap-legend-label">{e.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 const noop = () => {}
 
@@ -199,7 +243,28 @@ export default function IapDocument({ data, coverImage }: IapDocumentProps) {
         <section className="iap-doc-section">
           <div className="iap-section-label iap-no-print">Incident Map</div>
           <div className="iap-a4-page iap-map-page">
-            <img src={data.map_image} alt="Incident map" />
+            <div className="iap-cover-header iap-sheet-header">
+              <span className="iap-cover-kicker">Incident Action Plan</span>
+              <span className="iap-cover-name">{name ? `${name} — Incident Map` : 'Incident Map'}</span>
+            </div>
+            <div className="iap-map-image">
+              <img src={data.map_image} alt="Incident map" />
+            </div>
+            <MapLegend
+              markers={data.map_markers ?? []}
+              shapes={data.map_shapes ?? []}
+              customs={data.map_custom ?? []}
+            />
+            <div className="iap-cover-footer iap-sheet-footer">
+              <span className="iap-cover-field">
+                <span className="iap-cover-label">Operational Period</span>
+                <strong>{opLabel || '—'}</strong>
+              </span>
+              <span className="iap-cover-field">
+                <span className="iap-cover-label">IC</span>
+                <strong>{icName || '—'}</strong>
+              </span>
+            </div>
           </div>
         </section>
       )}

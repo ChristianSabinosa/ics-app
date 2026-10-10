@@ -429,14 +429,15 @@ export default function Ics215Form() {
                   <tbody key={wa.id}>
                     {['required', 'have', 'need'].map((field, fi) => {
                       const isFirst = fi === 0
+                      const fieldLabel = field === 'required' ? 'Required' : field === 'have' ? 'Have' : 'Need'
                       return (
                         <tr key={`${wa.id}-${field}`}>
                           {isFirst && <td rowSpan={3} className="cell-text" data-label="Branch"><input type="text" value={wa.branch} onChange={e => updateWa(wa.id, 'branch', e.target.value)} disabled={isReadonly} placeholder="Branch" /></td>}
                           {isFirst && <td rowSpan={3} className="cell-text" data-label="Div/Group"><input type="text" value={wa.division_group} onChange={e => updateWa(wa.id, 'division_group', e.target.value)} disabled={isReadonly} placeholder="Div/Group" /></td>}
                           {isFirst && <td rowSpan={3} className="cell-text" data-label="Work Assignment"><input type="text" value={wa.work_assignment} onChange={e => updateWa(wa.id, 'work_assignment', e.target.value)} disabled={isReadonly} placeholder="Work assignment" /></td>}
-                          <td className="cell-label">{field === 'required' ? 'Required' : field === 'have' ? 'Have' : 'Need'}</td>
+                          <td className="cell-label">{fieldLabel}</td>
                           {resourceIdentifiers.map((rid, ri) => (
-                            <td key={ri} className="cell-num" data-label={rid || `Res ${ri + 1}`}>
+                            <td key={ri} className="cell-num" data-label={`${rid || `Res ${ri + 1}`} — ${fieldLabel}`}>
                               <input type="number" min="0" value={getResVal(wa.id, rid, field as any) || ''} onChange={e => setResVal(wa.id, rid, field as any, parseInt(e.target.value) || 0)} disabled={isReadonly} />
                             </td>
                           ))}
@@ -459,6 +460,73 @@ export default function Ics215Form() {
                   <tbody><tr><td colSpan={4 + Math.max(resourceIdentifiers.length, 1) + 5} className="wa-empty-cell">No work assignments yet. Click "+add entry" below.</td></tr></tbody>
                 )}
               </table>
+            </div>
+            {/* Mobile-only cards (≤600px): one block per resource with labeled
+                Required/Have/Need inputs. Same state and handlers as the table. */}
+            <div className="wa-mobile">
+              {workAssignments.map(wa => (
+                <div key={wa.id} className="wa-mcard">
+                  <div className="wa-mfield">
+                    <label>Branch</label>
+                    <input type="text" value={wa.branch} onChange={e => updateWa(wa.id, 'branch', e.target.value)} disabled={isReadonly} placeholder="Branch" />
+                  </div>
+                  <div className="wa-mfield">
+                    <label>Div/Group</label>
+                    <input type="text" value={wa.division_group} onChange={e => updateWa(wa.id, 'division_group', e.target.value)} disabled={isReadonly} placeholder="Div/Group" />
+                  </div>
+                  <div className="wa-mfield">
+                    <label>Work Assignment</label>
+                    <input type="text" value={wa.work_assignment} onChange={e => updateWa(wa.id, 'work_assignment', e.target.value)} disabled={isReadonly} placeholder="Work assignment" />
+                  </div>
+                  {resourceIdentifiers.map((rid, ri) => (
+                    <div key={ri} className="wa-mres">
+                      <label className="wa-mres-cap">Resource {ri + 1}</label>
+                      <input
+                        type="text"
+                        className="wa-mres-name"
+                        value={rid}
+                        onChange={e => updateResourceIdentifier(ri, e.target.value)}
+                        disabled={isReadonly}
+                        placeholder={`Res ${ri + 1} — tap to name`}
+                        aria-label={`Resource ${ri + 1} name`}
+                      />
+                      <div className="wa-mres-nums">
+                        {(['required', 'have', 'need'] as const).map(field => (
+                          <div key={field} className="wa-mnum">
+                            <label>{field === 'required' ? 'Required' : field === 'have' ? 'Have' : 'Need'}</label>
+                            <input type="number" min="0" value={getResVal(wa.id, rid, field) || ''} onChange={e => setResVal(wa.id, rid, field, parseInt(e.target.value) || 0)} disabled={isReadonly} />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                  <div className="wa-mfield">
+                    <label>Overhead</label>
+                    <input type="text" list={`overhead-m-${wa.id}`} value={wa.overhead_position} onChange={e => updateWa(wa.id, 'overhead_position', e.target.value)} disabled={isReadonly} placeholder="Position" />
+                    <datalist id={`overhead-m-${wa.id}`}>{overheadSuggestions.map(s => <option key={s} value={s} />)}</datalist>
+                  </div>
+                  <div className="wa-mfield">
+                    <label>Equipment</label>
+                    <input type="text" value={wa.special_equipment} onChange={e => updateWa(wa.id, 'special_equipment', e.target.value)} disabled={isReadonly} placeholder="Equipment" />
+                  </div>
+                  <div className="wa-mfield">
+                    <label>Location</label>
+                    <input type="text" list={`location-m-${wa.id}`} value={wa.reporting_location} onChange={e => updateWa(wa.id, 'reporting_location', e.target.value)} disabled={isReadonly} placeholder="Location" />
+                    <datalist id={`location-m-${wa.id}`}>{LOCATION_SUGGESTIONS.map(s => <option key={s} value={s} />)}</datalist>
+                  </div>
+                  <div className="wa-mfield">
+                    <label>Arrival</label>
+                    <input type="time" value={wa.requested_arrival_time} onChange={e => updateWa(wa.id, 'requested_arrival_time', e.target.value)} disabled={isReadonly} />
+                  </div>
+                  {!isReadonly && <button className="wa-mremove" onClick={() => removeWorkAssignment(wa.id)}>Remove entry</button>}
+                </div>
+              ))}
+              {workAssignments.length === 0 && (
+                <p className="wa-empty-hint">No work assignments yet. Click "+add entry" below.</p>
+              )}
+              {!isReadonly && resourceIdentifiers.length < MAX_RESOURCES && (
+                <button className="wa-maddres" onClick={addResourceIdentifier}>+ Add resource</button>
+              )}
             </div>
             {!isReadonly && (
               <button className="add-entry-btn" onClick={addWorkAssignment}>+add entry</button>

@@ -1,0 +1,32 @@
+/* Next Operational Period modal: 2×2 date/time grid, stacked on phones. */
+
+.next-op-modal {
+  max-width: 460px;
+}
+
+.next-op-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 12px;
+}
+
+.next-op-grid .modal-field input {
+  font-size: 16px;
+  min-height: 44px;
+}
+
+.modal-warning {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  color: #92400e;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .next-op-grid {
+    grid-template-columns: 1fr;
+  }
+}
